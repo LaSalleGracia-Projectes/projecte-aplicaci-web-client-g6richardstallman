@@ -17,6 +17,7 @@ function Login() {
                     <button type="submit" id="btnSubmit">Continuar</button>
                 </form>
                 <p>¿Has olvidado tu contraseña? <a href="#">Recuperar contraseña</a></p>
+                <p>¿Aún no estás registrado? <a href="/">Registrarse</a></p>
             </div>
         </div>
     );
