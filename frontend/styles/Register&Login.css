@@ -81,6 +81,11 @@
     cursor: pointer;
 }
 
+.btnRegister.selected {
+    background-color: cornflowerblue;
+    color: #fff;
+}
+
 #btnSubmit {
     margin-top: 20px;
     margin-bottom: 20px;

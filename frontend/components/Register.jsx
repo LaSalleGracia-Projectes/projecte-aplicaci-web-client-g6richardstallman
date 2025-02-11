@@ -1,8 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import '../styles/Register&Login.css';
 import '../styles/Reset.css';
 
 function Register() {
+    const [selectedRole, setSelectedRole] = useState('');
+
+    const handleRoleClick = (role) => {
+        setSelectedRole(role);
+    };
+
     return (
         <div className="registerContainer">
             <div className="imageContainer">
@@ -18,8 +24,20 @@ function Register() {
                     <input type="password" name="confirmPassword" id="confirmPassword" placeholder="Confirmar contraseña" />
                     <h3>¿Qué eres?</h3>
                     <div id="btnContainer">
-                        <button type="button" className="btnRegister">Organizador</button>
-                        <button type="button" className="btnRegister">Participante</button>
+                        <button
+                            type="button"
+                            className={`btnRegister ${selectedRole === 'organizador' ? 'selected' : ''}`}
+                            onClick={() => handleRoleClick('organizador')}
+                        >
+                            Organizador
+                        </button>
+                        <button
+                            type="button"
+                            className={`btnRegister ${selectedRole === 'participante' ? 'selected' : ''}`}
+                            onClick={() => handleRoleClick('participante')}
+                        >
+                            Participante
+                        </button>
                     </div>
                     <button type="submit" id="btnSubmit">Continuar</button>
                 </form>
