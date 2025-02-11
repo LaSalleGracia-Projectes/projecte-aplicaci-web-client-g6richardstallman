@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import '../styles/Register&Login.css';
 import '../styles/Reset.css';
 
