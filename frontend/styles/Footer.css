@@ -1,0 +1,44 @@
+.footer {
+    background-color: #888;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    color: #000;
+    font-family: "Nunito", sans-serif;
+  }
+  
+  .footer__left p {
+    margin: 0;
+  }
+  
+  .footer__center {
+    display: flex;
+    gap: 2rem;
+  }
+  
+  .footer__center a {
+    text-decoration: none;
+    color: #000;
+    transition: color 0.2s ease-in-out;
+  }
+  
+  .footer__center a:hover {
+    color: #333;
+  }
+  
+  .footer__right {
+    display: flex;
+    align-items: center;
+  }
+  
+  .footer__language {
+    cursor: pointer;
+    user-select: none;
+  }
+  
+  .language-icon {
+    font-size: 0.85em;
+    margin-left: 0.25rem;
+  }
+  
