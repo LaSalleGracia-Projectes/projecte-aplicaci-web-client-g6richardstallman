@@ -4,6 +4,16 @@
     font-family: "Nunito", sans-serif;
 }
 
+.logo {
+    width: 180px;
+    height: 70px;
+    background-image: url('../src/assets/eventflix_logo.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    display: block;
+    justify-content: center;
+}
+
 .registerContainer {
     display: flex;
     height: 100vh;

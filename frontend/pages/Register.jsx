@@ -15,7 +15,7 @@ function Register() {
                 <img src="/registerImage.jpg" alt="Imagen de registro" />
             </div>
             <div className="formContainer">
-                <h3>Eventclix</h3>
+                <h3 className='logo'></h3>
                 <h1>Regístrate</h1>
                 <form id="registerForm">
                     <input type="text" name="name" id="name" placeholder="Nombre" />

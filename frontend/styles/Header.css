@@ -12,12 +12,14 @@
 }
 
 .header__logo {
-  text-decoration: none;
-  color: black;
-  font-weight: 600;
-  font-size: 30px;
-  margin-left: 20px;
-}
+    width: 250px;
+    height: 70px;
+    background-image: url('../src/assets/eventflix_logo.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    display: block;
+    ;
+  }
 
 .header__center {
   width: 700px;
