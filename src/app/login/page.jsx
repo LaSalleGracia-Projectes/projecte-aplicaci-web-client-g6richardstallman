@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 
 function Login() {
   return (
@@ -55,12 +56,16 @@ function Login() {
           </button>
         </form>
 
-        <p className="mt-4">
-          ¿Has olvidado tu contraseña?{" "}
-          <a href="#" className="text-blue-600">
+        <h1>¿Has olvidado tu contraseña?</h1>
+        <Link
+          href="/login/forgot-password"
+          className="flex flex-col items-center gap-1 text-[18px] text-black no-underline"
+        >
+          <p className="mt-4">
             Recuperar contraseña
-          </a>
-        </p>
+          </p>
+        </Link>
+
         <p className="mt-2">
           ¿Aún no estás registrado?{" "}
           <a href="/" className="text-blue-600">
