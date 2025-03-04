@@ -4,7 +4,7 @@ import { Carousel, Typography, Button } from "@/components/ui";
 
 export default function HomeCarousel() {
   return (
-    <Carousel className="rounded-xl aspect-[16/9] w-full max-w-5xl mx-auto z-[-1] relative z-0 mt-24">
+    <Carousel className="rounded-xl aspect-[16/9] w-full max-w-5xl mx-auto relative z-0 mt-24">
       {/* Imagen 1 */}
       <div className="relative h-full w-full">
         <img
