@@ -32,7 +32,7 @@ export default function ResetPassword() {
                     style={{
                         width: "180px",
                         height: "70px",
-                        backgroundImage: 'url("/eventflix_logo.png")',
+                        backgroundImage: 'url("/logo.webp")',
                         backgroundSize: "contain",
                         backgroundRepeat: "no-repeat",
                     }}
