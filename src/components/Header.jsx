@@ -12,7 +12,6 @@ import {
 export default function Header() {
   return (
     <header className="sticky top-0 z-50 bg-gray-50 shadow-md flex items-center justify-between p-4">
-
       {/* Logo */}
       <div className="flex items-center">
         <Link
@@ -49,32 +48,31 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Menú de navegación */}
-      <div className="flex items-center gap-8 mr-5">
-        <div className="flex flex-row mr-16 gap-5">
-          {/* Favoritos */}
+      {/* Menú de navegación - Dividido en dos partes */}
+      <div className="flex items-center gap-14">
+        {/* Favoritos y Tickets */}
+        <div className="flex items-center gap-5">
           <Link
             href="/favoritos"
-            className="flex flex-col items-center gap-1 text-[18px] text-black no-underline"
+            className="flex flex-col items-center gap-1 text-[18px] text-black no-underline hover:text-gray-600 transition-colors"
           >
             <FaHeart className="text-red-500" />
             <span>Favoritos</span>
           </Link>
 
-          {/* Tickets */}
           <Link
             href="/tickets"
-            className="flex flex-col items-center gap-1 text-[18px] text-black no-underline"
+            className="flex flex-col items-center gap-1 text-[18px] text-black no-underline hover:text-gray-600 transition-colors"
           >
             <FaTicketAlt />
             <span>Tickets</span>
           </Link>
         </div>
 
-        {/* Perfil */}
+        {/* Perfil - Separado */}
         <Link
           href="/register"
-          className="flex flex-col items-center gap-1 text-[18px] text-black no-underline"
+          className="flex flex-col items-center gap-1 text-[18px] text-black no-underline hover:text-gray-600 transition-colors"
         >
           <FaUser />
           <span>Perfil</span>
