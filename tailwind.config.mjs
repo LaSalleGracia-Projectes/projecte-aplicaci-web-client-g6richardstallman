@@ -13,6 +13,7 @@ export default withMT({
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        customRed: '#E53935',
       },
     },
   },
