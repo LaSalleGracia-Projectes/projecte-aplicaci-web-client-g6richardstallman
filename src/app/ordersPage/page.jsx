@@ -16,11 +16,8 @@ import { ChevronDownIcon, MagnifyingGlassIcon, FunnelIcon } from "@heroicons/rea
 export default function OrdersPage() {
   const [openAccordion, setOpenAccordion] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
-  
-  const handleOpen = (value) => setOpenAccordion(openAccordion === value ? 0 : value);
 
-  // Custom red color from previous project
-  const customRed = "#FFE53935";
+  const handleOpen = (value) => setOpenAccordion(openAccordion === value ? 0 : value);
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
@@ -38,7 +35,7 @@ export default function OrdersPage() {
           >
             <AccordionHeader 
               onClick={() => handleOpen(item)} 
-              className={`border-b-0 px-4 py-3 ${openAccordion === item ? 'text-[${customRed}]' : 'text-gray-700'}`}
+              className={`border-b-0 px-4 py-3 ${openAccordion === item ? 'text-customRed' : 'text-gray-700'}`}
             >
               <div className="flex items-center">
                 <span className="mr-2">📌</span>
@@ -48,7 +45,7 @@ export default function OrdersPage() {
             </AccordionHeader>
             
             <AccordionBody className="py-2 px-4">
-              <div className="p-3 bg-gradient-to-r from-red-50 to-white rounded-lg shadow-sm border-l-4 border-[#FFE53935]">
+              <div className="p-3 bg-gradient-to-r from-red-50 to-white rounded-lg shadow-sm border-l-4 border-customRed">
                 <Typography className="text-gray-600">
                   Contenido detallado para la opción {item}. Puedes agregar formularios, enlaces o cualquier componente aquí.
                 </Typography>
@@ -64,11 +61,11 @@ export default function OrdersPage() {
         <div className="mb-8 text-center">
           <Typography 
             variant="h1" 
-            className="text-4xl font-extrabold mb-4 bg-gradient-to-r from-[#FFE53935] to-red-600 bg-clip-text text-transparent"
+            className="text-4xl font-extrabold mb-4 bg-gradient-to-r from-customRed to-red-600 bg-clip-text text-transparent"
           >
             Gestión de Pedidos
           </Typography>
-          <div className="h-1 bg-gradient-to-r from-[#FFE53935] via-red-300 to-[#FFE53935] rounded-full"></div>
+          <div className="h-1 bg-gradient-to-r from-customRed via-red-300 to-customRed rounded-full"></div>
         </div>
 
         {/* Search Bar with Icon */}
@@ -77,10 +74,10 @@ export default function OrdersPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             label="Buscar pedidos..."
-            icon={<MagnifyingGlassIcon className="h-5 w-5 text-[#FFE53935]" />}
-            className="!border-2 !border-gray-200 focus:!border-[#FFE53935] !rounded-xl py-3 px-4"
+            icon={<MagnifyingGlassIcon className="h-5 w-5 text-customRed" />}
+            className="!border-2 !border-gray-200 focus:!border-customRed !rounded-xl py-3 px-4"
             labelProps={{
-              className: "!text-gray-500 peer-focus:!text-[#FFE53935]"
+              className: "!text-gray-500 peer-focus:!text-customRed"
             }}
           />
         </div>
@@ -88,7 +85,7 @@ export default function OrdersPage() {
         {/* Filtros Section */}
         <div className="bg-white p-6 rounded-xl shadow-lg">
           <Typography variant="h5" className="mb-6 flex items-center text-gray-700">
-            <FunnelIcon className="h-6 w-6 mr-2 text-[#FFE53935]" />
+            <FunnelIcon className="h-6 w-6 mr-2 text-customRed" />
             Filtros Avanzados
           </Typography>
 
@@ -97,12 +94,12 @@ export default function OrdersPage() {
               <Select
                 key={item}
                 label={`Filtro ${item}`}
-                className="!border-2 !border-gray-200 focus:!border-[#FFE53935] rounded-lg"
+                className="!border-2 !border-gray-200 focus:!border-customRed rounded-lg"
                 labelProps={{
-                  className: "!text-gray-600 peer-focus:!text-[#FFE53935]"
+                  className: "!text-gray-600 peer-focus:!text-customRed"
                 }}
                 menuProps={{
-                  className: "border-2 border-[#FFE53935] rounded-lg py-2"
+                  className: "border-2 border-customRed rounded-lg py-2"
                 }}
               >
                 <Option className="hover:bg-red-50">Opción 1</Option>
@@ -117,7 +114,7 @@ export default function OrdersPage() {
             <Button className="bg-gray-100 text-gray-600 hover:bg-gray-200 px-8 py-3 rounded-lg transition-all">
               Limpiar
             </Button>
-            <Button className="bg-[#FFE53935] text-white hover:bg-[#FFE53935]/90 px-8 py-3 rounded-lg shadow-red hover:shadow-lg transition-all">
+            <Button className="bg-customRed text-white hover:bg-customRed/90 px-8 py-3 rounded-lg shadow-red hover:shadow-lg transition-all">
               Aplicar Filtros
             </Button>
           </div>
