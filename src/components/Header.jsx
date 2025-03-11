@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
+import Link from "next/link";
 import {
   FaSearch,
   FaMapMarkerAlt,
@@ -14,10 +14,16 @@ import {
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
+  const userProfile = {
+    name: "Usuario Ejemplo",
+    image: "/img1.webp",
+  };
+
   return (
-    <header className="sticky top-0 z-50 bg-gray-50 shadow-md">
+    <header className="sticky top-0 z-[60] bg-gray-50 shadow-md">
       {/* Desktop y Tablet Header */}
       <div className="hidden md:block">
         <div className="max-w-7xl mx-auto flex items-center justify-between p-4">
@@ -70,13 +76,37 @@ export default function Header() {
               </Link>
             </div>
 
-            <Link
-              href="/register"
-              className="flex flex-col items-center gap-1 text-sm hover:text-gray-600 transition-colors"
-            >
-              <FaUser className="text-xl" />
-              <span>Perfil</span>
-            </Link>
+            {/* Botones de autenticación / Perfil de usuario */}
+            {isLoggedIn ? (
+              <Link
+                href="/profile"
+                className="flex items-center gap-3 hover:bg-gray-100 rounded-full transition-all duration-200 p-2"
+              >
+                <img
+                  src={userProfile.image}
+                  alt={userProfile.name}
+                  className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                />
+                <span className="text-sm font-medium hidden lg:block">
+                  {userProfile.name}
+                </span>
+              </Link>
+            ) : (
+              <div className="flex items-center gap-3">
+                <Link
+                  href="/login"
+                  className="px-4 py-2 text-sm font-medium hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  Iniciar sesión
+                </Link>
+                <Link
+                  href="/register"
+                  className="px-4 py-2 text-sm font-medium bg-black text-white rounded-full hover:bg-gray-800 transition-colors"
+                >
+                  Registrarse
+                </Link>
+              </div>
+            )}
           </nav>
         </div>
       </div>
@@ -135,7 +165,7 @@ export default function Header() {
         {/* Menú móvil */}
         {isMenuOpen && (
           <nav className="bg-white border-t border-gray-200">
-            <div className="px-4 py-2">
+            <div className="px-4 py-2 space-y-1">
               <Link
                 href="/favoritos"
                 className="flex items-center gap-3 p-3 hover:bg-gray-100 rounded-lg transition-colors"
@@ -150,13 +180,37 @@ export default function Header() {
                 <FaTicketAlt />
                 <span>Tickets</span>
               </Link>
-              <Link
-                href="/register"
-                className="flex items-center gap-3 p-3 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <FaUser />
-                <span>Perfil</span>
-              </Link>
+
+              {isLoggedIn ? (
+                <Link
+                  href="/profile"
+                  className="flex items-center gap-3 p-3 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <img
+                    src={userProfile.image}
+                    alt={userProfile.name}
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                  <span>{userProfile.name}</span>
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="flex items-center gap-3 p-3 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <FaUser />
+                    <span>Iniciar sesión</span>
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="flex items-center gap-3 p-3 bg-black text-white rounded-lg transition-colors mt-2"
+                  >
+                    <FaUser />
+                    <span>Registrarse</span>
+                  </Link>
+                </>
+              )}
             </div>
           </nav>
         )}
