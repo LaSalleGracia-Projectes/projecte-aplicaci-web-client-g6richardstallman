@@ -27,11 +27,9 @@ export default function EditInformationPage() {
     dni: "",
     role: "",
     fechaCreacion: "",
-    // Campos de contraseña
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
-    // Imagen
     profileImage: null,
   });
 
