@@ -1,59 +1,90 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   FaSearch,
-  FaMapMarkerAlt,
   FaHeart,
   FaTicketAlt,
   FaUser,
   FaBars,
   FaTimes,
 } from "react-icons/fa";
+import SearchBar from "./SearchBar";
 
 export default function Header() {
+  // Estados
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [locationQuery, setLocationQuery] = useState("");
 
+  // Datos de ejemplo del usuario
   const userProfile = {
     name: "Usuario Ejemplo",
     image: "/img1.webp",
   };
 
+  // Manejadores de eventos
+  const toggleMenu = useCallback(() => {
+    setIsMenuOpen((prev) => !prev);
+  }, []);
+
+  const toggleSearch = useCallback(() => {
+    setIsSearchOpen((prev) => !prev);
+  }, []);
+
+  const handleSearch = useCallback(() => {
+    console.log("Buscando:", { searchQuery, locationQuery });
+    // Añade aquí tu lógica de búsqueda
+  }, [searchQuery, locationQuery]);
+
+  const handleSearchChange = useCallback((value) => {
+    setSearchQuery(value);
+  }, []);
+
+  const handleLocationChange = useCallback((value) => {
+    setLocationQuery(value);
+  }, []);
+
+  const handleClearSearch = useCallback(() => {
+    setSearchQuery("");
+  }, []);
+
+  const handleClearLocation = useCallback(() => {
+    setLocationQuery("");
+  }, []);
+
   return (
-    <header className="sticky top-0 z-[60] bg-gray-50 shadow-md">
-      {/* Desktop y Tablet Header */}
+    <header className="sticky top-0 z-[60] bg-gray-50/95 backdrop-blur-sm shadow-md">
+      {/* Header Desktop y Tablet */}
       <div className="hidden md:block">
-        <div className="max-w-7xl mx-auto flex items-center justify-between p-4">
+        <div className="max-w-[1920px] mx-auto flex items-center justify-between p-4 xl:px-8">
           {/* Logo */}
-          <Link
-            href="/"
-            className="block w-[180px] lg:w-[250px] h-[50px] lg:h-[70px] bg-[url('/logo.webp')] bg-contain bg-no-repeat"
-          />
+          <Link href="/" className="shrink-0">
+            <Image
+              src="/logo.webp"
+              alt="Logo"
+              width={250}
+              height={70}
+              className="w-[180px] lg:w-[250px] h-[50px] lg:h-[70px] object-contain"
+              priority
+            />
+          </Link>
 
           {/* Barra de búsqueda */}
-          <div className="flex-grow max-w-2xl mx-4">
-            <div className="bg-white flex items-center border border-gray-300 rounded-full p-2">
-              <div className="flex items-center flex-1 gap-2">
-                <FaSearch className="text-gray-500" />
-                <input
-                  type="search"
-                  placeholder="Buscar eventos"
-                  className="w-full focus:outline-none text-sm"
-                />
-              </div>
-              <div className="w-px h-6 bg-gray-300 mx-2" />
-              <div className="flex items-center flex-1 gap-2">
-                <FaMapMarkerAlt className="text-gray-500" />
-                <input
-                  type="search"
-                  placeholder="Ciudad"
-                  className="w-full focus:outline-none text-sm"
-                />
-              </div>
-            </div>
+          <div className="flex-grow max-w-3xl mx-4 xl:mx-8">
+            <SearchBar
+              searchQuery={searchQuery}
+              locationQuery={locationQuery}
+              onSearchChange={handleSearchChange}
+              onLocationChange={handleLocationChange}
+              onClearSearch={handleClearSearch}
+              onClearLocation={handleClearLocation}
+              onSearch={handleSearch}
+            />
           </div>
 
           {/* Menú de navegación */}
@@ -61,33 +92,35 @@ export default function Header() {
             <div className="flex items-center gap-6 mr-8">
               <Link
                 href="/favoritos"
-                className="flex flex-col items-center gap-1 text-sm hover:text-gray-600 transition-colors"
+                className="flex flex-col items-center gap-1 text-sm hover:text-gray-600 transition-colors group"
               >
-                <FaHeart className="text-xl text-red-500" />
+                <FaHeart className="text-xl text-red-500 group-hover:scale-110 transition-transform" />
                 <span>Favoritos</span>
               </Link>
 
               <Link
                 href="/tickets"
-                className="flex flex-col items-center gap-1 text-sm hover:text-gray-600 transition-colors"
+                className="flex flex-col items-center gap-1 text-sm hover:text-gray-600 transition-colors group"
               >
-                <FaTicketAlt className="text-xl" />
+                <FaTicketAlt className="text-xl group-hover:scale-110 transition-transform" />
                 <span>Tickets</span>
               </Link>
             </div>
 
-            {/* Botones de autenticación / Perfil de usuario */}
+            {/* Perfil de usuario o botones de autenticación */}
             {isLoggedIn ? (
               <Link
                 href="/profile"
                 className="flex items-center gap-3 hover:bg-gray-100 rounded-full transition-all duration-200 p-2"
               >
-                <img
+                <Image
                   src={userProfile.image}
                   alt={userProfile.name}
-                  className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                  width={40}
+                  height={40}
+                  className="rounded-full object-cover border-2 border-gray-200"
                 />
-                <span className="text-sm font-medium hidden lg:block">
+                <span className="text-sm font-medium hidden xl:block">
                   {userProfile.name}
                 </span>
               </Link>
@@ -111,25 +144,34 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Mobile Header */}
+      {/* Header Mobile */}
       <div className="md:hidden">
         <div className="flex items-center justify-between p-4">
-          {/* Logo */}
-          <Link
-            href="/"
-            className="block w-[140px] h-[40px] bg-[url('/logo.webp')] bg-contain bg-no-repeat"
-          />
+          <Link href="/" className="shrink-0">
+            <Image
+              src="/logo.webp"
+              alt="Logo"
+              width={140}
+              height={40}
+              className="w-[140px] h-[40px] object-contain"
+              priority
+            />
+          </Link>
 
           <div className="flex items-center gap-4">
             <button
-              onClick={() => setIsSearchOpen(!isSearchOpen)}
+              type="button"
+              onClick={toggleSearch}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              aria-label="Abrir búsqueda"
             >
               <FaSearch className="text-xl" />
             </button>
             <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              type="button"
+              onClick={toggleMenu}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              aria-label="Abrir menú"
             >
               {isMenuOpen ? (
                 <FaTimes className="text-xl" />
@@ -143,22 +185,16 @@ export default function Header() {
         {/* Barra de búsqueda móvil */}
         {isSearchOpen && (
           <div className="px-4 pb-4 space-y-2 border-t border-gray-200 pt-4">
-            <div className="flex items-center gap-2 bg-white border border-gray-300 rounded-full px-4 py-2">
-              <FaSearch className="text-gray-500" />
-              <input
-                type="search"
-                placeholder="Buscar eventos"
-                className="w-full focus:outline-none text-sm"
-              />
-            </div>
-            <div className="flex items-center gap-2 bg-white border border-gray-300 rounded-full px-4 py-2">
-              <FaMapMarkerAlt className="text-gray-500" />
-              <input
-                type="search"
-                placeholder="Ciudad"
-                className="w-full focus:outline-none text-sm"
-              />
-            </div>
+            <SearchBar
+              searchQuery={searchQuery}
+              locationQuery={locationQuery}
+              onSearchChange={handleSearchChange}
+              onLocationChange={handleLocationChange}
+              onClearSearch={handleClearSearch}
+              onClearLocation={handleClearLocation}
+              onSearch={handleSearch}
+              isMobile
+            />
           </div>
         )}
 
@@ -186,10 +222,12 @@ export default function Header() {
                   href="/profile"
                   className="flex items-center gap-3 p-3 hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                  <img
+                  <Image
                     src={userProfile.image}
                     alt={userProfile.name}
-                    className="w-8 h-8 rounded-full object-cover"
+                    width={32}
+                    height={32}
+                    className="rounded-full object-cover"
                   />
                   <span>{userProfile.name}</span>
                 </Link>
