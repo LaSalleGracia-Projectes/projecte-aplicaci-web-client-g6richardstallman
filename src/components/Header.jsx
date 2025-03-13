@@ -112,7 +112,7 @@ export default function Header() {
 
           {/* Navigation Menu */}
           <nav className="flex items-center">
-            <div className="flex items-center gap-6 mr-8">
+            <div className="flex items-center gap-6 mr-10">
               <Link
                 href="/favoritos"
                 className="group flex flex-col items-center gap-1.5 text-sm text-gray-700 hover:text-gray-900 transition-colors"
@@ -148,10 +148,10 @@ export default function Header() {
                 </span>
               </Link>
             ) : (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 <Link
                   href="/login"
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all duration-200"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 border border-black rounded-full transition-all duration-200 hover:bg-gray-50"
                 >
                   Iniciar sesión
                 </Link>
