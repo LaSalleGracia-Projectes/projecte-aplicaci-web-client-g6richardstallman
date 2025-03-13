@@ -2,6 +2,7 @@
 
 import { FaSearch, FaMapMarkerAlt, FaTimes } from "react-icons/fa";
 
+// Componente de barra de búsqueda que maneja eventos y ubicaciones
 export default function SearchBar({
   searchQuery,
   locationQuery,
@@ -16,7 +17,7 @@ export default function SearchBar({
     <div className="w-full max-w-full">
       <div className="bg-white/95 backdrop-blur-sm border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow transition-colors duration-200 rounded-full overflow-hidden">
         <div className="flex flex-row items-center p-1">
-          {/* Search Input */}
+          {/* Sección de búsqueda de eventos */}
           <div className="flex-1 w-full flex items-center gap-2 px-3 h-10">
             <FaSearch className="text-sm text-black flex-shrink-0" />
             <input
@@ -37,9 +38,10 @@ export default function SearchBar({
             )}
           </div>
 
+          {/* Separador vertical */}
           <div className="h-6 w-px bg-gray-200 mx-1" />
 
-          {/* Location Input */}
+          {/* Sección de búsqueda por ubicación */}
           <div className="flex-1 w-full flex items-center gap-2 px-3 h-10">
             <FaMapMarkerAlt className="text-sm text-black flex-shrink-0" />
             <input
@@ -60,6 +62,7 @@ export default function SearchBar({
             )}
           </div>
 
+          {/* Botón de búsqueda */}
           <button
             onClick={onSearch}
             className="ml-1 w-9 h-9 bg-black text-white rounded-full hover:bg-gray-800 active:bg-gray-900 transition-all flex items-center justify-center flex-shrink-0"

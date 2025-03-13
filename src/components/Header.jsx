@@ -13,7 +13,9 @@ import {
 } from "react-icons/fa";
 import SearchBar from "./SearchBar";
 
+// Componente principal del header con navegación responsive
 export default function Header() {
+  // Estados del componente
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -26,7 +28,7 @@ export default function Header() {
     image: "/img1.webp",
   };
 
-  // Handle scroll effect
+  // Manejadores de eventos y efectos
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
@@ -35,7 +37,6 @@ export default function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Close mobile menu on route change
   useEffect(() => {
     setIsMenuOpen(false);
     setIsSearchOpen(false);
@@ -54,7 +55,6 @@ export default function Header() {
   const handleSearch = useCallback(() => {
     console.log("Searching:", { searchQuery, locationQuery });
     setIsSearchOpen(false);
-    // Add your search logic here
   }, [searchQuery, locationQuery]);
 
   const handleSearchChange = useCallback((value) => {
@@ -79,7 +79,7 @@ export default function Header() {
       ${isScrolled ? "bg-white/95 shadow-md" : "bg-white/90"}
       backdrop-blur-sm`}
     >
-      {/* Desktop and Tablet Header */}
+      {/* Versión Desktop y Tablet */}
       <div className="hidden md:block">
         <div className="max-w-[1920px] mx-auto flex items-center justify-between p-4 xl:px-8">
           {/* Logo */}
@@ -97,7 +97,7 @@ export default function Header() {
             />
           </Link>
 
-          {/* Search Bar */}
+          {/* Barra de búsqueda */}
           <div className="flex-grow max-w-3xl mx-4 xl:mx-8">
             <SearchBar
               searchQuery={searchQuery}
@@ -110,7 +110,7 @@ export default function Header() {
             />
           </div>
 
-          {/* Navigation Menu */}
+          {/* Menú de navegación */}
           <nav className="flex items-center">
             <div className="flex items-center gap-6 mr-10">
               <Link
@@ -130,7 +130,7 @@ export default function Header() {
               </Link>
             </div>
 
-            {/* Auth Buttons / User Profile */}
+            {/* Perfil de usuario / Botones de autenticación */}
             {isLoggedIn ? (
               <Link
                 href="/profile"
@@ -167,8 +167,9 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Mobile Header */}
+      {/* Versión Mobile */}
       <div className="md:hidden">
+        {/* Header móvil */}
         <div className="flex items-center justify-between p-4">
           <Link
             href="/"
@@ -206,7 +207,7 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Mobile Search Bar */}
+        {/* Barra de búsqueda móvil */}
         {isSearchOpen && (
           <div className="px-4 pb-4 border-t border-gray-100 pt-4 bg-white/95 backdrop-blur-sm">
             <SearchBar
@@ -222,7 +223,7 @@ export default function Header() {
           </div>
         )}
 
-        {/* Mobile Menu */}
+        {/* Menú móvil */}
         {isMenuOpen && (
           <nav className="bg-white/95 backdrop-blur-sm border-t border-gray-100">
             <div className="p-4 space-y-2">
