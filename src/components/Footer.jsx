@@ -40,9 +40,9 @@ export default function Footer() {
   return (
     <footer className="relative w-full bg-gradient-to-b from-gray-50 to-gray-100">
       <div className="mx-auto w-full max-w-7xl px-6 md:px-8">
-        {/* Contenedor principal */}
+        {/* Contenedor principal del footer */}
         <div className="grid grid-cols-1 justify-between gap-12 py-12 md:grid-cols-2 lg:grid-cols-4">
-          {/* Logo y descripción */}
+          {/* Sección del logo y descripción */}
           <div className="flex flex-col items-center md:items-start space-y-6">
             <Link
               href="/"
@@ -57,7 +57,7 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Enlaces - Grid responsive */}
+          {/* Sección de enlaces de navegación */}
           {LINKS.map(({ title, items }) => (
             <div key={title} className="text-center md:text-left">
               <Typography
@@ -83,17 +83,17 @@ export default function Footer() {
           ))}
         </div>
 
-        {/* Separador con degradado */}
+        {/* Separador visual */}
         <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
 
-        {/* Footer inferior */}
+        {/* Sección inferior del footer */}
         <div className="flex flex-col md:flex-row items-center justify-between py-8 gap-6">
-          {/* Copyright */}
+          {/* Información de copyright */}
           <Typography className="text-sm text-gray-600 text-center md:text-left">
             &copy; {currentYear} Eventclix. Todos los derechos reservados.
           </Typography>
 
-          {/* Redes sociales */}
+          {/* Enlaces a redes sociales */}
           <div className="flex gap-6">
             <Link
               href="#"
