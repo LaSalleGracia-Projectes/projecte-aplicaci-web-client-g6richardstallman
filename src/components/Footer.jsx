@@ -39,18 +39,18 @@ const currentYear = new Date().getFullYear();
 export default function Footer() {
   return (
     <footer className="relative w-full bg-gradient-to-b from-gray-50 to-gray-100">
-      <div className="mx-auto w-full max-w-7xl px-6 md:px-8">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Contenedor principal del footer */}
-        <div className="grid grid-cols-1 justify-between gap-12 py-12 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-12 py-12 sm:grid-cols-2 lg:grid-cols-4">
           {/* Sección del logo y descripción */}
-          <div className="flex flex-col items-center md:items-start space-y-6">
+          <div className="flex flex-col items-center sm:items-start space-y-6">
             <Link
               href="/"
               className="transform hover:scale-105 transition-transform duration-300"
             >
               <Image src="/logo.webp" alt="Eventclix Logo" width={176} height={44} className="w-36 md:w-44" />
             </Link>
-            <p className="text-sm leading-relaxed text-gray-600 text-center md:text-left max-w-sm">
+            <p className="text-sm leading-relaxed text-gray-600 text-center sm:text-left max-w-sm">
               Tu plataforma de confianza para descubrir, organizar y disfrutar
               de los mejores eventos. Únete a nuestra comunidad y vive
               experiencias inolvidables.
@@ -59,7 +59,7 @@ export default function Footer() {
 
           {/* Sección de enlaces de navegación */}
           {LINKS.map(({ title, items }) => (
-            <div key={title} className="text-center md:text-left">
+            <div key={title} className="text-center sm:text-left">
               <Typography
                 variant="small"
                 className="mb-4 font-semibold text-gray-900 uppercase tracking-wider"
@@ -87,9 +87,9 @@ export default function Footer() {
         <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
 
         {/* Sección inferior del footer */}
-        <div className="flex flex-col md:flex-row items-center justify-between py-8 gap-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between py-8 gap-6">
           {/* Información de copyright */}
-          <Typography className="text-sm text-gray-600 text-center md:text-left">
+          <Typography className="text-sm text-gray-600 text-center sm:text-left">
             &copy; {currentYear} Eventclix. Todos los derechos reservados.
           </Typography>
 
