@@ -3,6 +3,7 @@
 import { Typography } from "@/components/ui";
 import Link from "next/link";
 import { FaFacebookF, FaInstagram, FaTwitter } from "react-icons/fa";
+import Image from 'next/image';
 
 const LINKS = [
   {
@@ -47,7 +48,7 @@ export default function Footer() {
               href="/"
               className="transform hover:scale-105 transition-transform duration-300"
             >
-              <img src="/logo.webp" alt="Logo" className="w-36 md:w-44" />
+              <Image src="/logo.webp" alt="Eventclix Logo" width={176} height={44} className="w-36 md:w-44" />
             </Link>
             <p className="text-sm leading-relaxed text-gray-600 text-center md:text-left max-w-sm">
               Tu plataforma de confianza para descubrir, organizar y disfrutar
@@ -97,18 +98,21 @@ export default function Footer() {
             <Link
               href="#"
               className="p-3 rounded-full bg-white shadow-sm hover:shadow-md hover:scale-110 transition-all duration-300"
+              aria-label="Facebook"
             >
               <FaFacebookF className="h-5 w-5 text-blue-600" />
             </Link>
             <Link
               href="#"
               className="p-3 rounded-full bg-white shadow-sm hover:shadow-md hover:scale-110 transition-all duration-300"
+              aria-label="Instagram"
             >
               <FaInstagram className="h-5 w-5 text-pink-600" />
             </Link>
             <Link
               href="#"
               className="p-3 rounded-full bg-white shadow-sm hover:shadow-md hover:scale-110 transition-all duration-300"
+              aria-label="Twitter"
             >
               <FaTwitter className="h-5 w-5 text-blue-400" />
             </Link>
