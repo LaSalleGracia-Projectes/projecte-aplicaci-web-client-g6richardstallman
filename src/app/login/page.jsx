@@ -94,11 +94,11 @@ function Login() {
         </Link>
 
         {/* Logo */}
-        <div className="mb-6 sm:mb-8 mt-12 md:mt-0 transform hover:scale-105 transition-transform duration-300">
+        <div className="mb-6 sm:mb-8 mt-12 md:mt-0 transform hover:scale-[1.05] transition-transform duration-300">
           <div
             className="w-[130px] h-[52px] sm:w-[150px] sm:h-[60px]"
             style={{
-              backgroundImage: 'url("/logo.webp")',
+              backgroundImage: 'url("/logo.jpg")',
               backgroundSize: "contain",
               backgroundRepeat: "no-repeat",
               backgroundPosition: "center",
