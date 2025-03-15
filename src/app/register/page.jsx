@@ -33,6 +33,21 @@ function Register() {
   // Añadir estado para debug
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
+  const [scrollPosition, setScrollPosition] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const position = document.querySelector('.overflow-y-auto')?.scrollTop;
+      setScrollPosition(position || 0);
+    };
+    
+    const scrollContainer = document.querySelector('.overflow-y-auto');
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', handleScroll);
+      return () => scrollContainer.removeEventListener('scroll', handleScroll);
+    }
+  }, []);
+
   const handleRoleClick = (role) => {
     setSelectedRole(role);
     setStep(2); // Avanzar al formulario
@@ -185,8 +200,13 @@ function Register() {
 
       {/* Contenedor del formulario - con scroll */}
       <div className="w-full md:w-1/2 lg:w-3/5 flex flex-col h-screen overflow-hidden">
-        {/* Barra superior fija con botones de navegación */}
-        <div className="flex justify-between items-center p-4 bg-white/90 backdrop-blur-sm z-30">
+        {/* Barra superior fija solo con botón de inicio */}
+        <div 
+          className="flex justify-between items-center p-4 bg-white/90 backdrop-blur-sm z-30 sticky top-0 transition-shadow duration-200"
+          style={{
+            boxShadow: scrollPosition > 10 ? "0 2px 4px rgba(0,0,0,0.05)" : "none"
+          }}
+        >
           <Link
             href="/"
             className="flex items-center gap-2 px-3 py-2 bg-black text-white rounded-full hover:bg-gray-800 transform hover:scale-105 active:scale-95 transition-all duration-200 shadow-md"
@@ -194,22 +214,12 @@ function Register() {
             <FaHome className="text-lg" />
             <span className="text-sm font-medium md:inline hidden">Inicio</span>
           </Link>
-
-          {/* Botón para volver a selección de rol si estamos en paso 2 */}
-          {step === 2 && (
-            <button
-              onClick={() => setStep(1)}
-              className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transform hover:scale-105 active:scale-95 transition-all duration-200 shadow-sm"
-            >
-              <span className="text-sm font-medium">Cambiar rol</span>
-            </button>
-          )}
         </div>
 
         {/* Contenido con scroll */}
         <div className="flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 lg:px-12 py-8">
           {/* Logo */}
-          <div className="flex justify-center mb-6 sm:mb-8 transform hover:scale-[1.05] transition-transform duration-300">
+          <div className="flex justify-center mb-6 sm:mb-8">
             <div
               className="w-[130px] h-[52px] sm:w-[150px] sm:h-[60px]"
               style={{
@@ -279,6 +289,32 @@ function Register() {
           {/* Paso 2: Formulario según rol seleccionado */}
           {step === 2 && (
             <form onSubmit={handleSubmit} className="w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto space-y-5">
+              {/* Indicador del rol seleccionado */}
+              <div className="w-full bg-gray-50 rounded-lg p-4 mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-10 h-10 flex items-center justify-center bg-red-100 text-[#e53c3d] rounded-full">
+                    {selectedRole === "participante" ? (
+                      <FaUser className="text-lg" />
+                    ) : (
+                      <FaBuilding className="text-lg" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Tipo de cuenta:</p>
+                    <p className="font-medium text-gray-800 capitalize">
+                      {selectedRole === "participante" ? "Participante" : "Organizador"}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="text-sm text-[#e53c3d] hover:text-[#c93131] font-medium hover:underline"
+                >
+                  Cambiar
+                </button>
+              </div>
+              
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="w-full">
                   <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
@@ -289,7 +325,9 @@ function Register() {
                     value={formData.nombre}
                     onChange={handleChange}
                     placeholder="Tu nombre"
-                    className={`w-full p-3 border-2 ${formErrors.nombre ? 'border-red-500' : 'border-gray-300'} rounded-lg placeholder-gray-400 focus:outline-none focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 transition-all duration-200`}
+                    className={`w-full p-3 border-2 ${
+                      formErrors.nombre ? 'border-red-500' : 'border-gray-300'
+                    } rounded-lg placeholder-gray-400 focus:outline-none focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 hover:border-gray-400 active:border-gray-500 transition-all duration-200`}
                     required
                   />
                   {formErrors.nombre && (
@@ -306,7 +344,9 @@ function Register() {
                     value={formData.apellido1}
                     onChange={handleChange}
                     placeholder="Tu primer apellido"
-                    className={`w-full p-3 border-2 ${formErrors.apellido1 ? 'border-red-500' : 'border-gray-300'} rounded-lg placeholder-gray-400 focus:outline-none focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 transition-all duration-200`}
+                    className={`w-full p-3 border-2 ${
+                      formErrors.apellido1 ? 'border-red-500' : 'border-gray-300'
+                    } rounded-lg placeholder-gray-400 focus:outline-none focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 hover:border-gray-400 active:border-gray-500 transition-all duration-200`}
                     required
                   />
                   {formErrors.apellido1 && (
@@ -324,7 +364,9 @@ function Register() {
                   value={formData.apellido2}
                   onChange={handleChange}
                   placeholder="Tu segundo apellido"
-                  className={`w-full p-3 border-2 ${formErrors.apellido2 ? 'border-red-500' : 'border-gray-300'} rounded-lg placeholder-gray-400 focus:outline-none focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 transition-all duration-200`}
+                  className={`w-full p-3 border-2 ${
+                    formErrors.apellido2 ? 'border-red-500' : 'border-gray-300'
+                  } rounded-lg placeholder-gray-400 focus:outline-none focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 hover:border-gray-400 active:border-gray-500 transition-all duration-200`}
                 />
                 {formErrors.apellido2 && (
                   <p className="text-red-500 text-xs italic">{formErrors.apellido2}</p>
@@ -340,7 +382,9 @@ function Register() {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="tu@email.com"
-                  className={`w-full p-3 border-2 ${formErrors.email ? 'border-red-500' : 'border-gray-300'} rounded-lg placeholder-gray-400 focus:outline-none focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 transition-all duration-200`}
+                  className={`w-full p-3 border-2 ${
+                    formErrors.email ? 'border-red-500' : 'border-gray-300'
+                  } rounded-lg placeholder-gray-400 focus:outline-none focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 hover:border-gray-400 active:border-gray-500 transition-all duration-200`}
                   required
                 />
                 {formErrors.email && (
@@ -358,7 +402,9 @@ function Register() {
                     value={formData.password}
                     onChange={handleChange}
                     placeholder="6+ caracteres"
-                    className={`w-full p-3 border-2 ${formErrors.password ? 'border-red-500' : 'border-gray-300'} rounded-lg placeholder-gray-400 focus:outline-none focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 transition-all duration-200`}
+                    className={`w-full p-3 border-2 ${
+                      formErrors.password ? 'border-red-500' : 'border-gray-300'
+                    } rounded-lg placeholder-gray-400 focus:outline-none focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 hover:border-gray-400 active:border-gray-500 transition-all duration-200`}
                     required
                     minLength={6}
                   />
@@ -376,7 +422,7 @@ function Register() {
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     placeholder="Confirma tu contraseña"
-                    className="w-full p-3 border-2 border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 transition-all duration-200"
+                    className="w-full p-3 border-2 border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 hover:border-gray-400 active:border-gray-500 transition-all duration-200"
                     required
                   />
                 </div>
@@ -394,7 +440,9 @@ function Register() {
                       value={formData.organizacion}
                       onChange={handleChange}
                       placeholder="Nombre de tu organización"
-                      className={`w-full p-3 border-2 ${formErrors.organizacion ? 'border-red-500' : 'border-gray-300'} rounded-lg placeholder-gray-400 focus:outline-none focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 transition-all duration-200`}
+                      className={`w-full p-3 border-2 ${
+                        formErrors.organizacion ? 'border-red-500' : 'border-gray-300'
+                      } rounded-lg placeholder-gray-400 focus:outline-none focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 hover:border-gray-400 active:border-gray-500 transition-all duration-200`}
                       required
                     />
                     {formErrors.organizacion && (
@@ -411,7 +459,9 @@ function Register() {
                       value={formData.telefonoContacto}
                       onChange={handleChange}
                       placeholder="Teléfono de contacto"
-                      className={`w-full p-3 border-2 ${formErrors.telefonoContacto ? 'border-red-500' : 'border-gray-300'} rounded-lg placeholder-gray-400 focus:outline-none focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 transition-all duration-200`}
+                      className={`w-full p-3 border-2 ${
+                        formErrors.telefonoContacto ? 'border-red-500' : 'border-gray-300'
+                      } rounded-lg placeholder-gray-400 focus:outline-none focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 hover:border-gray-400 active:border-gray-500 transition-all duration-200`}
                       required
                     />
                     {formErrors.telefonoContacto && (
@@ -432,7 +482,9 @@ function Register() {
                       value={formData.dni}
                       onChange={handleChange}
                       placeholder="Tu DNI"
-                      className={`w-full p-3 border-2 ${formErrors.dni ? 'border-red-500' : 'border-gray-300'} rounded-lg placeholder-gray-400 focus:outline-none focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 transition-all duration-200`}
+                      className={`w-full p-3 border-2 ${
+                        formErrors.dni ? 'border-red-500' : 'border-gray-300'
+                      } rounded-lg placeholder-gray-400 focus:outline-none focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 hover:border-gray-400 active:border-gray-500 transition-all duration-200`}
                       required
                     />
                     {formErrors.dni && (
@@ -449,7 +501,9 @@ function Register() {
                       value={formData.telefonoContacto}
                       onChange={handleChange}
                       placeholder="Tu teléfono"
-                      className={`w-full p-3 border-2 ${formErrors.telefonoContacto ? 'border-red-500' : 'border-gray-300'} rounded-lg placeholder-gray-400 focus:outline-none focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 transition-all duration-200`}
+                      className={`w-full p-3 border-2 ${
+                        formErrors.telefonoContacto ? 'border-red-500' : 'border-gray-300'
+                      } rounded-lg placeholder-gray-400 focus:outline-none focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 hover:border-gray-400 active:border-gray-500 transition-all duration-200`}
                       required
                     />
                     {formErrors.telefonoContacto && (
@@ -476,17 +530,16 @@ function Register() {
                 </button>
               </div>
               
-              {/* CAMBIO: Botones sociales en fila en lugar de columna */}
+              {/* CAMBIO: Botones sociales mejorados */}
               <div className="flex flex-col items-center w-full mt-6">
                 <p className="text-sm text-gray-500 mb-4">O regístrate con</p>
                 
-                {/* Aquí está el cambio principal: flex-row en lugar de flex-col */}
-                <div className="flex flex-row space-x-4 justify-center">
+                <div className="flex flex-row space-x-4 justify-center w-full max-w-sm">
                   <button
                     type="button"
                     onClick={() => handleSocialLogin('google')}
                     disabled={socialLoading === 'google'}
-                    className="flex items-center justify-center space-x-2 py-2 px-4 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                    className="flex-1 flex items-center justify-center space-x-2 py-3 px-4 border border-gray-300 rounded-md hover:bg-gray-50 transition-all duration-200 hover:border-gray-400 hover:shadow-sm hover:scale-[1.01] active:scale-[0.98]"
                   >
                     {socialLoading === 'google' ? (
                       <FaSpinner className="animate-spin" />
@@ -500,7 +553,7 @@ function Register() {
                     type="button"
                     onClick={() => handleSocialLogin('facebook')}
                     disabled={socialLoading === 'facebook'}
-                    className="flex items-center justify-center space-x-2 py-2 px-4 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                    className="flex-1 flex items-center justify-center space-x-2 py-3 px-4 border border-gray-300 rounded-md hover:bg-gray-50 transition-all duration-200 hover:border-gray-400 hover:shadow-sm hover:scale-[1.01] active:scale-[0.98]"
                   >
                     {socialLoading === 'facebook' ? (
                       <FaSpinner className="animate-spin" />
