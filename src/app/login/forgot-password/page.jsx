@@ -44,7 +44,7 @@ export default function ResetPassword() {
           <div
             className="w-[120px] h-[48px] sm:w-[140px] sm:h-[55px]"
             style={{
-              backgroundImage: 'url("/logo.webp")',
+              backgroundImage: 'url("/logo.jpg")',
               backgroundSize: "contain",
               backgroundRepeat: "no-repeat",
               backgroundPosition: "center",

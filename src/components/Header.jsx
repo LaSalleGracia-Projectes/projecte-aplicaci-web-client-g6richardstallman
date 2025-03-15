@@ -85,10 +85,10 @@ export default function Header() {
           {/* Logo */}
           <Link
             href="/"
-            className="shrink-0 transition-transform hover:scale-[0.98]"
+            className="shrink-0 transition-transform duration-300 hover:scale-[1.05]"
           >
             <Image
-              src="/logo.webp"
+              src="/logo.jpg"
               alt="Logo"
               width={250}
               height={70}
@@ -134,7 +134,7 @@ export default function Header() {
             {isLoggedIn ? (
               <Link
                 href="/profile"
-                className="flex items-center gap-3 hover:bg-gray-100 rounded-full transition-all duration-200 p-2"
+                className="flex items-center gap-3 hover:bg-gray-100 rounded-full transition-all duration-200 p-2 hover:scale-[1.03]"
               >
                 <Image
                   src={userProfile.image}
@@ -151,13 +151,13 @@ export default function Header() {
               <div className="flex items-center gap-4">
                 <Link
                   href="/login"
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 border border-black rounded-full transition-all duration-200 hover:bg-gray-50"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 border border-black rounded-full transition-all duration-300 hover:bg-gray-50 hover:scale-[1.05]"
                 >
                   Iniciar sesión
                 </Link>
                 <Link
                   href="/register"
-                  className="px-4 py-2 text-sm font-medium bg-black text-white rounded-full hover:bg-gray-800 active:bg-gray-900 transition-all duration-200"
+                  className="px-4 py-2 text-sm font-medium bg-black text-white rounded-full hover:bg-gray-800 active:bg-gray-900 transition-all duration-300 hover:scale-[1.05]"
                 >
                   Registrarse
                 </Link>
@@ -173,10 +173,10 @@ export default function Header() {
         <div className="flex items-center justify-between p-4">
           <Link
             href="/"
-            className="shrink-0 transition-transform hover:scale-[0.98]"
+            className="shrink-0 transition-transform duration-300 hover:scale-[1.05]"
           >
             <Image
-              src="/logo.webp"
+              src="/logo.jpg"
               alt="Logo"
               width={140}
               height={40}
@@ -188,14 +188,14 @@ export default function Header() {
           <div className="flex items-center gap-2">
             <button
               onClick={toggleSearch}
-              className="p-2.5 hover:bg-gray-100 active:bg-gray-200 rounded-full transition-colors"
+              className="p-2.5 hover:bg-gray-100 active:bg-gray-200 rounded-full transition-all duration-300 hover:scale-[1.05]"
               aria-label="Buscar"
             >
               <FaSearch className="text-xl text-gray-700" />
             </button>
             <button
               onClick={toggleMenu}
-              className="p-2.5 hover:bg-gray-100 active:bg-gray-200 rounded-full transition-colors"
+              className="p-2.5 hover:bg-gray-100 active:bg-gray-200 rounded-full transition-all duration-300 hover:scale-[1.05]"
               aria-label="Menú"
             >
               {isMenuOpen ? (
@@ -229,14 +229,14 @@ export default function Header() {
             <div className="p-4 space-y-2">
               <Link
                 href="/favoritos"
-                className="flex items-center gap-4 p-3 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-colors"
+                className="flex items-center gap-4 p-3 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-all hover:scale-[1.01]"
               >
                 <FaHeart className="text-xl text-red-500" />
                 <span className="font-medium">Favoritos</span>
               </Link>
               <Link
                 href="/tickets"
-                className="flex items-center gap-4 p-3 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-colors"
+                className="flex items-center gap-4 p-3 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-all hover:scale-[1.01]"
               >
                 <FaTicketAlt className="text-xl" />
                 <span className="font-medium">Tickets</span>
@@ -245,7 +245,7 @@ export default function Header() {
               {isLoggedIn ? (
                 <Link
                   href="/profile"
-                  className="flex items-center gap-4 p-3 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-colors"
+                  className="flex items-center gap-4 p-3 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-all hover:scale-[1.02]"
                 >
                   <Image
                     src={userProfile.image}
@@ -260,14 +260,14 @@ export default function Header() {
                 <>
                   <Link
                     href="/login"
-                    className="flex items-center gap-4 p-3 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-colors"
+                    className="flex items-center gap-4 p-3 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-all hover:scale-[1.02]"
                   >
                     <FaUser className="text-xl" />
                     <span className="font-medium">Iniciar sesión</span>
                   </Link>
                   <Link
                     href="/register"
-                    className="flex items-center gap-4 p-3 bg-black text-white rounded-xl transition-colors mt-2 hover:bg-gray-800 active:bg-gray-900"
+                    className="flex items-center gap-4 p-3 bg-black text-white rounded-xl transition-all hover:scale-[1.02] mt-2 hover:bg-gray-800 active:bg-gray-900"
                   >
                     <FaUser className="text-xl" />
                     <span className="font-medium">Registrarse</span>
