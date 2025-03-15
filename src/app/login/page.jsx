@@ -15,6 +15,7 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState("");
   const [error, setError] = useState(null);
+  const [formErrors, setFormErrors] = useState({});
 
   const handleChange = (e) => {
     setFormData({
@@ -24,21 +25,55 @@ function Login() {
     setError(null);
   };
 
+  const validateForm = () => {
+    const errors = {};
+    
+    if (!formData.email) errors.email = "El email es obligatorio";
+    if (!formData.password) errors.password = "La contraseña es obligatoria";
+    
+    // Validar formato de email
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = "Por favor, introduce un email válido";
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Validar antes de enviar
+    if (!validateForm()) return;
+    
+    setLoading(true);
+    setError(null);
+
     try {
-      setLoading(true);
-      const response = await login(formData);
+      const response = await login({
+        email: formData.email,
+        password: formData.password
+      });
       
-      if (response.status === "success") {
-        router.push("/");
+      if (response && response.status === "success") {
+        // Guardamos la información del usuario en localStorage
+        localStorage.setItem('user', JSON.stringify({
+          isLoggedIn: true,
+          token: response.access_token,
+          userData: response.user
+        }));
+        
+        // Redirigimos al usuario a la página de perfil
+        router.push('/profile');
+      } else {
+        setError(response?.message || "Credenciales inválidas");
       }
     } catch (error) {
+      console.error("Error en el inicio de sesión:", error);
       if (error.response && error.response.data) {
-        setError(error.response.data.message || "Error al iniciar sesión");
+        setError(error.response.data.message || "Credenciales inválidas");
       } else {
-        setError("Error al conectar con el servidor");
+        setError("No se pudo iniciar sesión. Por favor, verifica tus credenciales e intenta de nuevo.");
       }
     } finally {
       setLoading(false);
@@ -120,16 +155,22 @@ function Login() {
         {/* Formulario de login */}
         <form onSubmit={handleSubmit} className="flex flex-col items-center w-full max-w-md sm:max-w-lg md:max-w-xl border-b border-gray-200 gap-4 sm:gap-5 pb-8">
           <div className="w-full">
+            <label className="block text-gray-700 text-sm font-bold mb-2">
+              Email*
+            </label>
             <input
               type="email"
               name="email"
               id="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder="Correo electrónico"
-              className="w-full p-3 border-2 border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 transition-all duration-200"
+              placeholder="Email"
+              className={`w-full p-3 border-2 border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 transition-all duration-200 ${formErrors.email ? 'border-red-500' : ''}`}
               required
             />
+            {formErrors.email && (
+              <p className="text-red-500 text-xs italic">{formErrors.email}</p>
+            )}
           </div>
           
           <div className="w-full">
@@ -175,31 +216,33 @@ function Login() {
         <div className="flex flex-col items-center w-full max-w-md sm:max-w-lg md:max-w-xl mt-6 sm:mt-8">
           <p className="text-sm text-gray-500 mb-4">O inicia sesión con</p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 w-full">
-            <button 
+          <div className="flex flex-col space-y-4">
+            <button
+              type="button"
               onClick={() => handleSocialLogin('google')}
               disabled={socialLoading === 'google'}
-              className={`w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transform hover:scale-[1.01] active:scale-[0.98] transition-all duration-200 shadow-sm ${socialLoading === 'google' ? 'opacity-70 cursor-not-allowed' : ''}`}
+              className="flex items-center justify-center space-x-2 py-2 px-4 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
             >
               {socialLoading === 'google' ? (
-                <FaSpinner className="animate-spin text-red-500 text-xl" />
+                <FaSpinner className="animate-spin" />
               ) : (
-                <FaGoogle className="text-xl text-red-500" />
+                <FaGoogle className="text-red-500" />
               )}
-              <span className="text-sm sm:text-base font-medium">Google</span>
+              <span>Continuar con Google</span>
             </button>
-
-            <button 
+            
+            <button
+              type="button"
               onClick={() => handleSocialLogin('facebook')}
               disabled={socialLoading === 'facebook'}
-              className={`w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transform hover:scale-[1.01] active:scale-[0.98] transition-all duration-200 shadow-sm ${socialLoading === 'facebook' ? 'opacity-70 cursor-not-allowed' : ''}`}
+              className="flex items-center justify-center space-x-2 py-2 px-4 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
             >
               {socialLoading === 'facebook' ? (
-                <FaSpinner className="animate-spin text-blue-600 text-xl" />
+                <FaSpinner className="animate-spin" />
               ) : (
-                <FaFacebook className="text-xl text-blue-600" />
+                <FaFacebook className="text-blue-600" />
               )}
-              <span className="text-sm sm:text-base font-medium">Facebook</span>
+              <span>Continuar con Facebook</span>
             </button>
           </div>
         </div>

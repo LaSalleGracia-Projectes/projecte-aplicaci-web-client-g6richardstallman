@@ -28,6 +28,8 @@ export interface LoginData {
 // Función para registrar un nuevo usuario
 export async function register(data: RegisterData) {
     try {
+        console.log("Enviando solicitud de registro:", data);
+        
         const response = await fetch(`${API_URL}/register`, {
             method: 'POST',
             headers: {
@@ -38,55 +40,59 @@ export async function register(data: RegisterData) {
         });
 
         const responseData = await response.json();
+        console.log("Respuesta del registro:", responseData);
 
         if (!response.ok) {
+            console.error("Error en el registro:", responseData);
             const error: any = new Error(responseData.message || 'Error en el registro');
             error.response = { data: responseData };
             throw error;
         }
 
-        // Si el registro fue exitoso, guardamos el token en localStorage
-        if (responseData.access_token) {
-            localStorage.setItem('auth_token', responseData.access_token);
-            localStorage.setItem('user_data', JSON.stringify(responseData.user));
-        }
-
-        return responseData;
+        return {
+            status: "success",
+            access_token: responseData.access_token,
+            user: responseData.user,
+            message: responseData.message
+        };
     } catch (error) {
-        console.error('Error de registro:', error);
+        console.error('Error en la función register:', error);
         throw error;
     }
 }
 
 // Función para iniciar sesión
-export async function login(data: LoginData) {
+export async function login(credentials: { email: string, password: string }) {
     try {
+        console.log("Enviando solicitud de login:", credentials);
+        
         const response = await fetch(`${API_URL}/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
-            body: JSON.stringify(data)
+            body: JSON.stringify(credentials)
         });
 
         const responseData = await response.json();
+        console.log("Respuesta del login:", responseData);
 
         if (!response.ok) {
-            const error: any = new Error(responseData.message || 'Error al iniciar sesión');
+            console.error("Error en el login:", responseData);
+            const error: any = new Error(responseData.message || 'Error en el inicio de sesión');
             error.response = { data: responseData };
             throw error;
         }
 
-        // Si el login fue exitoso, guardamos el token en localStorage
-        if (responseData.access_token) {
-            localStorage.setItem('auth_token', responseData.access_token);
-            localStorage.setItem('user_data', JSON.stringify(responseData.user));
-        }
-
-        return responseData;
+        return {
+            status: "success",
+            access_token: responseData.access_token,
+            user: responseData.user,
+            message: responseData.message
+        };
     } catch (error) {
-        console.error('Error de inicio de sesión:', error);
+        console.error('Error en la función login:', error);
         throw error;
     }
 }
@@ -94,34 +100,37 @@ export async function login(data: LoginData) {
 // Función para cerrar sesión
 export async function logout() {
     try {
-        const token = localStorage.getItem('auth_token');
+        const userInfo = typeof window !== 'undefined' ? 
+            JSON.parse(localStorage.getItem('user') || '{}') : {};
+        const token = userInfo.token;
         
         if (!token) {
-            throw new Error('No hay sesión activa');
+            throw new Error('No hay token de autenticación');
         }
-
+        
         const response = await fetch(`${API_URL}/logout`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
+                'Content-Type': 'application/json'
             }
         });
-
-        const responseData = await response.json();
-
+        
         if (!response.ok) {
-            throw new Error(responseData.message || 'Error al cerrar sesión');
+            throw new Error('Error al cerrar sesión');
         }
-
-        // Limpiar datos de sesión del localStorage
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('user_data');
-
-        return responseData;
+        
+        // Limpiar localStorage
+        localStorage.removeItem('user');
+        
+        return {
+            status: "success",
+            message: "Sesión cerrada correctamente"
+        };
     } catch (error) {
-        console.error('Error al cerrar sesión:', error);
+        console.error("Error al cerrar sesión:", error);
+        // Intentar limpiar localStorage de todos modos
+        localStorage.removeItem('user');
         throw error;
     }
 }
@@ -140,4 +149,90 @@ export function getCurrentUser() {
 // Función para obtener el token de autenticación
 export function getAuthToken() {
     return localStorage.getItem('auth_token');
+}
+
+// Función para obtener los datos del perfil de usuario
+export async function getUserProfile() {
+    try {
+        // Obtener el token almacenado en localStorage
+        const userInfo = typeof window !== 'undefined' ? 
+            JSON.parse(localStorage.getItem('user') || '{}') : {};
+        const token = userInfo.token;
+        
+        if (!token) {
+            throw new Error('No hay token de autenticación');
+        }
+        
+        const response = await fetch(`${API_URL}/user/profile`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Error al obtener el perfil');
+        }
+        
+        const data = await response.json();
+        
+        return {
+            status: "success",
+            data
+        };
+    } catch (error) {
+        console.error("Error al obtener perfil:", error);
+        throw error;
+    }
+}
+
+// Función para actualizar el perfil de usuario
+export async function updateUserProfile(userData: any) {
+    try {
+        // Obtener el token almacenado en localStorage
+        const userInfo = typeof window !== 'undefined' ? 
+            JSON.parse(localStorage.getItem('user') || '{}') : {};
+        const token = userInfo.token;
+        
+        if (!token) {
+            throw new Error('No hay token de autenticación');
+        }
+        
+        const response = await fetch(`${API_URL}/user/profile/update`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(userData)
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.message || 'Error al actualizar el perfil');
+        }
+        
+        // Actualizar la información del usuario en localStorage
+        if (typeof window !== 'undefined') {
+            const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+            localStorage.setItem('user', JSON.stringify({
+                ...currentUser,
+                userData: {
+                    ...currentUser.userData,
+                    ...userData
+                }
+            }));
+        }
+        
+        return {
+            status: "success",
+            message: data.message || "Perfil actualizado correctamente",
+            data: data.user
+        };
+    } catch (error) {
+        console.error("Error al actualizar perfil:", error);
+        throw error;
+    }
 }
