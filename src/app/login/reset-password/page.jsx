@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { FaHome } from "react-icons/fa";
+import Image from "next/image";
 
 export default function ResetPassword() {
   const [formData, setFormData] = useState({
@@ -27,51 +28,53 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-screen overflow-hidden">
-      {/* Imagen lateral - oculta en móvil */}
-      <div className="hidden md:block md:w-1/2 lg:w-1/2 h-full">
+    <div className="flex flex-col md:flex-row min-h-screen bg-white">
+      {/* Imagen lateral - adaptable según tamaño de pantalla */}
+      <div className="hidden md:block md:w-1/2 lg:w-2/5 relative">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent z-10"></div>
         <img
           src="/registerImage.jpg"
-          alt="Imagen de registro"
+          alt="Imagen de recuperación"
           className="w-full h-full object-cover"
         />
       </div>
 
-      {/* Contenedor del formulario */}
-      <div className="w-full md:w-1/2 lg:w-1/2 flex flex-col justify-center items-center h-full relative px-4 md:px-6 lg:px-8 py-8 md:py-0">
+      {/* Contenedor del formulario - adaptable a diferentes tamaños */}
+      <div className="w-full md:w-1/2 lg:w-3/5 flex flex-col justify-center items-center min-h-screen px-4 sm:px-6 md:px-8 lg:px-12 py-8 md:py-10 relative overflow-y-auto">
         {/* Botón de inicio mejorado */}
         <Link
           href="/"
-          className="absolute top-4 left-4 z-10 flex items-center gap-2 px-4 py-2 bg-black text-white rounded-full hover:bg-gray-800 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+          className="absolute top-4 left-4 z-10 flex items-center gap-2 px-3 py-2 bg-black text-white rounded-full hover:bg-gray-800 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-md"
         >
-          <FaHome className="text-xl" />
-          <span className="text-sm font-medium">Inicio</span>
+          <FaHome className="text-lg" />
+          <span className="text-sm font-medium md:inline hidden">Inicio</span>
         </Link>
 
-        {/* Logo */}
-        <h3
-          className="mb-2"
-          style={{
-            width: "140px",
-            height: "55px",
-            backgroundImage: 'url("/logo.webp")',
-            backgroundSize: "contain",
-            backgroundRepeat: "no-repeat",
-          }}
-        />
+        {/* Logo responsivo */}
+        <div className="mb-4 sm:mb-6 mt-8 md:mt-0">
+          <div
+            className="w-[120px] h-[48px] sm:w-[140px] sm:h-[55px]"
+            style={{
+              backgroundImage: 'url("/logo.webp")',
+              backgroundSize: "contain",
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "center",
+            }}
+          />
+        </div>
 
-        <h1 className="text-center mb-5 font-extrabold text-xl md:text-2xl">
+        <h1 className="text-center mb-4 font-extrabold text-2xl sm:text-2xl md:text-3xl">
           Establece tu nueva contraseña
         </h1>
 
-        <p className="text-center text-sm md:text-base mb-6 px-4 md:px-0">
-          Por favor, introduce tu nueva contraseña:
+        <p className="text-center text-sm md:text-base mb-6 px-4 md:px-0 max-w-md text-gray-600">
+          Introduce una nueva contraseña segura para tu cuenta
         </p>
 
-        {/* Formulario de reset */}
+        {/* Formulario de reset mejorado */}
         <form
           onSubmit={handleSubmit}
-          className="flex flex-col items-center w-full max-w-md md:w-4/5 lg:w-3/5 border-b border-black gap-4 pb-8"
+          className="flex flex-col items-center w-full max-w-md sm:max-w-lg md:max-w-xl border-b border-gray-300 gap-3 sm:gap-4 pb-8"
         >
           <input
             type="password"
@@ -80,7 +83,7 @@ export default function ResetPassword() {
             onChange={handleChange}
             placeholder="Nueva contraseña"
             required
-            className="w-full p-2 border-2 border-gray-600 rounded placeholder-gray-400 focus:outline-none focus:border-[#e53c3d] focus:placeholder-transparent transition-all ease-in-out duration-300"
+            className="w-full p-2.5 border-2 border-gray-400 rounded-md placeholder-gray-500 focus:outline-none focus:border-[#e53c3d] focus:ring-1 focus:ring-[#e53c3d] transition-all duration-200"
           />
           <input
             type="password"
@@ -89,22 +92,25 @@ export default function ResetPassword() {
             onChange={handleChange}
             placeholder="Confirmar nueva contraseña"
             required
-            className="w-full p-2 border-2 border-gray-600 rounded placeholder-gray-400 focus:outline-none focus:border-[#e53c3d] focus:placeholder-transparent transition-all ease-in-out duration-300"
+            className="w-full p-2.5 border-2 border-gray-400 rounded-md placeholder-gray-500 focus:outline-none focus:border-[#e53c3d] focus:ring-1 focus:ring-[#e53c3d] transition-all duration-200"
           />
           <button
             type="submit"
-            className="w-fit px-8 md:px-12 py-2.5 md:py-3 bg-black text-white rounded cursor-pointer hover:bg-gray-800 hover:scale-[1.01] active:scale-[0.98] transition-all duration-200 text-sm md:text-base"
+            className="w-fit mt-4 px-8 sm:px-12 py-2.5 sm:py-3 bg-black text-white rounded-md font-medium cursor-pointer hover:bg-gray-800 hover:scale-[1.01] active:scale-[0.98] transition-all duration-200 shadow-md text-sm sm:text-base"
           >
             Actualizar contraseña
           </button>
         </form>
 
-        {/* Link para volver al login */}
-        <p className="mt-6 text-sm md:text-base">
+        {/* Link para volver al login mejorado */}
+        <p className="mt-6 mb-8 text-sm sm:text-base">
           <Link
             href="/login"
-            className="text-red-600 hover:text-red-800 transition-colors font-medium"
+            className="text-[#e53c3d] hover:text-[#c93131] transition-colors font-medium flex items-center justify-center gap-2"
           >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
             Volver al inicio de sesión
           </Link>
         </p>
