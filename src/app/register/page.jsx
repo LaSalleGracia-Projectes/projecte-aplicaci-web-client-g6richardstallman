@@ -530,6 +530,9 @@ function Register() {
                 </button>
               </div>
               
+              {/* Añadir borde inferior */}
+              <div className="w-full border-b border-gray-300 mt-4" />
+              
               {/* CAMBIO: Botones sociales mejorados */}
               <div className="flex flex-col items-center w-full mt-6">
                 <p className="text-sm text-gray-500 mb-4">O regístrate con</p>
