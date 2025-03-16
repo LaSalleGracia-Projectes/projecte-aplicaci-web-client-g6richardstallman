@@ -6,13 +6,13 @@ import { useRouter } from "next/navigation";
 import {
   FaGlobe,
   FaBell,
-  FaEnvelope,
-  FaMobile,
   FaShieldAlt,
   FaToggleOn,
   FaToggleOff,
   FaSave,
-  FaHome
+  FaHome,
+  FaCheck,
+  FaSun
 } from "react-icons/fa";
 import ProfileNavBar from "@/components/userProfile/profileNavBar";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
@@ -26,13 +26,10 @@ export default function SettingsPage() {
   
   const [settings, setSettings] = useState({
     email_notifications: true,
-    push_notifications: false,
-    sms_notifications: true,
-    marketing_emails: false,
-    newsletter: true,
+    web_notifications: true,
+    dark_mode: false,
     two_factor: false,
-    language: "es",
-    timezone: "Europe/Madrid"
+    language: "es"
   });
 
   // Simular carga de datos
@@ -88,7 +85,6 @@ export default function SettingsPage() {
       <ProfileNavBar />
 
       <div className="flex-1 p-4 md:p-8 overflow-y-auto relative">
-        {/* Botón para volver al inicio (ahora sticky) */}
         <Link
           href="/"
           className="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-2.5 bg-black text-white rounded-full hover:bg-gray-800 transform hover:scale-105 active:scale-95 transition-all duration-200 shadow-md"
@@ -100,199 +96,169 @@ export default function SettingsPage() {
 
         <div className="max-w-4xl mx-auto pt-16">
           <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm overflow-hidden">
-            {/* Cabecera */}
-            <div className="relative h-32 bg-gradient-to-r from-gray-800 to-gray-900">
-              <div className="absolute -bottom-12 left-8">
-                <div className="w-24 h-24 rounded-full border-4 border-white bg-gray-200 flex items-center justify-center">
-                  <FaGlobe className="text-4xl text-gray-400" />
+            <div className="p-8">
+              <div className="flex justify-center mb-6">
+                <div className="w-24 h-24 rounded-full bg-red-50 flex items-center justify-center shadow-md">
+                  <FaGlobe className="text-4xl text-[#e53c3d]" />
                 </div>
               </div>
-            </div>
+              
+              <h1 className="text-2xl font-bold text-gray-800 text-center">Configuración de la cuenta</h1>
+              <p className="text-gray-600 mt-1 mb-6 text-center">Personaliza las opciones de tu cuenta</p>
 
-            {/* Contenido */}
-            <div className="p-6 pt-16 md:p-8 md:pt-16">
-              <h1 className="text-2xl font-bold text-gray-900 mb-6">Configuración de Cuenta</h1>
+              {/* Mensajes de éxito o error */}
+              {success && (
+                <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg flex items-center">
+                  <FaCheck className="mr-2 text-green-500" />
+                  Configuración guardada correctamente
+                </div>
+              )}
               
               {error && (
-                <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-md">
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
                   {error}
                 </div>
               )}
 
-              {success && (
-                <div className="mb-6 p-4 bg-green-50 border-l-4 border-green-500 text-green-700 rounded-md">
-                  Configuración guardada correctamente
-                </div>
-              )}
-
-              <div className="space-y-8">
-                {/* Notificaciones */}
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              {/* Sección de notificaciones */}
+              <div className="mt-2 bg-white rounded-xl">
+                <div className="border-b border-gray-100 pb-4 mb-4">
+                  <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                     <FaBell className="text-[#e53c3d]" />
-                    <span>Notificaciones</span>
+                    Notificaciones
                   </h2>
-                  
-                  <div className="space-y-4 bg-gray-50 p-4 rounded-xl">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-700">Notificaciones por email</p>
-                        <p className="text-sm text-gray-500">Recibe emails sobre tus compras y eventos</p>
-                      </div>
-                      <button 
-                        type="button"
-                        onClick={() => handleToggle('email_notifications')}
-                        className={`text-2xl ${settings.email_notifications ? 'text-[#e53c3d]' : 'text-gray-300'}`}
-                      >
-                        {settings.email_notifications ? <FaToggleOn /> : <FaToggleOff />}
-                      </button>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-700">Notificaciones push</p>
-                        <p className="text-sm text-gray-500">Recibe notificaciones en tu navegador</p>
-                      </div>
-                      <button 
-                        type="button"
-                        onClick={() => handleToggle('push_notifications')}
-                        className={`text-2xl ${settings.push_notifications ? 'text-[#e53c3d]' : 'text-gray-300'}`}
-                      >
-                        {settings.push_notifications ? <FaToggleOn /> : <FaToggleOff />}
-                      </button>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-700">Notificaciones SMS</p>
-                        <p className="text-sm text-gray-500">Recibe mensajes de texto sobre tus compras</p>
-                      </div>
-                      <button 
-                        type="button"
-                        onClick={() => handleToggle('sms_notifications')}
-                        className={`text-2xl ${settings.sms_notifications ? 'text-[#e53c3d]' : 'text-gray-300'}`}
-                      >
-                        {settings.sms_notifications ? <FaToggleOn /> : <FaToggleOff />}
-                      </button>
-                    </div>
-                  </div>
                 </div>
                 
-                {/* Comunicaciones */}
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <FaEnvelope className="text-[#e53c3d]" />
-                    <span>Comunicaciones</span>
-                  </h2>
-                  
-                  <div className="space-y-4 bg-gray-50 p-4 rounded-xl">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-700">Emails de marketing</p>
-                        <p className="text-sm text-gray-500">Recibe ofertas y promociones especiales</p>
-                      </div>
-                      <button 
-                        type="button"
-                        onClick={() => handleToggle('marketing_emails')}
-                        className={`text-2xl ${settings.marketing_emails ? 'text-[#e53c3d]' : 'text-gray-300'}`}
-                      >
-                        {settings.marketing_emails ? <FaToggleOn /> : <FaToggleOff />}
-                      </button>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-700">Newsletter</p>
-                        <p className="text-sm text-gray-500">Noticias y actualizaciones semanales</p>
-                      </div>
-                      <button 
-                        type="button"
-                        onClick={() => handleToggle('newsletter')}
-                        className={`text-2xl ${settings.newsletter ? 'text-[#e53c3d]' : 'text-gray-300'}`}
-                      >
-                        {settings.newsletter ? <FaToggleOn /> : <FaToggleOff />}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Seguridad */}
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <FaShieldAlt className="text-[#e53c3d]" />
-                    <span>Seguridad</span>
-                  </h2>
-                  
-                  <div className="space-y-4 bg-gray-50 p-4 rounded-xl">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-700">Autenticación de dos factores</p>
-                        <p className="text-sm text-gray-500">Mayor seguridad para tu cuenta</p>
-                      </div>
-                      <button 
-                        type="button"
-                        onClick={() => handleToggle('two_factor')}
-                        className={`text-2xl ${settings.two_factor ? 'text-[#e53c3d]' : 'text-gray-300'}`}
-                      >
-                        {settings.two_factor ? <FaToggleOn /> : <FaToggleOff />}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Preferencias */}
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <FaGlobe className="text-[#e53c3d]" />
-                    <span>Preferencias</span>
-                  </h2>
-                  
-                  <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-4 px-1">
+                  <div className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Idioma</label>
-                      <select
-                        name="language"
-                        value={settings.language}
-                        onChange={handleChange}
-                        className="w-full p-3 border border-gray-300 rounded-xl focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 focus:outline-none"
-                      >
-                        <option value="es">Español</option>
-                        <option value="en">English</option>
-                        <option value="fr">Français</option>
-                        <option value="de">Deutsch</option>
-                      </select>
+                      <h3 className="font-medium text-gray-800">Notificaciones por email</h3>
+                      <p className="text-sm text-gray-600">Recibe actualizaciones por correo electrónico</p>
                     </div>
-                    
+                    <button 
+                      type="button"
+                      onClick={() => handleToggle('email_notifications')}
+                      className="text-2xl"
+                    >
+                      {settings.email_notifications ? 
+                        <FaToggleOn className="text-[#e53c3d]" /> : 
+                        <FaToggleOff className="text-gray-400" />
+                      }
+                    </button>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Zona horaria</label>
-                      <select
-                        name="timezone"
-                        value={settings.timezone}
-                        onChange={handleChange}
-                        className="w-full p-3 border border-gray-300 rounded-xl focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 focus:outline-none"
-                      >
-                        <option value="Europe/Madrid">Madrid (GMT+1)</option>
-                        <option value="Europe/London">Londres (GMT+0)</option>
-                        <option value="America/New_York">Nueva York (GMT-5)</option>
-                        <option value="America/Los_Angeles">Los Ángeles (GMT-8)</option>
-                      </select>
+                      <h3 className="font-medium text-gray-800">Notificaciones web</h3>
+                      <p className="text-sm text-gray-600">Recibe alertas en la campanita de la aplicación</p>
                     </div>
+                    <button 
+                      type="button"
+                      onClick={() => handleToggle('web_notifications')}
+                      className="text-2xl"
+                    >
+                      {settings.web_notifications ? 
+                        <FaToggleOn className="text-[#e53c3d]" /> : 
+                        <FaToggleOff className="text-gray-400" />
+                      }
+                    </button>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-8 pt-6 border-t border-gray-100 flex justify-end">
+              {/* Sección de apariencia y modos */}
+              <div className="mt-8 bg-white rounded-xl">
+                <div className="border-b border-gray-100 pb-4 mb-4">
+                  <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <FaSun className="text-[#e53c3d]" />
+                    Apariencia
+                  </h2>
+                </div>
+                
+                <div className="space-y-4 px-1">
+                  <div className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50">
+                    <div>
+                      <h3 className="font-medium text-gray-800">Modo oscuro</h3>
+                      <p className="text-sm text-gray-600">Activar tema oscuro en la aplicación</p>
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={() => handleToggle('dark_mode')}
+                      className="text-2xl"
+                    >
+                      {settings.dark_mode ? 
+                        <FaToggleOn className="text-[#e53c3d]" /> : 
+                        <FaToggleOff className="text-gray-400" />
+                      }
+                    </button>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50">
+                    <div>
+                      <h3 className="font-medium text-gray-800">Idioma</h3>
+                      <p className="text-sm text-gray-600">Selecciona tu idioma preferido</p>
+                    </div>
+                    <select
+                      name="language"
+                      value={settings.language}
+                      onChange={handleChange}
+                      className="bg-gray-50 border border-gray-300 text-gray-700 text-sm rounded-lg px-4 py-2.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-[#e53c3d]"
+                    >
+                      <option value="es">Español</option>
+                      <option value="en">English</option>
+                      <option value="fr">Français</option>
+                      <option value="de">Deutsch</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sección de seguridad */}
+              <div className="mt-8 bg-white rounded-xl">
+                <div className="border-b border-gray-100 pb-4 mb-4">
+                  <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <FaShieldAlt className="text-[#e53c3d]" />
+                    Seguridad
+                  </h2>
+                </div>
+                
+                <div className="space-y-4 px-1">
+                  <div className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50">
+                    <div>
+                      <h3 className="font-medium text-gray-800">Autenticación de dos factores</h3>
+                      <p className="text-sm text-gray-600">Protege tu cuenta con una capa adicional de seguridad</p>
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={() => handleToggle('two_factor')}
+                      className="text-2xl"
+                    >
+                      {settings.two_factor ? 
+                        <FaToggleOn className="text-[#e53c3d]" /> : 
+                        <FaToggleOff className="text-gray-400" />
+                      }
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Botones de acción */}
+              <div className="px-8 py-6 border-t border-gray-100 flex justify-end mt-8">
+                <button
+                  type="button"
+                  onClick={() => router.push('/profile')}
+                  className="px-6 py-2.5 mr-4 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancelar
+                </button>
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="flex items-center gap-2 px-6 py-3 bg-[#e53c3d] text-white rounded-xl hover:bg-red-600 transition-colors disabled:bg-red-400"
+                  className="px-6 py-2.5 bg-[#e53c3d] text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2 disabled:bg-red-400"
                 >
                   {isSaving ? (
                     <>
-                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
+                      <LoadingSpinner size="sm" withText={false} />
                       <span>Guardando...</span>
                     </>
                   ) : (
@@ -310,3 +276,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+

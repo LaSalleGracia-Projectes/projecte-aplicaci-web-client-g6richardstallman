@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { FaHome, FaGoogle, FaFacebook, FaAngleRight, FaUser, FaBuilding, FaSpinner } from "react-icons/fa";
+import { FaHome, FaGoogle, FaFacebook, FaAngleRight, FaUser, FaBuilding } from "react-icons/fa";
 import { useRouter } from "next/navigation";
-import { register } from "../../api/auth";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 function Register() {
   const router = useRouter();
@@ -521,8 +521,7 @@ function Register() {
                 >
                   {loading ? (
                     <span className="flex items-center justify-center">
-                      <FaSpinner className="animate-spin mr-2" />
-                      Creando cuenta...
+                      <LoadingSpinner size="sm" withText={false} />
                     </span>
                   ) : (
                     "Crear cuenta"
@@ -545,7 +544,7 @@ function Register() {
                     className="flex-1 flex items-center justify-center space-x-2 py-3 px-4 border border-gray-300 rounded-md hover:bg-gray-50 transition-all duration-200 hover:border-gray-400 hover:shadow-sm hover:scale-[1.01] active:scale-[0.98]"
                   >
                     {socialLoading === 'google' ? (
-                      <FaSpinner className="animate-spin" />
+                      <LoadingSpinner size="sm" withText={false} />
                     ) : (
                       <FaGoogle className="text-red-500" />
                     )}
@@ -559,7 +558,7 @@ function Register() {
                     className="flex-1 flex items-center justify-center space-x-2 py-3 px-4 border border-gray-300 rounded-md hover:bg-gray-50 transition-all duration-200 hover:border-gray-400 hover:shadow-sm hover:scale-[1.01] active:scale-[0.98]"
                   >
                     {socialLoading === 'facebook' ? (
-                      <FaSpinner className="animate-spin" />
+                      <LoadingSpinner size="sm" withText={false} />
                     ) : (
                       <FaFacebook className="text-blue-600" />
                     )}

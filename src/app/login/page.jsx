@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { FaHome, FaGoogle, FaFacebook, FaSpinner } from "react-icons/fa";
+import { FaHome, FaGoogle, FaFacebook } from "react-icons/fa";
 import { useRouter } from "next/navigation";
-import { login } from "../../api/auth";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 function Login() {
   const router = useRouter();
@@ -233,7 +233,7 @@ function Login() {
             >
               {loading ? (
                 <span className="flex items-center justify-center">
-                  <FaSpinner className="animate-spin mr-2" />
+                  <LoadingSpinner size="sm" withText={false} />
                   Iniciando sesión...
                 </span>
               ) : (
@@ -254,7 +254,7 @@ function Login() {
                 className="flex-1 flex items-center justify-center space-x-2 py-3 px-4 border border-gray-300 rounded-md hover:bg-gray-50 transition-all duration-200 hover:border-gray-400 hover:shadow-sm hover:scale-[1.01] active:scale-[0.98]"
               >
                 {socialLoading === 'google' ? (
-                  <FaSpinner className="animate-spin" />
+                  <LoadingSpinner size="sm" withText={false} />
                 ) : (
                   <FaGoogle className="text-red-500" />
                 )}
@@ -268,7 +268,7 @@ function Login() {
                 className="flex-1 flex items-center justify-center space-x-2 py-3 px-4 border border-gray-300 rounded-md hover:bg-gray-50 transition-all duration-200 hover:border-gray-400 hover:shadow-sm hover:scale-[1.01] active:scale-[0.98]"
               >
                 {socialLoading === 'facebook' ? (
-                  <FaSpinner className="animate-spin" />
+                  <LoadingSpinner size="sm" withText={false} />
                 ) : (
                   <FaFacebook className="text-blue-600" />
                 )}

@@ -2,62 +2,113 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getUserProfile, updateUserProfile, logout } from "../../api/auth";
-import { FaUser, FaEnvelope, FaIdCard, FaPhone, FaBuilding, FaSpinner } from "react-icons/fa";
+import { FaUser, FaEnvelope, FaPhone, FaBuilding, FaSpinner, FaHome, FaPen, FaMapMarkerAlt, FaCalendarAlt } from "react-icons/fa";
+import Link from "next/link";
+import ProfileNavBar from "@/components/userProfile/profileNavBar";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
+
+// Función simulada para obtener el perfil del usuario
+const getUserProfile = async () => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        status: "success",
+        data: {
+          nombre: "Juan",
+          apellido1: "García",
+          apellido2: "López",
+          email: "juan@ejemplo.com",
+          profileImage: "/img1.webp",
+          role: "organizador",
+          fechaRegistro: "10/05/2023",
+          ubicacion: "Madrid, España",
+          organizador: {
+            nombre_organizacion: "Eventos García S.L.",
+            telefono_contacto: "+34 666 777 888"
+          }
+        }
+      });
+    }, 800);
+  });
+};
 
 export default function ProfilePage() {
   const router = useRouter();
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [editMode, setEditMode] = useState(false);
-  const [formData, setFormData] = useState({});
-  const [formErrors, setFormErrors] = useState({});
-  const [updateLoading, setUpdateLoading] = useState(false);
-  const [updateSuccess, setUpdateSuccess] = useState(false);
-  const [updateError, setUpdateError] = useState(null);
+  const [needsLogin, setNeedsLogin] = useState(false);
 
+  // Verificar login y cargar datos
   useEffect(() => {
     const checkLogin = () => {
-      const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
-      if (!userInfo.isLoggedIn || !userInfo.token) {
-        router.push('/login');
+      try {
+        // Si estamos en desarrollo, permitir acceso aun sin login
+        if (process.env.NODE_ENV === "development") {
+          return true;
+        }
+        
+        const userInfo = typeof window !== 'undefined' ? 
+          JSON.parse(localStorage.getItem('user') || '{}') : {};
+          
+        if (!userInfo.isLoggedIn || !userInfo.token) {
+          // No redirigir inmediatamente, establecer un flag
+          setNeedsLogin(true);
+          return false;
+        }
+        return true;
+      } catch (error) {
+        console.error("Error al verificar login:", error);
+        setNeedsLogin(true);
         return false;
       }
-      return true;
     };
 
     const fetchUserProfile = async () => {
-      if (!checkLogin()) return;
+      if (!checkLogin()) {
+        // Cargar datos de prueba en desarrollo
+        if (process.env.NODE_ENV === "development") {
+          setUserProfile({
+            nombre: "Usuario",
+            apellido1: "De",
+            apellido2: "Prueba",
+            email: "usuario@ejemplo.com",
+            role: "participante",
+            fechaRegistro: "01/01/2023",
+            ubicacion: "Madrid, España",
+            profileImage: "/img1.webp"
+          });
+          setLoading(false);
+          return;
+        }
+        return;
+      }
       
       try {
+        // Si estamos en desarrollo y no hay API, usar datos simulados
+        if (process.env.NODE_ENV === "development") {
+          setTimeout(() => {
+            setUserProfile({
+              nombre: "Usuario",
+              apellido1: "De",
+              apellido2: "Prueba",
+              email: "usuario@ejemplo.com",
+              role: "participante",
+              fechaRegistro: "01/01/2023",
+              ubicacion: "Madrid, España",
+              profileImage: "/img1.webp"
+            });
+            setLoading(false);
+          }, 800);
+          return;
+        }
+        
         const response = await getUserProfile();
         if (response.status === "success") {
           setUserProfile(response.data);
-          
-          // Inicializar el formulario con los datos del usuario
-          const initialFormData = {
-            nombre: response.data.nombre,
-            apellido1: response.data.apellido1,
-            apellido2: response.data.apellido2 || "",
-            email: response.data.email,
-          };
-          
-          // Agregar campos específicos según el rol
-          if (response.data.role === 'organizador') {
-            initialFormData.nombre_organizacion = response.data.organizador?.nombre_organizacion || "";
-            initialFormData.telefono_contacto = response.data.organizador?.telefono_contacto || "";
-          } else if (response.data.role === 'participante') {
-            initialFormData.dni = response.data.participante?.dni || "";
-            initialFormData.telefono = response.data.participante?.telefono || "";
-          }
-          
-          setFormData(initialFormData);
         }
       } catch (error) {
         console.error("Error al obtener el perfil:", error);
-        // Si hay un error de autenticación, redirigir al login
-        if (error.message.includes('autenticación')) {
-          localStorage.removeItem('user');
+        if (process.env.NODE_ENV !== "development") {
           router.push('/login');
         }
       } finally {
@@ -68,389 +119,186 @@ export default function ProfilePage() {
     fetchUserProfile();
   }, [router]);
 
-  const validateForm = () => {
-    const errors = {};
-    
-    // Validación de campos básicos
-    if (!formData.nombre) errors.nombre = "El nombre es obligatorio";
-    if (!formData.apellido1) errors.apellido1 = "El primer apellido es obligatorio";
-    
-    // Validación de email
-    if (!formData.email) {
-      errors.email = "El email es obligatorio";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = "Por favor, introduce un email válido";
-    }
-    
-    // Validaciones específicas por rol
-    if (userProfile?.role === 'organizador') {
-      if (!formData.nombre_organizacion) errors.nombre_organizacion = "El nombre de la organización es obligatorio";
-      if (!formData.telefono_contacto) errors.telefono_contacto = "El teléfono de contacto es obligatorio";
-    } else if (userProfile?.role === 'participante') {
-      if (!formData.dni) errors.dni = "El DNI es obligatorio";
-      if (!formData.telefono) errors.telefono = "El teléfono es obligatorio";
-      
-      // Validar formato DNI
-      const dniRegex = /^[0-9]{8}[A-Za-z]$/;
-      if (formData.dni && !dniRegex.test(formData.dni)) {
-        errors.dni = "El formato del DNI debe ser 8 números seguidos de una letra";
-      }
-    }
-    
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-    setFormErrors({
-      ...formErrors,
-      [e.target.name]: null
-    });
-    
-    // Limpiar mensajes de éxito/error cuando el usuario empieza a editar
-    setUpdateSuccess(false);
-    setUpdateError(null);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-    
-    setUpdateLoading(true);
-    setUpdateError(null);
-    setUpdateSuccess(false);
-    
-    try {
-      const result = await updateUserProfile(formData);
-      if (result.status === "success") {
-        setUpdateSuccess(true);
-        
-        // Actualizar el perfil en la interfaz
-        const updatedUserProfile = {
-          ...userProfile,
-          nombre: formData.nombre,
-          apellido1: formData.apellido1,
-          apellido2: formData.apellido2,
-          email: formData.email
-        };
-        
-        // Actualizar campos específicos según el rol
-        if (userProfile.role === 'organizador' && userProfile.organizador) {
-          updatedUserProfile.organizador = {
-            ...userProfile.organizador,
-            nombre_organizacion: formData.nombre_organizacion,
-            telefono_contacto: formData.telefono_contacto
-          };
-        } else if (userProfile.role === 'participante' && userProfile.participante) {
-          updatedUserProfile.participante = {
-            ...userProfile.participante,
-            dni: formData.dni,
-            telefono: formData.telefono
-          };
-        }
-        
-        setUserProfile(updatedUserProfile);
-        setEditMode(false);
-      } else {
-        setUpdateError(result.message || "Error al actualizar el perfil");
-      }
-    } catch (error) {
-      console.error("Error al actualizar el perfil:", error);
-      setUpdateError("No se pudo actualizar el perfil. Por favor, intenta de nuevo más tarde.");
-    } finally {
-      setUpdateLoading(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      router.push('/login');
-    } catch (error) {
-      console.error("Error al cerrar sesión:", error);
-      // Intentar limpiar localStorage de todos modos y redirigir
-      localStorage.removeItem('user');
-      router.push('/login');
-    }
-  };
-
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <FaSpinner className="animate-spin text-4xl text-blue-500" />
+      <div className="min-h-screen flex bg-gray-50">
+        <ProfileNavBar />
+        <div className="flex-1 p-4 md:p-8 overflow-y-auto relative">
+          <div className="flex justify-center items-center h-64">
+            <LoadingSpinner size="lg" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Verificar si userProfile es nulo
+  if (!userProfile) {
+    return (
+      <div className="min-h-screen flex bg-gray-50">
+        <ProfileNavBar />
+        <div className="flex-1 p-4 md:p-8 overflow-y-auto relative flex items-center justify-center">
+          <p className="text-gray-600">Cargando perfil...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Si necesita login, mostrar un mensaje con botón de redirección
+  if (needsLogin) {
+    return (
+      <div className="min-h-screen flex bg-gray-50">
+        <ProfileNavBar />
+        <div className="flex-1 p-4 md:p-8 overflow-y-auto relative flex items-center justify-center">
+          <div className="bg-white p-8 rounded-2xl shadow-sm text-center max-w-md">
+            <h2 className="text-xl font-bold mb-4">Sesión no iniciada</h2>
+            <p className="text-gray-600 mb-6">
+              Necesitas iniciar sesión para acceder a tu perfil
+            </p>
+            <Link 
+              href="/login"
+              className="px-6 py-2 bg-[#e53c3d] text-white rounded-lg hover:bg-red-600 transition-colors inline-block"
+            >
+              Iniciar sesión
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="bg-white shadow-md rounded-lg p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">Perfil de Usuario</h1>
-          <div className="space-x-3">
-            {editMode ? (
-              <>
-                <button
-                  onClick={() => setEditMode(false)}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  disabled={updateLoading}
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-blue-300"
-                >
-                  {updateLoading ? (
-                    <FaSpinner className="animate-spin inline" />
-                  ) : (
-                    "Guardar"
-                  )}
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={() => setEditMode(true)}
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                >
-                  Editar Perfil
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                >
-                  Cerrar Sesión
-                </button>
-              </>
-            )}
+    <div className="min-h-screen flex bg-gray-50">
+      <ProfileNavBar />
+      <div className="flex-1 p-4 md:p-8 overflow-y-auto relative">
+        {/* Botón para volver al inicio */}
+        <Link
+          href="/"
+          className="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-2.5 bg-black text-white rounded-full hover:bg-gray-800 transform hover:scale-105 active:scale-95 transition-all duration-200 shadow-md"
+          aria-label="Volver al inicio"
+        >
+          <FaHome className="text-lg" />
+          <span className="font-medium">Inicio</span>
+        </Link>
+        
+        <div className="max-w-4xl mx-auto pt-16">
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            {/* Sección de cabecera con foto de perfil */}
+            <div className="p-8 pb-0 flex justify-between items-center flex-wrap gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-24 h-24 rounded-full border-4 border-white overflow-hidden bg-gray-200 shadow-md">
+                  <img 
+                    src={userProfile.profileImage || "/img1.webp"} 
+                    alt="Foto de perfil" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-800">
+                    {userProfile.nombre} {userProfile.apellido1} {userProfile.apellido2}
+                  </h1>
+                  <p className="text-[#e53c3d] font-semibold mt-1 capitalize">{userProfile.role}</p>
+                </div>
+              </div>
+              
+              {/* Botón de editar perfil */}
+              <Link
+                href="/profile/edit-information"
+                className="flex items-center gap-2 px-4 py-2 bg-[#e53c3d] text-white rounded-lg hover:bg-red-600 transition-colors shadow-sm hover:shadow-md"
+              >
+                <FaPen className="text-sm" />
+                <span>Editar perfil</span>
+              </Link>
+            </div>
+            
+            {/* Información de miembro */}
+            <div className="px-8 pt-4 pb-6">
+              <div className="flex flex-col md:flex-row gap-4 text-sm text-gray-600">
+                <div className="flex items-center gap-2">
+                  <FaCalendarAlt className="text-[#e53c3d]" />
+                  <span>Miembro desde {userProfile.fechaRegistro}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <FaMapMarkerAlt className="text-[#e53c3d]" />
+                  <span>{userProfile.ubicacion}</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Secciones de información */}
+            <div className="px-8 py-6 border-t border-gray-100">
+              <h2 className="text-lg font-semibold mb-4 text-gray-800">Información personal</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex items-center group transition-all duration-200 hover:translate-x-1">
+                  <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center mr-4 group-hover:bg-red-100">
+                    <FaUser className="text-[#e53c3d]" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Nombre completo</p>
+                    <p className="font-semibold text-gray-800">
+                      {userProfile.nombre} {userProfile.apellido1} {userProfile.apellido2}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center group transition-all duration-200 hover:translate-x-1">
+                  <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center mr-4 group-hover:bg-red-100">
+                    <FaEnvelope className="text-[#e53c3d]" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Correo electrónico</p>
+                    <p className="font-semibold text-gray-800">{userProfile.email}</p>
+                  </div>
+                </div>
+
+                {userProfile.role === "organizador" && (
+                  <>
+                    <div className="flex items-center group transition-all duration-200 hover:translate-x-1">
+                      <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center mr-4 group-hover:bg-red-100">
+                        <FaBuilding className="text-[#e53c3d]" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Organización</p>
+                        <p className="font-semibold text-gray-800">{userProfile.organizador.nombre_organizacion}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center group transition-all duration-200 hover:translate-x-1">
+                      <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center mr-4 group-hover:bg-red-100">
+                        <FaPhone className="text-[#e53c3d]" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Teléfono de contacto</p>
+                        <p className="font-semibold text-gray-800">{userProfile.organizador.telefono_contacto}</p>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Sección de actividad */}
+            <div className="px-8 py-6 border-t border-gray-100">
+              <h2 className="text-lg font-semibold mb-4 text-gray-800">Actividad</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-red-50 rounded-lg p-4 text-center hover:shadow-md transition-all hover:bg-red-100">
+                  <p className="text-3xl font-bold text-[#e53c3d]">0</p>
+                  <p className="text-gray-700 mt-1">Eventos creados</p>
+                </div>
+                <div className="bg-red-50 rounded-lg p-4 text-center hover:shadow-md transition-all hover:bg-red-100">
+                  <p className="text-3xl font-bold text-[#e53c3d]">0</p>
+                  <p className="text-gray-700 mt-1">Eventos asistidos</p>
+                </div>
+                <div className="bg-red-50 rounded-lg p-4 text-center hover:shadow-md transition-all hover:bg-red-100">
+                  <p className="text-3xl font-bold text-[#e53c3d]">0</p>
+                  <p className="text-gray-700 mt-1">Reseñas recibidas</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-
-        {updateSuccess && (
-          <div className="mb-4 p-3 bg-green-100 text-green-700 rounded">
-            Perfil actualizado correctamente
-          </div>
-        )}
-
-        {updateError && (
-          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
-            {updateError}
-          </div>
-        )}
-
-        {editMode ? (
-          <form className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2">
-                  Nombre*
-                </label>
-                <input
-                  type="text"
-                  name="nombre"
-                  value={formData.nombre || ""}
-                  onChange={handleChange}
-                  className={`shadow appearance-none border ${formErrors.nombre ? 'border-red-500' : 'border-gray-300'} rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline`}
-                />
-                {formErrors.nombre && (
-                  <p className="text-red-500 text-xs italic">{formErrors.nombre}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2">
-                  Primer Apellido*
-                </label>
-                <input
-                  type="text"
-                  name="apellido1"
-                  value={formData.apellido1 || ""}
-                  onChange={handleChange}
-                  className={`shadow appearance-none border ${formErrors.apellido1 ? 'border-red-500' : 'border-gray-300'} rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline`}
-                />
-                {formErrors.apellido1 && (
-                  <p className="text-red-500 text-xs italic">{formErrors.apellido1}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2">
-                  Segundo Apellido
-                </label>
-                <input
-                  type="text"
-                  name="apellido2"
-                  value={formData.apellido2 || ""}
-                  onChange={handleChange}
-                  className="shadow appearance-none border border-gray-300 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                />
-              </div>
-
-              <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2">
-                  Email*
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email || ""}
-                  onChange={handleChange}
-                  className={`shadow appearance-none border ${formErrors.email ? 'border-red-500' : 'border-gray-300'} rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline`}
-                />
-                {formErrors.email && (
-                  <p className="text-red-500 text-xs italic">{formErrors.email}</p>
-                )}
-              </div>
-
-              {userProfile?.role === "organizador" && (
-                <>
-                  <div>
-                    <label className="block text-gray-700 text-sm font-bold mb-2">
-                      Nombre de la Organización*
-                    </label>
-                    <input
-                      type="text"
-                      name="nombre_organizacion"
-                      value={formData.nombre_organizacion || ""}
-                      onChange={handleChange}
-                      className={`shadow appearance-none border ${formErrors.nombre_organizacion ? 'border-red-500' : 'border-gray-300'} rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline`}
-                    />
-                    {formErrors.nombre_organizacion && (
-                      <p className="text-red-500 text-xs italic">{formErrors.nombre_organizacion}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-gray-700 text-sm font-bold mb-2">
-                      Teléfono de Contacto*
-                    </label>
-                    <input
-                      type="text"
-                      name="telefono_contacto"
-                      value={formData.telefono_contacto || ""}
-                      onChange={handleChange}
-                      className={`shadow appearance-none border ${formErrors.telefono_contacto ? 'border-red-500' : 'border-gray-300'} rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline`}
-                    />
-                    {formErrors.telefono_contacto && (
-                      <p className="text-red-500 text-xs italic">{formErrors.telefono_contacto}</p>
-                    )}
-                  </div>
-                </>
-              )}
-
-              {userProfile?.role === "participante" && (
-                <>
-                  <div>
-                    <label className="block text-gray-700 text-sm font-bold mb-2">
-                      DNI*
-                    </label>
-                    <input
-                      type="text"
-                      name="dni"
-                      value={formData.dni || ""}
-                      onChange={handleChange}
-                      className={`shadow appearance-none border ${formErrors.dni ? 'border-red-500' : 'border-gray-300'} rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline`}
-                    />
-                    {formErrors.dni && (
-                      <p className="text-red-500 text-xs italic">{formErrors.dni}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-gray-700 text-sm font-bold mb-2">
-                      Teléfono*
-                    </label>
-                    <input
-                      type="text"
-                      name="telefono"
-                      value={formData.telefono || ""}
-                      onChange={handleChange}
-                      className={`shadow appearance-none border ${formErrors.telefono ? 'border-red-500' : 'border-gray-300'} rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline`}
-                    />
-                    {formErrors.telefono && (
-                      <p className="text-red-500 text-xs italic">{formErrors.telefono}</p>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-          </form>
-        ) : (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center">
-                <FaUser className="text-blue-500 mr-3" />
-                <div>
-                  <p className="text-sm text-gray-500">Nombre</p>
-                  <p className="font-semibold">{userProfile?.nombre} {userProfile?.apellido1} {userProfile?.apellido2 || ""}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center">
-                <FaEnvelope className="text-blue-500 mr-3" />
-                <div>
-                  <p className="text-sm text-gray-500">Email</p>
-                  <p className="font-semibold">{userProfile?.email}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center">
-                <div className="text-blue-500 mr-3 w-5 text-center">@</div>
-                <div>
-                  <p className="text-sm text-gray-500">Rol</p>
-                  <p className="font-semibold capitalize">{userProfile?.role}</p>
-                </div>
-              </div>
-
-              {userProfile?.role === "organizador" && userProfile?.organizador && (
-                <>
-                  <div className="flex items-center">
-                    <FaBuilding className="text-blue-500 mr-3" />
-                    <div>
-                      <p className="text-sm text-gray-500">Organización</p>
-                      <p className="font-semibold">{userProfile.organizador.nombre_organizacion}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center">
-                    <FaPhone className="text-blue-500 mr-3" />
-                    <div>
-                      <p className="text-sm text-gray-500">Teléfono de Contacto</p>
-                      <p className="font-semibold">{userProfile.organizador.telefono_contacto}</p>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {userProfile?.role === "participante" && userProfile?.participante && (
-                <>
-                  <div className="flex items-center">
-                    <FaIdCard className="text-blue-500 mr-3" />
-                    <div>
-                      <p className="text-sm text-gray-500">DNI</p>
-                      <p className="font-semibold">{userProfile.participante.dni}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center">
-                    <FaPhone className="text-blue-500 mr-3" />
-                    <div>
-                      <p className="text-sm text-gray-500">Teléfono</p>
-                      <p className="font-semibold">{userProfile.participante.telefono}</p>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
 }
+

@@ -1,6 +1,5 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import ClientLayout from '../components/ClientLayout';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,10 +37,8 @@ export default function RootLayout({ children }) {
           min-h-screen
         `}
       >
-        <ClientLayout>
           {/* Contenido principal */}
           <main className="flex-1">{children}</main>
-        </ClientLayout>
       </body>
     </html>
   );

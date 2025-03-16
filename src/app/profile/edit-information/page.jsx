@@ -8,12 +8,12 @@ import {
   FaEnvelope, 
   FaPhone, 
   FaIdCard, 
-  FaBuilding, 
   FaSave,
   FaTimes,
   FaHome,
   FaCamera,
-  FaPen
+  FaPen,
+  FaLock
 } from "react-icons/fa";
 import ProfileNavBar from "@/components/userProfile/profileNavBar";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
@@ -129,6 +129,80 @@ export default function EditInformationPage() {
     }
   };
 
+  // Modificación para los campos editables con los lápices mejorados
+  const renderField = (label, name, icon) => {
+    const isEditable = name !== 'email' && name !== 'dni';
+    
+    return (
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-2">
+          <label className="block text-gray-700 font-medium flex items-center gap-2">
+            {icon}
+            {label}
+          </label>
+          
+          {isEditable ? (
+            <button
+              type="button"
+              onClick={() => toggleFieldEdit(name)}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-colors ${
+                editableFields[name] 
+                  ? "bg-red-100 text-[#e53c3d] hover:bg-red-200" 
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+              aria-label={`${editableFields[name] ? "Cancelar edición" : "Editar"} ${label}`}
+            >
+              {editableFields[name] ? (
+                <>
+                  <FaTimes size={12} />
+                  <span className="text-xs font-medium">Cancelar</span>
+                </>
+              ) : (
+                <>
+                  <FaPen size={12} />
+                  <span className="text-xs font-medium">Editar</span>
+                </>
+              )}
+            </button>
+          ) : (
+            <div className="px-2.5 py-1 bg-gray-100 text-gray-500 rounded-md flex items-center gap-1.5 text-xs">
+              <FaIdCard size={12} />
+              <span>No editable</span>
+            </div>
+          )}
+        </div>
+        
+        <div className="relative">
+          <input
+            type={name === "email" ? "email" : "text"}
+            id={name}
+            name={name}
+            value={userData[name]}
+            onChange={handleChange}
+            disabled={!isEditable || !editableFields[name]}
+            className={`w-full px-4 py-3 rounded-lg border ${
+              error[name] ? "border-red-300 bg-red-50" : "border-gray-300"
+            } ${
+              !isEditable || !editableFields[name]
+                ? "bg-gray-50 cursor-not-allowed text-gray-500"
+                : "bg-white"
+            } focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-[#e53c3d] transition-all`}
+          />
+          
+          {error[name] && (
+            <p className="text-red-500 text-sm mt-1">{error[name]}</p>
+          )}
+          
+          {!isEditable && (
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+              <FaLock size={14} />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   if (isLoading) {
     return <LoadingSpinner fullScreen size="lg" />;
   }
@@ -138,7 +212,6 @@ export default function EditInformationPage() {
       <ProfileNavBar />
 
       <div className="flex-1 p-4 md:p-8 overflow-y-auto relative">
-        {/* Botón para volver al inicio (ahora sticky) */}
         <Link
           href="/"
           className="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-2.5 bg-black text-white rounded-full hover:bg-gray-800 transform hover:scale-105 active:scale-95 transition-all duration-200 shadow-md"
@@ -150,11 +223,10 @@ export default function EditInformationPage() {
 
         <div className="max-w-4xl mx-auto pt-16">
           <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm overflow-hidden">
-            {/* Banner y foto de perfil */}
-            <div className="relative h-40 bg-gradient-to-r from-[#2d3748] to-[#1a202c]">
-              <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2">
+            <div className="p-8">
+              <div className="flex justify-center mb-8">
                 <div className="relative group">
-                  <div className="w-24 h-24 rounded-full border-4 border-white overflow-hidden bg-gray-200">
+                  <div className="w-24 h-24 rounded-full border-4 border-white overflow-hidden bg-gray-200 shadow-md">
                     <img 
                       src={profileImage} 
                       alt="Foto de perfil" 
@@ -170,11 +242,8 @@ export default function EditInformationPage() {
                   </button>
                 </div>
               </div>
-            </div>
-
-            {/* Contenido del formulario */}
-            <div className="p-6 pt-16 md:p-8 md:pt-16">
-              <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">Editar Información Personal</h1>
+              
+              <h1 className="text-2xl font-bold text-gray-800 mb-4 text-center">Editar Información Personal</h1>
               
               {error.general && (
                 <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-md">
@@ -182,201 +251,16 @@ export default function EditInformationPage() {
                 </div>
               )}
 
-              {/* Campos de información personal */}
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nombre
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                      <FaUser />
-                    </div>
-                    <input
-                      type="text"
-                      name="nombre"
-                      value={userData.nombre}
-                      onChange={handleChange}
-                      disabled={!editableFields.nombre}
-                      className={`w-full pl-10 pr-12 p-3 border rounded-xl focus:outline-none ${
-                        editableFields.nombre 
-                          ? "border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20" 
-                          : "bg-gray-50 border-gray-200 text-gray-700"
-                      }`}
-                    />
-                    <button 
-                      type="button"
-                      onClick={() => toggleFieldEdit('nombre')}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-[#e53c3d] transition-colors"
-                    >
-                      <FaPen size={14} />
-                    </button>
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Primer apellido
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                      <FaUser />
-                    </div>
-                    <input
-                      type="text"
-                      name="apellido1"
-                      value={userData.apellido1}
-                      onChange={handleChange}
-                      disabled={!editableFields.apellido1}
-                      className={`w-full pl-10 pr-12 p-3 border rounded-xl focus:outline-none ${
-                        editableFields.apellido1 
-                          ? "border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20" 
-                          : "bg-gray-50 border-gray-200 text-gray-700"
-                      }`}
-                    />
-                    <button 
-                      type="button"
-                      onClick={() => toggleFieldEdit('apellido1')}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-[#e53c3d] transition-colors"
-                    >
-                      <FaPen size={14} />
-                    </button>
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Segundo apellido
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                      <FaUser />
-                    </div>
-                    <input
-                      type="text"
-                      name="apellido2"
-                      value={userData.apellido2}
-                      onChange={handleChange}
-                      disabled={!editableFields.apellido2}
-                      className={`w-full pl-10 pr-12 p-3 border rounded-xl focus:outline-none ${
-                        editableFields.apellido2 
-                          ? "border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20" 
-                          : "bg-gray-50 border-gray-200 text-gray-700"
-                      }`}
-                    />
-                    <button 
-                      type="button"
-                      onClick={() => toggleFieldEdit('apellido2')}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-[#e53c3d] transition-colors"
-                    >
-                      <FaPen size={14} />
-                    </button>
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Teléfono
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                      <FaPhone />
-                    </div>
-                    <input
-                      type="tel"
-                      name="telefono"
-                      value={userData.telefono}
-                      onChange={handleChange}
-                      disabled={!editableFields.telefono}
-                      className={`w-full pl-10 pr-12 p-3 border rounded-xl focus:outline-none ${
-                        editableFields.telefono 
-                          ? "border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20" 
-                          : "bg-gray-50 border-gray-200 text-gray-700"
-                      }`}
-                    />
-                    <button 
-                      type="button"
-                      onClick={() => toggleFieldEdit('telefono')}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-[#e53c3d] transition-colors"
-                    >
-                      <FaPen size={14} />
-                    </button>
-                  </div>
-                </div>
-                
-                {/* Campo de email no editable */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                      <FaEnvelope />
-                    </div>
-                    <input
-                      type="email"
-                      name="email"
-                      value={userData.email}
-                      disabled
-                      className="w-full pl-10 p-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-500 cursor-not-allowed"
-                    />
-                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400">
-                      <FaTimes />
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">No es posible cambiar el email de la cuenta</p>
-                </div>
-                
-                {/* Campo de DNI no editable */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    DNI/NIF
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                      <FaIdCard />
-                    </div>
-                    <input
-                      type="text"
-                      name="dni"
-                      value={userData.dni}
-                      disabled
-                      className="w-full pl-10 p-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-500 cursor-not-allowed"
-                    />
-                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400">
-                      <FaTimes />
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">El DNI/NIF no se puede modificar</p>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                {renderField("Nombre", "nombre", <FaUser className="text-[#e53c3d]" />)}
+                {renderField("Primer apellido", "apellido1", <FaUser className="text-[#e53c3d]" />)}
+                {renderField("Segundo apellido", "apellido2", <FaUser className="text-[#e53c3d]" />)}
+                {renderField("Email", "email", <FaEnvelope className="text-[#e53c3d]" />)}
+                {renderField("Teléfono", "telefono", <FaPhone className="text-[#e53c3d]" />)}
+                {renderField("DNI/NIE", "dni", <FaIdCard className="text-[#e53c3d]" />)}
+                {renderField("Organización (opcional)", "organizacion", <FaIdCard className="text-[#e53c3d]" />)}
               </div>
 
-              {/* Campo de organización (solo para organizadores) y no editable */}
-              {userData.role === "organizador" && (
-                <div className="mt-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nombre de la organización
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                      <FaBuilding />
-                    </div>
-                    <input
-                      type="text"
-                      name="organizacion"
-                      value={userData.organizacion}
-                      disabled
-                      className="w-full pl-10 p-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-500 cursor-not-allowed"
-                    />
-                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400">
-                      <FaTimes />
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">No es posible cambiar el nombre de la organización</p>
-                </div>
-              )}
-
-              {/* Sección para cambiar la contraseña */}
               <div className="mt-8 pt-6 border-t border-gray-100">
                 <h2 className="text-xl font-semibold mb-5 text-gray-900 flex items-center gap-2">
                   <FaIdCard className="text-[#e53c3d]" />
@@ -385,56 +269,35 @@ export default function EditInformationPage() {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Contraseña actual
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                        <FaIdCard />
-                      </div>
-                      <input
-                        type="password"
-                        name="currentPassword"
-                        placeholder="Introduce tu contraseña actual"
-                        className="w-full pl-10 p-3 border border-gray-300 rounded-xl focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 focus:outline-none"
-                      />
-                    </div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Contraseña actual</label>
+                    <input
+                      type="password"
+                      name="currentPassword"
+                      placeholder="Introduce tu contraseña actual"
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 focus:outline-none"
+                    />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nueva contraseña
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                        <FaIdCard />
-                      </div>
-                      <input
-                        type="password"
-                        name="newPassword"
-                        placeholder="Introduce tu nueva contraseña"
-                        className="w-full pl-10 p-3 border border-gray-300 rounded-xl focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 focus:outline-none"
-                      />
-                    </div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Nueva contraseña</label>
+                    <input
+                      type="password"
+                      name="newPassword"
+                      placeholder="Introduce tu nueva contraseña"
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 focus:outline-none"
+                    />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Confirmar nueva contraseña
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                        <FaIdCard />
-                      </div>
-                      <input
-                        type="password"
-                        name="confirmPassword"
-                        placeholder="Confirma tu nueva contraseña"
-                        className="w-full pl-10 p-3 border border-gray-300 rounded-xl focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 focus:outline-none"
-                      />
-                    </div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Confirmar nueva contraseña</label>
+                    <input
+                      type="password"
+                      name="confirmPassword"
+                      placeholder="Confirma tu nueva contraseña"
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 focus:outline-none"
+                    />
                   </div>
                 </div>
                 
@@ -484,7 +347,6 @@ export default function EditInformationPage() {
                 </div>
               </div>
 
-              {/* Botones de acción */}
               <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col sm:flex-row gap-3 justify-end">
                 <button
                   type="button"
