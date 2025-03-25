@@ -16,9 +16,7 @@ import { ChevronDownIcon, MagnifyingGlassIcon, FunnelIcon } from "@heroicons/rea
 export default function OrdersPage() {
   const [openAccordion, setOpenAccordion] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
-
   const handleOpen = (value) => setOpenAccordion(openAccordion === value ? 0 : value);
-
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
       {/* Left Side - Styled Accordion Menu */}
@@ -26,7 +24,6 @@ export default function OrdersPage() {
         <Typography variant="h4" className="mb-6 font-bold text-gray-800">
           🚀 Menú de Acciones
         </Typography>
-
         {[1, 2, 3, 4, 5].map((item) => (
           <Accordion 
             key={item} 
@@ -54,7 +51,6 @@ export default function OrdersPage() {
           </Accordion>
         ))}
       </div>
-
       {/* Right Side - Enhanced Main Content */}
       <div className="w-full md:w-2/3 p-8">
         {/* Title Section */}
@@ -67,7 +63,6 @@ export default function OrdersPage() {
           </Typography>
           <div className="h-1 bg-gradient-to-r from-customRed via-red-300 to-customRed rounded-full"></div>
         </div>
-
         {/* Search Bar with Icon */}
         <div className="mb-10 relative">
           <Input
@@ -81,14 +76,12 @@ export default function OrdersPage() {
             }}
           />
         </div>
-
         {/* Filtros Section */}
         <div className="bg-white p-6 rounded-xl shadow-lg">
           <Typography variant="h5" className="mb-6 flex items-center text-gray-700">
             <FunnelIcon className="h-6 w-6 mr-2 text-customRed" />
             Filtros Avanzados
           </Typography>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[1, 2, 3, 4].map((item) => (
               <Select
@@ -108,7 +101,6 @@ export default function OrdersPage() {
               </Select>
             ))}
           </div>
-
           {/* Action Buttons */}
           <div className="mt-8 flex gap-4 justify-end">
             <Button className="bg-gray-100 text-gray-600 hover:bg-gray-200 px-8 py-3 rounded-lg transition-all">
