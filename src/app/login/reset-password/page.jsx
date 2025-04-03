@@ -76,14 +76,13 @@ export default function ResetPassword() {
         <div className="flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 lg:px-12 py-8 flex flex-col items-center">
           {/* Logo responsivo - sin hover */}
           <div className="mb-4 sm:mb-6">
-            <div
-              className="w-[120px] h-[48px] sm:w-[140px] sm:h-[55px]"
-              style={{
-                backgroundImage: 'url("/logo.webp")',
-                backgroundSize: "contain",
-                backgroundRepeat: "no-repeat",
-                backgroundPosition: "center",
-              }}
+            <Image
+              src="/logo.jpg"
+              alt="EventFlix Logo"
+              width={150}
+              height={60}
+              className="object-contain"
+              priority
             />
           </div>
 

@@ -270,15 +270,18 @@ export default function Header() {
         )}
 
         {isSearchVisible && (
-          <SearchBar
-            searchQuery={searchQuery}
-            locationQuery={locationQuery}
-            onSearchChange={handleSearchChange}
-            onLocationChange={handleLocationChange}
-            onClearSearch={() => setSearchQuery("")}
-            onClearLocation={() => setLocationQuery("")}
-            onSearch={() => console.log("Búsqueda:", searchQuery, locationQuery)}
-          />
+          <div className="w-full px-2 py-3 bg-white/95 shadow-sm border-t border-gray-100">
+            <SearchBar
+              searchQuery={searchQuery}
+              locationQuery={locationQuery}
+              onSearchChange={handleSearchChange}
+              onLocationChange={handleLocationChange}
+              onClearSearch={() => setSearchQuery("")}
+              onClearLocation={() => setLocationQuery("")}
+              onSearch={() => console.log("Búsqueda:", searchQuery, locationQuery)}
+              isMobile={true}
+            />
+          </div>
         )}
       </div>
     </header>
