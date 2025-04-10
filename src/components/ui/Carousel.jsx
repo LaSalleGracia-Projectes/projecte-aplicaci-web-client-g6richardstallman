@@ -16,7 +16,6 @@ export default function Carousel({
   const slides = React.Children.toArray(children);
   const length = slides.length;
 
-  // Autoplay function
   useEffect(() => {
     if (!autoplay) return;
     
@@ -27,7 +26,6 @@ export default function Carousel({
     return () => clearInterval(interval);
   }, [autoplay, autoplayDelay, length]);
 
-  // Swipe handlers
   const handleTouchStart = (e) => {
     setTouchStart(e.targetTouches[0].clientX);
   };
@@ -38,17 +36,14 @@ export default function Carousel({
 
   const handleTouchEnd = () => {
     if (touchStart - touchEnd > 70) {
-      // Swipe left, next slide
       setActiveIndex((current) => (current === length - 1 ? 0 : current + 1));
     }
 
     if (touchStart - touchEnd < -70) {
-      // Swipe right, previous slide
       setActiveIndex((current) => (current === 0 ? length - 1 : current - 1));
     }
   };
 
-  // Navigation functions
   const handleNext = () => {
     setActiveIndex((current) => (current === length - 1 ? 0 : current + 1));
   };

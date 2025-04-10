@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { FaHome } from "react-icons/fa";
-import PopUpPasswordReset from "@/components/PopUpPasswordReset";
+import PopUpPasswordReset from "../../../components/PopUpPasswordReset.jsx";
 import Image from "next/image";
 
 export default function ResetPassword() {

@@ -35,7 +35,6 @@ export default function Typography({
   children,
   ...props
 }) {
-  // Determine the HTML element to render
   const Component = as || 
     (variant === "h1" ? "h1" : 
      variant === "h2" ? "h2" : 

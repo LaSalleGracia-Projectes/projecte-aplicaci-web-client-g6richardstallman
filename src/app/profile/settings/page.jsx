@@ -14,15 +14,13 @@ import {
   FaCheck,
   FaSun
 } from "react-icons/fa";
-import ProfileNavBar from "@/components/userProfile/profileNavBar";
-import LoadingSpinner from "@/components/common/LoadingSpinner";
+import ProfileNavBar from "../../../components/userProfile/profileNavBar";
+import { showSuccessToast, showErrorToast } from '../../../utils/toastNotifications';
 
 export default function SettingsPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState("");
   
   const [settings, setSettings] = useState({
     email_notifications: true,
@@ -32,7 +30,6 @@ export default function SettingsPage() {
     language: "es"
   });
 
-  // Simular carga de datos
   useEffect(() => {
     setTimeout(() => {
       setIsLoading(false);
@@ -57,27 +54,24 @@ export default function SettingsPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
-    setError("");
-    setSuccess(false);
     
     try {
-      // Simular guardado
       await new Promise(resolve => setTimeout(resolve, 1000));
-      setSuccess(true);
-      
-      // Quitar mensaje de éxito después de 3 segundos
-      setTimeout(() => {
-        setSuccess(false);
-      }, 3000);
+      showSuccessToast("Configuración guardada correctamente");
+
     } catch (err) {
-      setError("Error al guardar la configuración");
+      showErrorToast("Error al guardar la configuración");
     } finally {
       setIsSaving(false);
     }
   };
 
   if (isLoading) {
-    return <LoadingSpinner fullScreen size="lg" />;
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-white/90 backdrop-blur-sm z-50">
+        <p>Cargando configuración...</p>
+      </div>
+    );
   }
 
   return (
@@ -106,21 +100,6 @@ export default function SettingsPage() {
               <h1 className="text-2xl font-bold text-gray-800 text-center">Configuración de la cuenta</h1>
               <p className="text-gray-600 mt-1 mb-6 text-center">Personaliza las opciones de tu cuenta</p>
 
-              {/* Mensajes de éxito o error */}
-              {success && (
-                <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg flex items-center">
-                  <FaCheck className="mr-2 text-green-500" />
-                  Configuración guardada correctamente
-                </div>
-              )}
-              
-              {error && (
-                <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
-                  {error}
-                </div>
-              )}
-
-              {/* Sección de notificaciones */}
               <div className="mt-2 bg-white rounded-xl">
                 <div className="border-b border-gray-100 pb-4 mb-4">
                   <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
@@ -166,7 +145,6 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Sección de apariencia y modos */}
               <div className="mt-8 bg-white rounded-xl">
                 <div className="border-b border-gray-100 pb-4 mb-4">
                   <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
@@ -213,7 +191,6 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Sección de seguridad */}
               <div className="mt-8 bg-white rounded-xl">
                 <div className="border-b border-gray-100 pb-4 mb-4">
                   <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
@@ -242,7 +219,6 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Botones de acción */}
               <div className="px-8 py-6 border-t border-gray-100 flex justify-end mt-8">
                 <button
                   type="button"
@@ -258,7 +234,10 @@ export default function SettingsPage() {
                 >
                   {isSaving ? (
                     <>
-                      <LoadingSpinner size="sm" withText={false} />
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
                       <span>Guardando...</span>
                     </>
                   ) : (
