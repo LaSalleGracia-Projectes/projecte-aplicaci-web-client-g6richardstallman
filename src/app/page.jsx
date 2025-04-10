@@ -1,7 +1,7 @@
-import HomeCarousel from "@/components/Carousel";
-import Footer from "@/components/Footer";
-import Header from "@/components/Header";
-import NavbarCategorias from "@/components/NavbarCategorias";
+import HomeCarousel from "../components/Carousel";
+import Footer from "../components/Footer";
+import Header from "../components/Header";
+import NavbarCategorias from "../components/NavbarCategorias";
 
 export default function Home() {
   return (

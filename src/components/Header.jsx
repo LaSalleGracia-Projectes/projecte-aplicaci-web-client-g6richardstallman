@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -15,20 +15,39 @@ import SearchBar from "./SearchBar";
 
 // Componente principal del header con navegación responsive
 export default function Header() {
-  // Estados del componente
+  // Estados para usuario y autenticación
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userProfile, setUserProfile] = useState({});
+
+  // Estados de UI
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [locationQuery, setLocationQuery] = useState("");
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
 
-  const userProfile = {
-    name: "Usuario Ejemplo",
-    image: "/img1.webp",
-  };
+  // Cargar datos de usuario desde localStorage
+  useEffect(() => {
+    try {
+      const userInfo = typeof window !== 'undefined' ? 
+        JSON.parse(localStorage.getItem('user') || '{}') : {};
+        
+      if (userInfo.isLoggedIn && userInfo.token) {
+        setIsLoggedIn(true);
+        setUserProfile(userInfo.userData || {});
+      } else {
+        setIsLoggedIn(false);
+        setUserProfile({});
+      }
+    } catch (error) {
+      console.error("Error al cargar datos de usuario:", error);
+      setIsLoggedIn(false);
+      setUserProfile({});
+    }
+  }, []);
 
-  // Manejadores de eventos y efectos
+  // Detectar scroll para cambiar estilo del header
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
@@ -37,40 +56,25 @@ export default function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  useEffect(() => {
-    setIsMenuOpen(false);
-    setIsSearchOpen(false);
-  }, []);
-
+  // Alternar menú móvil
   const toggleMenu = useCallback(() => {
     setIsMenuOpen((prev) => !prev);
     if (isSearchOpen) setIsSearchOpen(false);
   }, [isSearchOpen]);
 
-  const toggleSearch = useCallback(() => {
-    setIsSearchOpen((prev) => !prev);
-    if (isMenuOpen) setIsMenuOpen(false);
-  }, [isMenuOpen]);
+  // Alternar barra de búsqueda en móvil
+  const toggleSearch = () => {
+    setIsSearchVisible(!isSearchVisible);
+  };
 
-  const handleSearch = useCallback(() => {
-    console.log("Searching:", { searchQuery, locationQuery });
-    setIsSearchOpen(false);
-  }, [searchQuery, locationQuery]);
-
+  // Handler para cambiar texto de búsqueda
   const handleSearchChange = useCallback((value) => {
     setSearchQuery(value);
   }, []);
 
+  // Handler para cambiar ubicación de búsqueda
   const handleLocationChange = useCallback((value) => {
     setLocationQuery(value);
-  }, []);
-
-  const handleClearSearch = useCallback(() => {
-    setSearchQuery("");
-  }, []);
-
-  const handleClearLocation = useCallback(() => {
-    setLocationQuery("");
   }, []);
 
   return (
@@ -104,9 +108,9 @@ export default function Header() {
               locationQuery={locationQuery}
               onSearchChange={handleSearchChange}
               onLocationChange={handleLocationChange}
-              onClearSearch={handleClearSearch}
-              onClearLocation={handleClearLocation}
-              onSearch={handleSearch}
+              onClearSearch={() => setSearchQuery("")}
+              onClearLocation={() => setLocationQuery("")}
+              onSearch={() => console.log("Búsqueda:", searchQuery, locationQuery)}
             />
           </div>
 
@@ -136,28 +140,31 @@ export default function Header() {
                 href="/profile"
                 className="flex items-center gap-3 hover:bg-gray-100 rounded-full transition-all duration-200 p-2 hover:scale-[1.03]"
               >
-                <Image
-                  src={userProfile.image}
-                  alt={userProfile.name}
-                  width={40}
-                  height={40}
-                  className="rounded-full object-cover border-2 border-gray-200"
-                />
-                <span className="text-sm font-medium hidden xl:block pr-2">
-                  {userProfile.name}
+                {/* Foto de perfil circular */}
+                <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-white shadow">
+                  <img
+                    src={userProfile?.profileImage || "/img1.webp"}
+                    alt="Foto de perfil"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                
+                {/* Nombre del usuario - visible en pantallas más grandes */}
+                <span className="hidden md:block text-sm font-medium truncate max-w-[120px]">
+                  {userProfile?.nombre || 'Usuario'}
                 </span>
               </Link>
             ) : (
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
                 <Link
                   href="/login"
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 border border-black rounded-full transition-all duration-300 hover:bg-gray-50 hover:scale-[1.05]"
+                  className="px-3 py-1.5 border border-gray-300 hover:border-gray-400 rounded-full text-sm hover:bg-gray-50 transition-colors transform hover:scale-105"
                 >
                   Iniciar sesión
                 </Link>
                 <Link
                   href="/register"
-                  className="px-4 py-2 text-sm font-medium bg-black text-white rounded-full hover:bg-gray-800 active:bg-gray-900 transition-all duration-300 hover:scale-[1.05]"
+                  className="px-3 py-1.5 bg-black text-white rounded-full text-sm hover:bg-gray-800 transition-colors transform hover:scale-105"
                 >
                   Registrarse
                 </Link>
@@ -207,22 +214,6 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Barra de búsqueda móvil */}
-        {isSearchOpen && (
-          <div className="px-4 pb-4 border-t border-gray-100 pt-4 bg-white/95 backdrop-blur-sm">
-            <SearchBar
-              searchQuery={searchQuery}
-              locationQuery={locationQuery}
-              onSearchChange={handleSearchChange}
-              onLocationChange={handleLocationChange}
-              onClearSearch={handleClearSearch}
-              onClearLocation={handleClearLocation}
-              onSearch={handleSearch}
-              isMobile
-            />
-          </div>
-        )}
-
         {/* Menú móvil */}
         {isMenuOpen && (
           <nav className="bg-white/95 backdrop-blur-sm border-t border-gray-100">
@@ -247,14 +238,14 @@ export default function Header() {
                   href="/profile"
                   className="flex items-center gap-4 p-3 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-all hover:scale-[1.02]"
                 >
-                  <Image
-                    src={userProfile.image}
-                    alt={userProfile.name}
-                    width={36}
-                    height={36}
-                    className="rounded-full object-cover border-2 border-gray-200"
-                  />
-                  <span className="font-medium">{userProfile.name}</span>
+                  <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-gray-200">
+                    <img
+                      src={userProfile?.profileImage || "/img1.webp"}
+                      alt={userProfile?.nombre || "Usuario"}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <span className="font-medium">{userProfile?.nombre || "Usuario"}</span>
                 </Link>
               ) : (
                 <>
@@ -276,6 +267,21 @@ export default function Header() {
               )}
             </div>
           </nav>
+        )}
+
+        {isSearchVisible && (
+          <div className="w-full px-2 py-3 bg-white/95 shadow-sm border-t border-gray-100">
+            <SearchBar
+              searchQuery={searchQuery}
+              locationQuery={locationQuery}
+              onSearchChange={handleSearchChange}
+              onLocationChange={handleLocationChange}
+              onClearSearch={() => setSearchQuery("")}
+              onClearLocation={() => setLocationQuery("")}
+              onSearch={() => console.log("Búsqueda:", searchQuery, locationQuery)}
+              isMobile={true}
+            />
+          </div>
         )}
       </div>
     </header>

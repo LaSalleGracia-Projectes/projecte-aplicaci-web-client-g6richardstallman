@@ -1,6 +1,6 @@
 "use client";
 
-import { Typography } from "@/components/ui";
+import { Typography } from "./ui";
 import Link from "next/link";
 import { FaFacebookF, FaInstagram, FaTwitter } from "react-icons/fa";
 import Image from 'next/image';
