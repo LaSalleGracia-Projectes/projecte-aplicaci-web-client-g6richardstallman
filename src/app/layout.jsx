@@ -26,7 +26,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="es">
       <body
         className={`
           ${geistSans.variable}
@@ -37,8 +37,8 @@ export default function RootLayout({ children }) {
           min-h-screen
         `}
       >
-        {/* Contenido principal */}
-        <main className="flex-1">{children}</main>
+          {/* Contenido principal */}
+          <main className="flex-1">{children}</main>
       </body>
     </html>
   );
