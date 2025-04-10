@@ -1,6 +1,6 @@
 "use client";
 
-import { Carousel, Typography, Button } from "@/components/ui";
+import { Carousel, Typography, Button } from "./ui";
 
 export default function HomeCarousel() {
   return (
