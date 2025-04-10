@@ -13,6 +13,34 @@ import {
 } from "react-icons/fa";
 import SearchBar from "./SearchBar";
 
+// Estilos para animaciones
+const styles = {
+  '@keyframes slideIn': {
+    '0%': {
+      transform: 'translateY(-20px)',
+      opacity: 0,
+    },
+    '100%': {
+      transform: 'translateY(0)',
+      opacity: 1,
+    },
+  },
+};
+
+// Keyframes para la animación de deslizamiento
+const slideDownAnimation = `
+  @keyframes slideDown {
+    from {
+      max-height: 0;
+      opacity: 0;
+    }
+    to {
+      max-height: 400px;
+      opacity: 1;
+    }
+  }
+`;
+
 export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userProfile, setUserProfile] = useState({});
@@ -55,11 +83,12 @@ export default function Header() {
 
   const toggleMenu = useCallback(() => {
     setIsMenuOpen((prev) => !prev);
-    if (isSearchOpen) setIsSearchOpen(false);
-  }, [isSearchOpen]);
+    if (isSearchVisible) setIsSearchVisible(false);
+  }, [isSearchVisible]);
 
   const toggleSearch = () => {
     setIsSearchVisible(!isSearchVisible);
+    if (isMenuOpen) setIsMenuOpen(false);
   };
 
   const handleSearchChange = useCallback((value) => {
@@ -73,8 +102,8 @@ export default function Header() {
   return (
     <header
       className={`sticky top-0 z-[60] transition-all duration-200 
-      ${isScrolled ? "bg-white/95 shadow-md" : "bg-white/90"}
-      backdrop-blur-sm`}
+      ${isScrolled ? "bg-white shadow-md" : "bg-white"}
+      `}
     >
       {/* Versión Desktop y Tablet */}
       <div className="hidden md:block">
@@ -153,13 +182,13 @@ export default function Header() {
               <div className="flex items-center gap-3">
                 <Link
                   href="/login"
-                  className="px-3 py-1.5 border border-gray-300 hover:border-gray-400 rounded-full text-sm hover:bg-gray-50 transition-colors transform hover:scale-105"
+                  className="px-3 py-1.5 border border-gray-300 hover:border-gray-400 rounded-full text-sm hover:bg-gray-50 transition-all duration-300 hover:scale-105 transform"
                 >
                   Iniciar sesión
                 </Link>
                 <Link
                   href="/register"
-                  className="px-3 py-1.5 bg-black text-white rounded-full text-sm hover:bg-gray-800 transition-colors transform hover:scale-105"
+                  className="px-3 py-1.5 bg-black text-white rounded-full text-sm hover:bg-gray-800 transition-all duration-300 hover:scale-105 transform"
                 >
                   Registrarse
                 </Link>
@@ -187,18 +216,22 @@ export default function Header() {
             />
           </Link>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <button
               onClick={toggleSearch}
-              className="p-2.5 hover:bg-gray-100 active:bg-gray-200 rounded-full transition-all duration-300 hover:scale-[1.05]"
-              aria-label="Buscar"
+              className="p-2.5 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-full transition-all duration-300 hover:scale-[1.05]"
+              aria-label={isSearchVisible ? "Cerrar búsqueda" : "Buscar"}
             >
-              <FaSearch className="text-xl text-gray-700" />
+              {isSearchVisible ? (
+                <FaTimes className="text-xl text-gray-700" />
+              ) : (
+                <FaSearch className="text-xl text-gray-700" />
+              )}
             </button>
             <button
               onClick={toggleMenu}
-              className="p-2.5 hover:bg-gray-100 active:bg-gray-200 rounded-full transition-all duration-300 hover:scale-[1.05]"
-              aria-label="Menú"
+              className="p-2.5 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-full transition-all duration-300 hover:scale-[1.05]"
+              aria-label={isMenuOpen ? "Cerrar menú" : "Abrir menú"}
             >
               {isMenuOpen ? (
                 <FaTimes className="text-xl text-gray-700" />
@@ -209,79 +242,94 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Menú móvil */}
-        {isMenuOpen && (
-          <nav className="bg-white/95 backdrop-blur-sm border-t border-gray-100">
-            <div className="p-4 space-y-2">
-              <Link
-                href="/favoritos"
-                className="flex items-center gap-4 p-3 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-all hover:scale-[1.01]"
-              >
-                <FaHeart className="text-xl text-red-500" />
-                <span className="font-medium">Favoritos</span>
-              </Link>
-              <Link
-                href="/tickets"
-                className="flex items-center gap-4 p-3 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-all hover:scale-[1.01]"
-              >
-                <FaTicketAlt className="text-xl" />
-                <span className="font-medium">Tickets</span>
-              </Link>
+        {/* Contenedor fijo para menú/buscador que se superpone al contenido */}
+        <div className="fixed inset-x-0 top-[72px] z-50">
+          {/* Buscador móvil integrado en el header */}
+          {isSearchVisible && (
+            <div 
+              className="bg-white border-t border-gray-100 shadow-md overflow-hidden"
+              style={{ animation: "slideDown 0.3s ease-out forwards" }}
+            >
+              <style jsx>{slideDownAnimation}</style>
+              <div className="p-4">                
+                <SearchBar
+                  searchQuery={searchQuery}
+                  locationQuery={locationQuery}
+                  onSearchChange={handleSearchChange}
+                  onLocationChange={handleLocationChange}
+                  onClearSearch={() => setSearchQuery("")}
+                  onClearLocation={() => setLocationQuery("")}
+                  onSearch={() => {
+                    console.log("Búsqueda:", searchQuery, locationQuery);
+                    toggleSearch();
+                  }}
+                  isMobile={true}
+                />
+              </div>
+            </div>
+          )}
 
-              {isLoggedIn ? (
+          {/* Menú móvil */}
+          {isMenuOpen && (
+            <nav 
+              className="bg-white border-t border-gray-100 shadow-md overflow-hidden"
+              style={{ animation: "slideDown 0.3s ease-out forwards" }}
+            >
+              <style jsx>{slideDownAnimation}</style>
+              <div className="p-4 space-y-2">
                 <Link
-                  href="/profile"
-                  className="flex items-center gap-4 p-3 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-all hover:scale-[1.02]"
+                  href="/favoritos"
+                  className="flex items-center gap-4 p-3 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-all hover:scale-[1.01]"
                 >
-                  <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-gray-200">
-                    <img
-                      src={userProfile?.profileImage || "/img1.webp"}
-                      alt={userProfile?.nombre || "Usuario"}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <span className="font-medium">
-                    {userProfile?.nombre || "Usuario"}
-                  </span>
+                  <FaHeart className="text-xl text-red-500" />
+                  <span className="font-medium">Favoritos</span>
                 </Link>
-              ) : (
-                <>
+                <Link
+                  href="/tickets"
+                  className="flex items-center gap-4 p-3 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-all hover:scale-[1.01]"
+                >
+                  <FaTicketAlt className="text-xl" />
+                  <span className="font-medium">Tickets</span>
+                </Link>
+
+                {isLoggedIn ? (
                   <Link
-                    href="/login"
+                    href="/profile"
                     className="flex items-center gap-4 p-3 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-all hover:scale-[1.02]"
                   >
-                    <FaUser className="text-xl" />
-                    <span className="font-medium">Iniciar sesión</span>
+                    <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-gray-200">
+                      <img
+                        src={userProfile?.profileImage || "/img1.webp"}
+                        alt={userProfile?.nombre || "Usuario"}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <span className="font-medium">
+                      {userProfile?.nombre || "Usuario"}
+                    </span>
                   </Link>
-                  <Link
-                    href="/register"
-                    className="flex items-center gap-4 p-3 bg-black text-white rounded-xl transition-all hover:scale-[1.02] mt-2 hover:bg-gray-800 active:bg-gray-900"
-                  >
-                    <FaUser className="text-xl" />
-                    <span className="font-medium">Registrarse</span>
-                  </Link>
-                </>
-              )}
-            </div>
-          </nav>
-        )}
-
-        {isSearchVisible && (
-          <div className="w-full px-2 py-3 bg-white/95 shadow-sm border-t border-gray-100">
-            <SearchBar
-              searchQuery={searchQuery}
-              locationQuery={locationQuery}
-              onSearchChange={handleSearchChange}
-              onLocationChange={handleLocationChange}
-              onClearSearch={() => setSearchQuery("")}
-              onClearLocation={() => setLocationQuery("")}
-              onSearch={() =>
-                console.log("Búsqueda:", searchQuery, locationQuery)
-              }
-              isMobile={true}
-            />
-          </div>
-        )}
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      className="flex items-center gap-4 p-3 hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-all hover:scale-[1.02]"
+                    >
+                      <FaUser className="text-xl" />
+                      <span className="font-medium">Iniciar sesión</span>
+                    </Link>
+                    <Link
+                      href="/register"
+                      className="flex items-center gap-4 p-3 bg-black text-white rounded-xl transition-all hover:scale-[1.02] mt-2 hover:bg-gray-800 active:bg-gray-900"
+                    >
+                      <FaUser className="text-xl" />
+                      <span className="font-medium">Registrarse</span>
+                    </Link>
+                  </>
+                )}
+              </div>
+            </nav>
+          )}
+        </div>
       </div>
     </header>
   );
