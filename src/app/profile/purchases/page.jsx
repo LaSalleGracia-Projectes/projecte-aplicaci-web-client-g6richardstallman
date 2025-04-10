@@ -14,8 +14,7 @@ import {
   FaRegClock,
   FaHome
 } from "react-icons/fa";
-import ProfileNavBar from "@/components/userProfile/profileNavBar";
-import LoadingSpinner from "@/components/common/LoadingSpinner";
+import ProfileNavBar from "../../../components/userProfile/profileNavBar";
 
 export default function PurchasesPage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -25,7 +24,6 @@ export default function PurchasesPage() {
   const [sortOrder, setSortOrder] = useState("desc");
   const [filterStatus, setFilterStatus] = useState("all");
   
-  // Datos simulados para pruebas
   const mockPurchases = [
     {
       id: "TKT-001",
@@ -88,11 +86,9 @@ export default function PurchasesPage() {
     const fetchPurchases = async () => {
       try {
         setIsLoading(true);
-        // Simulación de llamada a API con un retardo
+        // Simulación de llamada a API
         await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // Usar datos simulados
-        setPurchases(mockPurchases);
+        setPurchases(mockPurchases); // Aquí iría la llamada real: fetch('/api/purchases')
         setIsLoading(false);
       } catch (error) {
         setError("Error al cargar el historial de compras");
@@ -103,7 +99,6 @@ export default function PurchasesPage() {
     fetchPurchases();
   }, []);
 
-  // Filtrar y ordenar las compras
   const filteredPurchases = purchases
     .filter(purchase => {
       // Filtro por búsqueda
@@ -116,7 +111,9 @@ export default function PurchasesPage() {
       return matchesSearch && matchesStatus;
     })
     .sort((a, b) => {
-      // Ordenar por fecha de compra
+      // Nota: Este parseo de fecha depende del formato "DD de MMMM de YYYY". 
+      // Sería más robusto usar una librería como date-fns o moment, 
+      // o recibir fechas en formato ISO 8601 desde la API.
       const dateA = new Date(a.purchaseDate.split(" de ").reverse().join(" "));
       const dateB = new Date(b.purchaseDate.split(" de ").reverse().join(" "));
       
@@ -153,7 +150,11 @@ export default function PurchasesPage() {
   };
 
   if (isLoading) {
-    return <LoadingSpinner fullScreen size="lg" />;
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-white/90 backdrop-blur-sm z-50">
+        <p>Cargando compras...</p>
+      </div>
+    );
   }
 
   return (

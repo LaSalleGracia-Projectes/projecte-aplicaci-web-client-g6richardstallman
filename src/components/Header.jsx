@@ -13,13 +13,10 @@ import {
 } from "react-icons/fa";
 import SearchBar from "./SearchBar";
 
-// Componente principal del header con navegación responsive
 export default function Header() {
-  // Estados para usuario y autenticación
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userProfile, setUserProfile] = useState({});
 
-  // Estados de UI
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -27,12 +24,13 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isSearchVisible, setIsSearchVisible] = useState(false);
 
-  // Cargar datos de usuario desde localStorage
   useEffect(() => {
     try {
-      const userInfo = typeof window !== 'undefined' ? 
-        JSON.parse(localStorage.getItem('user') || '{}') : {};
-        
+      const userInfo =
+        typeof window !== "undefined"
+          ? JSON.parse(localStorage.getItem("user") || "{}")
+          : {};
+
       if (userInfo.isLoggedIn && userInfo.token) {
         setIsLoggedIn(true);
         setUserProfile(userInfo.userData || {});
@@ -47,7 +45,6 @@ export default function Header() {
     }
   }, []);
 
-  // Detectar scroll para cambiar estilo del header
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
@@ -56,23 +53,19 @@ export default function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Alternar menú móvil
   const toggleMenu = useCallback(() => {
     setIsMenuOpen((prev) => !prev);
     if (isSearchOpen) setIsSearchOpen(false);
   }, [isSearchOpen]);
 
-  // Alternar barra de búsqueda en móvil
   const toggleSearch = () => {
     setIsSearchVisible(!isSearchVisible);
   };
 
-  // Handler para cambiar texto de búsqueda
   const handleSearchChange = useCallback((value) => {
     setSearchQuery(value);
   }, []);
 
-  // Handler para cambiar ubicación de búsqueda
   const handleLocationChange = useCallback((value) => {
     setLocationQuery(value);
   }, []);
@@ -110,7 +103,9 @@ export default function Header() {
               onLocationChange={handleLocationChange}
               onClearSearch={() => setSearchQuery("")}
               onClearLocation={() => setLocationQuery("")}
-              onSearch={() => console.log("Búsqueda:", searchQuery, locationQuery)}
+              onSearch={() =>
+                console.log("Búsqueda:", searchQuery, locationQuery)
+              }
             />
           </div>
 
@@ -148,10 +143,10 @@ export default function Header() {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                
+
                 {/* Nombre del usuario - visible en pantallas más grandes */}
                 <span className="hidden md:block text-sm font-medium truncate max-w-[120px]">
-                  {userProfile?.nombre || 'Usuario'}
+                  {userProfile?.nombre || "Usuario"}
                 </span>
               </Link>
             ) : (
@@ -245,7 +240,9 @@ export default function Header() {
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <span className="font-medium">{userProfile?.nombre || "Usuario"}</span>
+                  <span className="font-medium">
+                    {userProfile?.nombre || "Usuario"}
+                  </span>
                 </Link>
               ) : (
                 <>
@@ -278,7 +275,9 @@ export default function Header() {
               onLocationChange={handleLocationChange}
               onClearSearch={() => setSearchQuery("")}
               onClearLocation={() => setLocationQuery("")}
-              onSearch={() => console.log("Búsqueda:", searchQuery, locationQuery)}
+              onSearch={() =>
+                console.log("Búsqueda:", searchQuery, locationQuery)
+              }
               isMobile={true}
             />
           </div>

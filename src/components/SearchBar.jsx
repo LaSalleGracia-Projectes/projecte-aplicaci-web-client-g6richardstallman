@@ -2,7 +2,6 @@
 
 import { FaSearch, FaMapMarkerAlt, FaTimes } from "react-icons/fa";
 
-// Componente de barra de búsqueda que maneja eventos y ubicaciones
 export default function SearchBar({
   searchQuery,
   locationQuery,

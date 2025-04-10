@@ -43,7 +43,6 @@ export default function ProfileNavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeItem, setActiveItem] = useState("");
 
-  // Determinar el ítem activo basado en la ruta actual
   useEffect(() => {
     const currentItem = menuItems.find((item) => item.href === pathname);
     if (currentItem) {
@@ -51,7 +50,6 @@ export default function ProfileNavBar() {
     }
   }, [pathname]);
 
-  // Cerrar menú al cambiar el tamaño de la ventana a desktop
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768) {
@@ -63,7 +61,6 @@ export default function ProfileNavBar() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Función para cerrar sesión
   const handleLogout = () => {
     localStorage.removeItem('user');
     router.push('/login');

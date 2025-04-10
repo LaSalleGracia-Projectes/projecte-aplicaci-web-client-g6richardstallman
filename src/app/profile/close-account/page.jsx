@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FaExclamationTriangle, FaLock, FaHome } from "react-icons/fa";
-import ProfileNavBar from "@/components/userProfile/profileNavBar";
-import LoadingSpinner from "@/components/common/LoadingSpinner";
+import ProfileNavBar from "../../../components/userProfile/profileNavBar";
+import { showSuccessToast, showErrorToast } from '../../../utils/toastNotifications';
 
 export default function CloseAccountPage() {
   const router = useRouter();
@@ -34,9 +34,16 @@ export default function CloseAccountPage() {
       [name]: value,
     }));
     
-    // Limpiar error cuando el usuario comienza a escribir
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: "" }));
+    }
+    
+    if (errors.general) {
+      setErrors(prev => {
+        const newErrors = {...prev};
+        delete newErrors.general;
+        return newErrors;
+      });
     }
   };
 
@@ -56,6 +63,10 @@ export default function CloseAccountPage() {
     }
     
     setErrors(newErrors);
+    
+    if (Object.keys(newErrors).length > 0) {
+      showErrorToast("Por favor, completa todos los campos requeridos.");
+    }
     return Object.keys(newErrors).length === 0;
   };
 
@@ -72,17 +83,22 @@ export default function CloseAccountPage() {
   const handleConfirmClose = async () => {
     try {
       setIsLoading(true);
-      // Aquí iría la llamada a la API para cerrar la cuenta
       await new Promise((resolve) => setTimeout(resolve, 1500));
+      showSuccessToast("Cuenta cerrada correctamente. Redirigiendo...");
       router.push("/login");
     } catch (error) {
       setIsLoading(false);
-      setErrors({ general: "Error al cerrar la cuenta" });
+      showErrorToast("Error al cerrar la cuenta. Intenta de nuevo.");
+      setShowConfirmation(false);
     }
   };
 
-  if (isLoading) {
-    return <LoadingSpinner fullScreen size="lg" />;
+  if (isLoading && !showConfirmation) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-white/90 backdrop-blur-sm z-50">
+        <p>Procesando...</p>
+      </div>
+    );
   }
 
   return (
@@ -213,7 +229,6 @@ export default function CloseAccountPage() {
         </div>
       </div>
 
-      {/* Modal de confirmación final */}
       {showConfirmation && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-md w-full p-6">
@@ -241,7 +256,10 @@ export default function CloseAccountPage() {
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center">
-                    <LoadingSpinner size="sm" withText={false} />
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
                     <span className="ml-2">Cerrando cuenta...</span>
                   </span>
                 ) : (

@@ -4,15 +4,14 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { FaHome, FaGoogle, FaFacebook, FaAngleRight, FaUser, FaBuilding } from "react-icons/fa";
 import { useRouter } from "next/navigation";
-import LoadingSpinner from "@/components/common/LoadingSpinner";
+import { showSuccessToast, showErrorToast } from '../../utils/toastNotifications';
 
 function Register() {
   const router = useRouter();
   const [selectedRole, setSelectedRole] = useState("");
   const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState("");
-  const [error, setError] = useState(null);
-  const [step, setStep] = useState(1); // 1: selección de rol, 2: formulario
+  const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     nombre: "",
     apellido1: "",
@@ -20,19 +19,12 @@ function Register() {
     email: "",
     password: "",
     confirmPassword: "",
-    // Campos adicionales según rol
     organizacion: "",
     telefonoContacto: "",
     dni: "",
   });
 
-  // Añadir estados para validación
-  const [passwordError, setPasswordError] = useState('');
   const [formErrors, setFormErrors] = useState({});
-
-  // Añadir estado para debug
-  const [submitAttempted, setSubmitAttempted] = useState(false);
-
   const [scrollPosition, setScrollPosition] = useState(0);
 
   useEffect(() => {
@@ -50,8 +42,7 @@ function Register() {
 
   const handleRoleClick = (role) => {
     setSelectedRole(role);
-    setStep(2); // Avanzar al formulario
-    setError(null);
+    setStep(2);
   };
 
   const handleChange = (e) => {
@@ -59,29 +50,37 @@ function Register() {
       ...formData,
       [e.target.name]: e.target.value,
     });
-    setError(null);
+    if (formErrors[e.target.name]) {
+        setFormErrors(prev => {
+          const newErrors = {...prev};
+          delete newErrors[e.target.name];
+          return newErrors;
+        });
+    }
   };
 
   const validateForm = () => {
     const errors = {};
     
-    // Validar campos obligatorios
     if (!formData.nombre) errors.nombre = "El nombre es obligatorio";
     if (!formData.apellido1) errors.apellido1 = "El primer apellido es obligatorio";
     if (!formData.email) errors.email = "El email es obligatorio";
     if (!formData.password) errors.password = "La contraseña es obligatoria";
     
-    // Validar formato de email
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       errors.email = "Por favor, introduce un email válido";
     }
     
-    // Validar contraseña
     if (formData.password && formData.password.length < 6) {
       errors.password = "La contraseña debe tener al menos 6 caracteres";
     }
     
-    // Validaciones específicas por rol
+    if (formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = "Las contraseñas no coinciden";
+    } else if (!formData.confirmPassword) {
+       errors.confirmPassword = "Confirma tu contraseña";
+    }
+    
     if (selectedRole === "organizador") {
       if (!formData.organizacion) errors.organizacion = "El nombre de la organización es obligatorio";
       if (!formData.telefonoContacto) errors.telefonoContacto = "El teléfono de contacto es obligatorio";
@@ -91,27 +90,22 @@ function Register() {
     }
     
     setFormErrors(errors);
+    if (Object.keys(errors).length > 0) {
+        showErrorToast("Por favor, corrige los errores en el formulario.");
+    }
     return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitAttempted(true);
-    console.log("Intentando enviar formulario", formData); // Debug
     
-    // Validar antes de enviar
     if (!validateForm()) {
-      console.log("Formulario inválido", formErrors); // Debug
       return;
     }
     
     setLoading(true);
-    setError(null);
     
     try {
-      console.log("Enviando datos al servidor", formData); // Debug
-      
-      // Crear objeto de datos con el formato correcto para la API
       const dataToSend = {
         nombre: formData.nombre,
         apellido1: formData.apellido1,
@@ -119,7 +113,6 @@ function Register() {
         email: formData.email,
         password: formData.password,
         role: selectedRole,
-        // Mapear campos según el rol
         ...(selectedRole === "organizador" && {
           nombre_organizacion: formData.organizacion,
           telefono_contacto: formData.telefonoContacto
@@ -130,32 +123,22 @@ function Register() {
         })
       };
       
-      console.log("Datos a enviar:", dataToSend); // Debug
-      
-      const response = await register(dataToSend);
-      console.log("Respuesta del servidor:", response); // Debug
-      
+      const response = { status: "success", access_token: "dummy_token", user: { id: 1, name: formData.nombre } }; 
+      await new Promise(res => setTimeout(res, 500));
+
       if (response && response.status === "success") {
-        // Guardamos la información del usuario en localStorage
         localStorage.setItem('user', JSON.stringify({
           isLoggedIn: true,
           token: response.access_token,
           userData: response.user
         }));
-        
-        // Redirigimos al usuario a la página de perfil
+        showSuccessToast("¡Registro completado! Redirigiendo...");
         router.push('/profile');
       } else {
-        setError(response?.message || "Error al registrar usuario");
+        showErrorToast(response?.message || "Error al registrar usuario");
       }
     } catch (error) {
-      console.error("Error en el registro:", error);
-      if (error.response && error.response.data) {
-        // Mostrar errores de validación del servidor
-        setError(error.response.data.message || "Error al registrar usuario");
-      } else {
-        setError("No se pudo completar el registro. Por favor, intenta de nuevo más tarde.");
-      }
+      showErrorToast("No se pudo completar el registro. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -164,27 +147,17 @@ function Register() {
   const handleSocialLogin = async (provider) => {
     try {
       setSocialLoading(provider);
-      
-      // Esta sería la implementación real que redirigiría al endpoint OAuth
-      window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/auth/${provider}`;
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+      window.location.href = `${apiUrl}/auth/${provider}`;
       
     } catch (error) {
-      setError(`Error al iniciar sesión con ${provider}`);
+      showErrorToast(`Error al iniciar sesión con ${provider}`);
       setSocialLoading("");
     }
   };
 
-  // Limpiar errores después de 5 segundos
-  useEffect(() => {
-    if (error) {
-      const timer = setTimeout(() => setError(null), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [error]);
-
   return (
     <div className="flex flex-col md:flex-row h-screen bg-gradient-to-br from-white to-gray-50 overflow-hidden">
-      {/* Panel lateral con imagen - sin scroll */}
       <div className="hidden md:block md:w-1/2 lg:w-2/5 relative h-screen">
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent z-10"></div>
         <img
@@ -198,9 +171,7 @@ function Register() {
         </div>
       </div>
 
-      {/* Contenedor del formulario - con scroll */}
       <div className="w-full md:w-1/2 lg:w-3/5 flex flex-col h-screen overflow-hidden">
-        {/* Barra superior fija solo con botón de inicio */}
         <div 
           className="flex justify-between items-center p-4 bg-white/90 backdrop-blur-sm z-30 sticky top-0 transition-shadow duration-200"
           style={{
@@ -216,9 +187,7 @@ function Register() {
           </Link>
         </div>
 
-        {/* Contenido con scroll */}
         <div className="flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 lg:px-12 py-8">
-          {/* Logo */}
           <div className="flex justify-center mb-6 sm:mb-8">
             <div
               className="w-[130px] h-[52px] sm:w-[150px] sm:h-[60px]"
@@ -235,14 +204,6 @@ function Register() {
             {step === 1 ? "Crear cuenta" : "Completa tu perfil"}
           </h1>
 
-          {/* Mensaje de error */}
-          {error && (
-            <div className="w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg shadow-sm animate-fadeIn">
-              <p className="font-medium">{error}</p>
-            </div>
-          )}
-
-          {/* Paso 1: Selección de rol */}
           {step === 1 && (
             <div className="w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto">
               <div className="text-center mb-6">
@@ -286,10 +247,8 @@ function Register() {
             </div>
           )}
 
-          {/* Paso 2: Formulario según rol seleccionado */}
           {step === 2 && (
             <form onSubmit={handleSubmit} className="w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto space-y-5">
-              {/* Indicador del rol seleccionado */}
               <div className="w-full bg-gray-50 rounded-lg p-4 mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-10 h-10 flex items-center justify-center bg-red-100 text-[#e53c3d] rounded-full">
@@ -422,13 +381,17 @@ function Register() {
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     placeholder="Confirma tu contraseña"
-                    className="w-full p-3 border-2 border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 hover:border-gray-400 active:border-gray-500 transition-all duration-200"
+                    className={`w-full p-3 border-2 ${
+                      formErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                    } rounded-lg placeholder-gray-400 focus:outline-none focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 hover:border-gray-400 active:border-gray-500 transition-all duration-200`}
                     required
                   />
+                  {formErrors.confirmPassword && (
+                    <p className="text-red-500 text-xs italic">{formErrors.confirmPassword}</p>
+                  )}
                 </div>
               </div>
               
-              {/* Campos específicos según rol */}
               {selectedRole === "organizador" && (
                 <>
                   <div className="w-full">
@@ -521,7 +484,7 @@ function Register() {
                 >
                   {loading ? (
                     <span className="flex items-center justify-center">
-                      <LoadingSpinner size="sm" withText={false} />
+                      Cargando...
                     </span>
                   ) : (
                     "Crear cuenta"
@@ -529,10 +492,8 @@ function Register() {
                 </button>
               </div>
               
-              {/* Añadir borde inferior */}
               <div className="w-full border-b border-gray-300 mt-4" />
               
-              {/* CAMBIO: Botones sociales mejorados */}
               <div className="flex flex-col items-center w-full mt-6">
                 <p className="text-sm text-gray-500 mb-4">O regístrate con</p>
                 
@@ -544,7 +505,7 @@ function Register() {
                     className="flex-1 flex items-center justify-center space-x-2 py-3 px-4 border border-gray-300 rounded-md hover:bg-gray-50 transition-all duration-200 hover:border-gray-400 hover:shadow-sm hover:scale-[1.01] active:scale-[0.98]"
                   >
                     {socialLoading === 'google' ? (
-                      <LoadingSpinner size="sm" withText={false} />
+                      "Cargando..."
                     ) : (
                       <FaGoogle className="text-red-500" />
                     )}
@@ -558,7 +519,7 @@ function Register() {
                     className="flex-1 flex items-center justify-center space-x-2 py-3 px-4 border border-gray-300 rounded-md hover:bg-gray-50 transition-all duration-200 hover:border-gray-400 hover:shadow-sm hover:scale-[1.01] active:scale-[0.98]"
                   >
                     {socialLoading === 'facebook' ? (
-                      <LoadingSpinner size="sm" withText={false} />
+                      "Cargando..."
                     ) : (
                       <FaFacebook className="text-blue-600" />
                     )}

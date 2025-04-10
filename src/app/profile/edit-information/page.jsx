@@ -15,17 +15,19 @@ import {
   FaPen,
   FaLock
 } from "react-icons/fa";
-import ProfileNavBar from "@/components/userProfile/profileNavBar";
-import LoadingSpinner from "@/components/common/LoadingSpinner";
+import ProfileNavBar from "../../../components/userProfile/profileNavBar";
+import { showSuccessToast, showErrorToast } from '../../../utils/toastNotifications';
 
 export default function EditInformationPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState("");
+  const [isSavingPassword, setIsSavingPassword] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [errors, setErrors] = useState({}); 
   const [profileImage, setProfileImage] = useState("/img1.webp");
+  const [newProfileImageFile, setNewProfileImageFile] = useState(null);
   const [showImageModal, setShowImageModal] = useState(false);
-
   const [userData, setUserData] = useState({
     nombre: "",
     apellido1: "",
@@ -35,7 +37,11 @@ export default function EditInformationPage() {
     dni: "",
     organizacion: ""
   });
-
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
   const [editableFields, setEditableFields] = useState({
     nombre: false,
     apellido1: false,
@@ -43,7 +49,6 @@ export default function EditInformationPage() {
     telefono: false
   });
 
-  // Simular carga de datos
   useEffect(() => {
     setTimeout(() => {
       setUserData({
@@ -65,6 +70,28 @@ export default function EditInformationPage() {
       ...prev,
       [name]: value
     }));
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = {...prev};
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+
+  const handlePasswordChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    if (errors.password) {
+      setErrors(prev => {
+        const newErrors = {...prev};
+        delete newErrors.password;
+        return newErrors;
+      });
+    }
   };
 
   const toggleFieldEdit = (fieldName) => {
@@ -75,61 +102,88 @@ export default function EditInformationPage() {
   };
 
   const validateForm = () => {
-    const errors = {};
+    const fieldErrors = {};
     let isValid = true;
 
     if (!userData.nombre) {
-      errors.nombre = "El nombre es obligatorio";
+      fieldErrors.nombre = "El nombre es obligatorio";
       isValid = false;
     }
-
     if (!userData.apellido1) {
-      errors.apellido1 = "El primer apellido es obligatorio";
+      fieldErrors.apellido1 = "El primer apellido es obligatorio";
       isValid = false;
     }
-
     if (!userData.email) {
-      errors.email = "El email es obligatorio";
+      fieldErrors.email = "El email es obligatorio";
       isValid = false;
     } else if (!/\S+@\S+\.\S+/.test(userData.email)) {
-      errors.email = "El email no es válido";
+      fieldErrors.email = "El email no es válido";
       isValid = false;
     }
-
     if (!userData.telefono) {
-      errors.telefono = "El teléfono es obligatorio";
+      fieldErrors.telefono = "El teléfono es obligatorio";
       isValid = false;
     }
-
     if (!userData.dni) {
-      errors.dni = "El DNI/NIF es obligatorio";
+      fieldErrors.dni = "El DNI/NIF es obligatorio";
       isValid = false;
     }
 
-    setError(isValid ? "" : errors);
+    setErrors(isValid ? {} : fieldErrors);
+    if (!isValid) {
+      showErrorToast("Revisa los campos marcados en rojo.");
+    }
     return isValid;
+  };
+
+  const validatePasswordForm = () => {
+    const pwErrors = {};
+    if (!passwordData.currentPassword) pwErrors.password = "Introduce la contraseña actual";
+    if (!passwordData.newPassword) pwErrors.password = "Introduce la nueva contraseña";
+    else if (passwordData.newPassword.length < 8) pwErrors.password = "La nueva contraseña debe tener al menos 8 caracteres";
+    if (passwordData.newPassword !== passwordData.confirmPassword) pwErrors.password = "Las nuevas contraseñas no coinciden";
+    
+    if(Object.keys(pwErrors).length > 0) {
+      setErrors(prev => ({...prev, ...pwErrors}));
+      showErrorToast(pwErrors.password || "Completa correctamente los campos de contraseña.");
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!validateForm()) return;
 
+    setIsSaving(true);
+    setErrors({}); 
+
     try {
-      setIsSaving(true);
-      setError("");
-
-      // Simular llamada a API
       await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      router.push("/profile");
-    } catch (error) {
-      setError({ general: "Error al actualizar los datos" });
+      showSuccessToast("Información del perfil actualizada.");
+    } catch (err) {
+      showErrorToast("Error al actualizar la información del perfil.");
+    } finally {
       setIsSaving(false);
     }
   };
+  
+  const handlePasswordSubmit = async () => {
+    if (!validatePasswordForm()) return;
+    
+    setIsSavingPassword(true); 
+    setErrors({});
+    try {
+      await new Promise(res => setTimeout(res, 1000));
+      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" }); 
+      showSuccessToast("Contraseña cambiada con éxito.");
+    } catch(err) {
+      showErrorToast("Error al cambiar la contraseña. Verifica la contraseña actual.");
+    } finally {
+      setIsSavingPassword(false);
+    }
+  };
 
-  // Modificación para los campos editables con los lápices mejorados
   const renderField = (label, name, icon) => {
     const isEditable = name !== 'email' && name !== 'dni';
     
@@ -181,7 +235,7 @@ export default function EditInformationPage() {
             onChange={handleChange}
             disabled={!isEditable || !editableFields[name]}
             className={`w-full px-4 py-3 rounded-lg border ${
-              error[name] ? "border-red-300 bg-red-50" : "border-gray-300"
+              errors[name] ? "border-red-300 bg-red-50" : "border-gray-300"
             } ${
               !isEditable || !editableFields[name]
                 ? "bg-gray-50 cursor-not-allowed text-gray-500"
@@ -189,8 +243,8 @@ export default function EditInformationPage() {
             } focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-[#e53c3d] transition-all`}
           />
           
-          {error[name] && (
-            <p className="text-red-500 text-sm mt-1">{error[name]}</p>
+          {errors[name] && (
+            <p className="text-red-500 text-sm mt-1">{errors[name]}</p>
           )}
           
           {!isEditable && (
@@ -203,8 +257,41 @@ export default function EditInformationPage() {
     );
   };
 
+  const handleImageFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setNewProfileImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfileImage(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleImageSave = async () => {
+    if (!newProfileImageFile) return;
+    
+    setIsUploadingImage(true);
+    setErrors({});
+    try {
+      await new Promise(res => setTimeout(res, 1000));
+      setShowImageModal(false);
+      setNewProfileImageFile(null); 
+      showSuccessToast("Imagen de perfil actualizada.");
+    } catch (err) {
+      showErrorToast("Error al subir la imagen.");
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
   if (isLoading) {
-    return <LoadingSpinner fullScreen size="lg" />;
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-white/90 backdrop-blur-sm z-50">
+        <p>Cargando información...</p>
+      </div>
+    );
   }
 
   return (
@@ -245,12 +332,6 @@ export default function EditInformationPage() {
               
               <h1 className="text-2xl font-bold text-gray-800 mb-4 text-center">Editar Información Personal</h1>
               
-              {error.general && (
-                <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-md">
-                  {error.general}
-                </div>
-              )}
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
                 {renderField("Nombre", "nombre", <FaUser className="text-[#e53c3d]" />)}
                 {renderField("Primer apellido", "apellido1", <FaUser className="text-[#e53c3d]" />)}
@@ -263,7 +344,7 @@ export default function EditInformationPage() {
 
               <div className="mt-8 pt-6 border-t border-gray-100">
                 <h2 className="text-xl font-semibold mb-5 text-gray-900 flex items-center gap-2">
-                  <FaIdCard className="text-[#e53c3d]" />
+                  <FaLock className="text-[#e53c3d]" />
                   <span>Cambiar contraseña</span>
                 </h2>
                 
@@ -273,6 +354,8 @@ export default function EditInformationPage() {
                     <input
                       type="password"
                       name="currentPassword"
+                      value={passwordData.currentPassword}
+                      onChange={handlePasswordChange}
                       placeholder="Introduce tu contraseña actual"
                       className="w-full p-3 border border-gray-300 rounded-xl focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 focus:outline-none"
                     />
@@ -285,6 +368,8 @@ export default function EditInformationPage() {
                     <input
                       type="password"
                       name="newPassword"
+                      value={passwordData.newPassword}
+                      onChange={handlePasswordChange}
                       placeholder="Introduce tu nueva contraseña"
                       className="w-full p-3 border border-gray-300 rounded-xl focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 focus:outline-none"
                     />
@@ -295,6 +380,8 @@ export default function EditInformationPage() {
                     <input
                       type="password"
                       name="confirmPassword"
+                      value={passwordData.confirmPassword}
+                      onChange={handlePasswordChange}
                       placeholder="Confirma tu nueva contraseña"
                       className="w-full p-3 border border-gray-300 rounded-xl focus:border-[#e53c3d] focus:ring-2 focus:ring-[#e53c3d]/20 focus:outline-none"
                     />
@@ -340,9 +427,11 @@ export default function EditInformationPage() {
                 <div className="mt-6 flex justify-end">
                   <button
                     type="button"
-                    className="px-6 py-2.5 bg-[#e53c3d] text-white rounded-lg hover:bg-red-600 transition-colors"
+                    onClick={handlePasswordSubmit}
+                    disabled={isSavingPassword || isSaving || isUploadingImage}
+                    className="px-6 py-2.5 bg-[#e53c3d] text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
                   >
-                    Cambiar contraseña
+                    {isSavingPassword ? "Guardando..." : "Cambiar contraseña"}
                   </button>
                 </div>
               </div>
@@ -357,7 +446,7 @@ export default function EditInformationPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSaving}
+                  disabled={isSaving || isSavingPassword || isUploadingImage}
                   className="flex items-center justify-center gap-2 px-6 py-3 bg-[#e53c3d] text-white rounded-xl hover:bg-red-600 transition-colors disabled:bg-red-400"
                 >
                   {isSaving ? (
@@ -381,63 +470,56 @@ export default function EditInformationPage() {
         </div>
       </div>
 
-      {/* Modal para cambiar imagen */}
       {showImageModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">Cambiar foto de perfil</h3>
-              <button 
-                onClick={() => setShowImageModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 relative">
+            <button
+              onClick={() => setShowImageModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+              aria-label="Cerrar modal"
+            >
+              <FaTimes size={20} />
+            </button>
+            <h3 className="text-xl font-semibold text-gray-900 mb-6 text-center">Cambiar foto de perfil</h3>
+
+            <div className="flex flex-col items-center mb-6">
+              <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-200 mb-4">
+                <img
+                  src={profileImage}
+                  alt="Vista previa"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <button
+                type="button"
+                className="relative flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
               >
-                <FaTimes />
+                <FaCamera />
+                <span>Subir nueva imagen</span>
+                <input 
+                  type="file" 
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                  accept="image/*" 
+                  onChange={handleImageFileChange}
+                />
               </button>
             </div>
-            
-            <div className="mb-6">
-              <p className="text-gray-600 mb-4">Selecciona una nueva imagen de perfil:</p>
-              <div className="grid grid-cols-3 gap-3">
-                {["/img1.webp", "/img2.webp", "/img3.webp", "/img4.webp"].map(img => (
-                  <div 
-                    key={img}
-                    className={`w-full pt-[100%] relative rounded-lg overflow-hidden cursor-pointer border-2 hover:opacity-90 transition-all ${
-                      profileImage === img ? "border-[#e53c3d]" : "border-transparent"
-                    }`}
-                    onClick={() => setProfileImage(img)}
-                  >
-                    <img 
-                      src={img} 
-                      alt="Opción de avatar" 
-                      className="absolute inset-0 w-full h-full object-cover"
-                    />
-                  </div>
-                ))}
-                <div
-                  className="w-full pt-[100%] relative rounded-lg overflow-hidden cursor-pointer border-2 border-dashed border-gray-300 hover:border-gray-400 transition-all bg-gray-50 flex items-center justify-center"
-                >
-                  <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-                    <FaCamera size={24} />
-                  </div>
-                </div>
-              </div>
-            </div>
-            
+
             <div className="flex justify-end gap-3">
               <button
+                type="button"
                 onClick={() => setShowImageModal(false)}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors"
+                className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors"
               >
                 Cancelar
               </button>
               <button
-                onClick={() => {
-                  // Aquí iría la lógica para guardar la imagen seleccionada
-                  setShowImageModal(false);
-                }}
-                className="px-4 py-2 bg-[#e53c3d] text-white rounded-xl hover:bg-red-600 transition-colors"
+                type="button"
+                onClick={handleImageSave}
+                disabled={!newProfileImageFile || isUploadingImage}
+                className="px-5 py-2.5 bg-[#e53c3d] text-white rounded-xl hover:bg-red-600 transition-colors disabled:opacity-50"
               >
-                Aplicar
+                {isUploadingImage ? "Subiendo..." : "Guardar Imagen"}
               </button>
             </div>
           </div>
