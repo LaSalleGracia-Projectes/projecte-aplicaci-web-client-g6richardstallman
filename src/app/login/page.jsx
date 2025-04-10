@@ -115,10 +115,6 @@ function Login() {
           alt="Imagen de login"
           className="w-full h-full object-cover"
         />
-        <div className="absolute bottom-8 left-8 right-8 text-white z-20">
-          <h2 className="text-2xl lg:text-3xl font-bold mb-2 bg-black/40 p-2 rounded-lg inline-block">¡Bienvenido de nuevo!</h2>
-          <p className="text-sm lg:text-base opacity-90 bg-black/40 p-2 rounded-lg inline-block">Accede a tu cuenta para descubrir eventos increíbles</p>
-        </div>
       </div>
 
       <div className="w-full md:w-1/2 lg:w-3/5 flex flex-col h-screen overflow-hidden">

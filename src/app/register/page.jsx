@@ -161,14 +161,10 @@ function Register() {
       <div className="hidden md:block md:w-1/2 lg:w-2/5 relative h-screen">
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent z-10"></div>
         <img
-          src="/registerImage.jpg" 
+          src="/registerImage.jpg"
           alt="Imagen de registro"
           className="w-full h-full object-cover"
         />
-        <div className="absolute bottom-8 left-8 right-8 text-white z-20">
-          <h2 className="text-2xl lg:text-3xl font-bold mb-2">¡Únete a nuestra comunidad!</h2>
-          <p className="text-sm lg:text-base opacity-90">Crea una cuenta para descubrir y participar en eventos increíbles</p>
-        </div>
       </div>
 
       <div className="w-full md:w-1/2 lg:w-3/5 flex flex-col h-screen overflow-hidden">
