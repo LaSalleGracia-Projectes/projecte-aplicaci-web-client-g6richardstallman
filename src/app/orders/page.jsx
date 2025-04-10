@@ -54,7 +54,7 @@ export default function OrdersPage() {
           </Accordion>
         ))}
       </div>
-
+      
       {/* Right Side - Enhanced Main Content */}
       <div className="w-full md:w-2/3 p-8">
         {/* Title Section */}
