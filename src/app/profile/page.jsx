@@ -7,6 +7,7 @@ import Link from "next/link";
 import ProfileNavBar from "@/components/userProfile/profileNavBar";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 
+
 // Función simulada para obtener el perfil del usuario
 const getUserProfile = async () => {
   return new Promise((resolve) => {

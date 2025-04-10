@@ -1,43 +1,40 @@
 import React from "react";
 
-/**
- * Componente de spinner de carga simplificado y elegante
- * @param {Object} props - Propiedades del componente
- * @param {string} props.size - Tamaño del spinner: "sm", "md" o "lg"
- * @param {boolean} props.fullScreen - Si debe ocupar toda la pantalla
- * @param {boolean} props.withText - Si debe mostrar el texto "Cargando..."
- */
-export default function LoadingSpinner({ 
-  size = "md", 
+export default function LoadingSpinner({
+  size = "md",
   fullScreen = false,
-  withText = true
+  withText = true,
 }) {
-  // Mapeo de tamaños a clases
   const sizeClasses = {
     sm: {
       spinner: "w-5 h-5",
-      text: "text-xs"
+      text: "text-xs",
     },
     md: {
       spinner: "w-8 h-8",
-      text: "text-sm"
+      text: "text-sm",
     },
     lg: {
       spinner: "w-12 h-12",
-      text: "text-base"
-    }
+      text: "text-base",
+    },
   };
-  
+
   const classes = sizeClasses[size] || sizeClasses.md;
-  
+
   const spinner = (
     <div className="flex flex-col items-center justify-center">
-      <div className={`${classes.spinner} rounded-full border-2 border-transparent border-t-[#e53c3d] border-r-[#e53c3d] shadow-sm animate-spin`}></div>
-      {withText && <p className={`mt-2 text-gray-600 font-medium ${classes.text}`}>Cargando...</p>}
+      <div
+        className={`${classes.spinner} rounded-full border-2 border-transparent border-t-[#e53c3d] border-r-[#e53c3d] shadow-sm animate-spin`}
+      ></div>
+      {withText && (
+        <p className={`mt-2 text-gray-600 font-medium ${classes.text}`}>
+          Cargando...
+        </p>
+      )}
     </div>
   );
-  
-  // Si es fullScreen, centra en toda la pantalla con efecto de fondo
+
   if (fullScreen) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-white/90 backdrop-blur-sm z-50">
@@ -45,11 +42,10 @@ export default function LoadingSpinner({
       </div>
     );
   }
-  
-  // Renderizado normal
+
   return (
     <div className="flex items-center justify-center w-full h-full">
       {spinner}
     </div>
   );
-} 
+}
