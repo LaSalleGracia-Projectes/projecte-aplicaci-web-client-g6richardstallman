@@ -161,14 +161,10 @@ function Register() {
       <div className="hidden md:block md:w-1/2 lg:w-2/5 relative h-screen">
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent z-10"></div>
         <img
-          src="/registerImage.jpg" 
+          src="/registerImage.jpg"
           alt="Imagen de registro"
           className="w-full h-full object-cover"
         />
-        <div className="absolute bottom-8 left-8 right-8 text-white z-20">
-          <h2 className="text-2xl lg:text-3xl font-bold mb-2">¡Únete a nuestra comunidad!</h2>
-          <p className="text-sm lg:text-base opacity-90">Crea una cuenta para descubrir y participar en eventos increíbles</p>
-        </div>
       </div>
 
       <div className="w-full md:w-1/2 lg:w-3/5 flex flex-col h-screen overflow-hidden">
@@ -497,12 +493,12 @@ function Register() {
               <div className="flex flex-col items-center w-full mt-6">
                 <p className="text-sm text-gray-500 mb-4">O regístrate con</p>
                 
-                <div className="flex flex-row space-x-4 justify-center w-full max-w-sm">
+                <div className="flex justify-center w-full max-w-sm">
                   <button
                     type="button"
                     onClick={() => handleSocialLogin('google')}
                     disabled={socialLoading === 'google'}
-                    className="flex-1 flex items-center justify-center space-x-2 py-3 px-4 border border-gray-300 rounded-md hover:bg-gray-50 transition-all duration-200 hover:border-gray-400 hover:shadow-sm hover:scale-[1.01] active:scale-[0.98]"
+                    className="w-full flex items-center justify-center space-x-2 py-3 px-4 border border-gray-300 rounded-md hover:bg-gray-50 transition-all duration-200 hover:border-gray-400 hover:shadow-sm hover:scale-[1.01] active:scale-[0.98] max-w-xs"
                   >
                     {socialLoading === 'google' ? (
                       "Cargando..."
@@ -510,20 +506,6 @@ function Register() {
                       <FaGoogle className="text-red-500" />
                     )}
                     <span>Google</span>
-                  </button>
-                  
-                  <button
-                    type="button"
-                    onClick={() => handleSocialLogin('facebook')}
-                    disabled={socialLoading === 'facebook'}
-                    className="flex-1 flex items-center justify-center space-x-2 py-3 px-4 border border-gray-300 rounded-md hover:bg-gray-50 transition-all duration-200 hover:border-gray-400 hover:shadow-sm hover:scale-[1.01] active:scale-[0.98]"
-                  >
-                    {socialLoading === 'facebook' ? (
-                      "Cargando..."
-                    ) : (
-                      <FaFacebook className="text-blue-600" />
-                    )}
-                    <span>Facebook</span>
                   </button>
                 </div>
               </div>
