@@ -65,9 +65,12 @@ export default function ProfileEditPage() {
     if (profile.role === "participante") {
       payload.dni = form.dni;
       payload.telefono = form.telefono;
+      payload.direccion = form.direccion;
     } else if (profile.role === "organizador") {
       payload.nombre_organizacion = form.nombre_organizacion;
       payload.telefono_contacto = form.telefono_contacto;
+      payload.direccion_fiscal = form.direccion_fiscal;
+      payload.cif = form.cif;
     }
     try {
       const res = await fetch("http://localhost:8000/api/profile", {
@@ -129,6 +132,10 @@ export default function ProfileEditPage() {
               <label>Teléfono</label>
               <input name="telefono" value={form.telefono || ""} onChange={handleChange} required />
             </div>
+            <div>
+              <label>Dirección</label>
+              <input name="direccion" value={form.direccion || ""} onChange={handleChange} />
+            </div>
           </>
         )}
         {profile.role === "organizador" && (
@@ -140,6 +147,14 @@ export default function ProfileEditPage() {
             <div>
               <label>Teléfono de contacto</label>
               <input name="telefono_contacto" value={form.telefono_contacto || ""} onChange={handleChange} required />
+            </div>
+            <div>
+              <label>Dirección fiscal</label>
+              <input name="direccion_fiscal" value={form.direccion_fiscal || ""} onChange={handleChange} />
+            </div>
+            <div>
+              <label>CIF</label>
+              <input name="cif" value={form.cif || ""} onChange={handleChange} />
             </div>
           </>
         )}

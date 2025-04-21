@@ -52,12 +52,15 @@ export default function ProfilePage() {
         <>
           <div><strong>DNI:</strong> {profile.dni || "-"}</div>
           <div><strong>Teléfono:</strong> {profile.telefono || "-"}</div>
+          <div><strong>Dirección:</strong> {profile.direccion || "-"}</div>
         </>
       )}
       {profile.role === "organizador" && (
         <>
           <div><strong>Nombre organización:</strong> {profile.nombre_organizacion || "-"}</div>
           <div><strong>Teléfono de contacto:</strong> {profile.telefono_contacto || "-"}</div>
+          <div><strong>Dirección fiscal:</strong> {profile.direccion_fiscal || "-"}</div>
+          <div><strong>CIF:</strong> {profile.cif || "-"}</div>
         </>
       )}
       <div style={{ marginTop: 24, display: 'flex', gap: 12 }}>
