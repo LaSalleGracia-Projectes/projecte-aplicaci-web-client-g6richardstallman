@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import Image from "next/image";
 
 const initialState = {
   nombre: '',
@@ -37,6 +38,18 @@ export default function RegisterPage() {
       nombre_organizacion: '',
       telefono_contacto: '',
     }));
+  };
+
+  const handleGoogleAuth = async () => {
+    try {
+      const res = await fetch("http://localhost:8000/api/auth/google");
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err) {
+      alert("Error al conectar con Google");
+    }
   };
 
   // Validaciones frontend
@@ -169,6 +182,24 @@ export default function RegisterPage() {
         )}
         <button type="submit" disabled={loading}>{loading ? 'Registrando...' : 'Registrarse'}</button>
       </form>
+      <button
+        type="button"
+        onClick={handleGoogleAuth}
+        style={{
+          marginTop: 16,
+          background: '#fff',
+          border: '1px solid #ccc',
+          borderRadius: 4,
+          padding: '8px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          cursor: 'pointer',
+        }}
+      >
+        <Image src="/googleIcon.png" alt="Google" width={20} height={20} />
+        Registrarse con Google
+      </button>
       {error && (
         <div style={{ color: 'red', marginTop: 10 }}>
           {typeof error === 'string' ? error : (

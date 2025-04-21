@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -41,6 +42,18 @@ export default function LoginPage() {
     }
   };
 
+  const handleGoogleAuth = async () => {
+    try {
+      const res = await fetch("http://localhost:8000/api/auth/google");
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err) {
+      alert("Error al conectar con Google");
+    }
+  };
+
   return (
     <div>
       <h1>Iniciar sesión</h1>
@@ -69,6 +82,24 @@ export default function LoginPage() {
           {loading ? "Entrando..." : "Entrar"}
         </button>
       </form>
+      <button
+        type="button"
+        onClick={handleGoogleAuth}
+        style={{
+          marginTop: 16,
+          background: '#fff',
+          border: '1px solid #ccc',
+          borderRadius: 4,
+          padding: '8px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          cursor: 'pointer',
+        }}
+      >
+        <Image src="/googleIcon.png" alt="Google" width={20} height={20} />
+        Continuar con Google
+      </button>
       <div style={{ marginTop: 10 }}>
         <Link href="/auth/reset-password">¿Has olvidado la contraseña?</Link>
       </div>
