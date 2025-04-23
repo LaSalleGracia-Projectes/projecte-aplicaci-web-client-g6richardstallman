@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { clearStoredUser } from "../../../utils/user";
 
 export default function ChangePasswordPage() {
   const router = useRouter();
@@ -45,6 +46,7 @@ export default function ChangePasswordPage() {
       } else {
         setSuccess("Contraseña cambiada correctamente. Vuelve a iniciar sesión.");
         localStorage.removeItem("access_token");
+        clearStoredUser();
         setTimeout(() => {
           router.replace("/auth/login");
         }, 1500);

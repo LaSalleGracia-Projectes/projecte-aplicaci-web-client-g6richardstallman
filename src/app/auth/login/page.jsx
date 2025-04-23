@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { setStoredUser } from "../../../utils/user";
 
 export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -32,6 +33,12 @@ export default function LoginPage() {
         setSuccess("Login exitoso");
         if (data.access_token) {
           localStorage.setItem("access_token", data.access_token);
+          // Fetch perfil y guardar info básica
+          const profileRes = await fetch("http://localhost:8000/api/profile", {
+            headers: { Authorization: `Bearer ${data.access_token}` },
+          });
+          const profileData = await profileRes.json();
+          if (profileData?.data) setStoredUser(profileData.data);
         }
         // Aquí puedes redirigir o actualizar el estado global si lo necesitas
       }

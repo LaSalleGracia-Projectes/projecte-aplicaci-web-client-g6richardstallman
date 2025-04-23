@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { setStoredUser, clearStoredUser } from "../../../utils/user";
 
 export default function ProfileEditPage() {
   const router = useRouter();
@@ -53,6 +54,7 @@ export default function ProfileEditPage() {
     if (!token) {
       setError("No hay sesión activa");
       setSaving(false);
+      clearStoredUser();
       return;
     }
     // Construir payload solo con campos editables
@@ -83,10 +85,18 @@ export default function ProfileEditPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.messages || data.message || "Error al actualizar perfil");
+        if (res.status === 401 || res.status === 403) {
+          clearStoredUser();
+          localStorage.removeItem("access_token");
+          setError("Sesión expirada. Vuelve a iniciar sesión.");
+          setTimeout(() => router.replace("/auth/login"), 1200);
+        } else {
+          setError(data.messages || data.message || "Error al actualizar perfil");
+        }
       } else {
         setSuccess("Perfil actualizado correctamente");
         setProfile(data.data);
+        setStoredUser(data.data);
         setTimeout(() => {
           router.replace("/profile");
         }, 1200);

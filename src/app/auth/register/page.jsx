@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Image from "next/image";
+import { setStoredUser } from "../../../utils/user";
 
 const initialState = {
   nombre: '',
@@ -113,6 +114,15 @@ export default function RegisterPage() {
         setError(data.messages || data.message || 'Error en el registro');
       } else {
         setSuccess('Registro exitoso. Revisa tu correo para confirmar.');
+        // Si el backend retorna access_token, guardar token i perfil
+        if (data.access_token) {
+          localStorage.setItem("access_token", data.access_token);
+          const profileRes = await fetch("http://localhost:8000/api/profile", {
+            headers: { Authorization: `Bearer ${data.access_token}` },
+          });
+          const profileData = await profileRes.json();
+          if (profileData?.data) setStoredUser(profileData.data);
+        }
         setForm(initialState);
         setTimeout(() => {
           window.location.href = '/auth/login';

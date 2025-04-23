@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { logout } from "../../utils/logout";
+import { getStoredUser, setStoredUser, clearStoredUser } from "../../utils/user";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -13,6 +14,7 @@ export default function ProfilePage() {
     const fetchProfile = async () => {
       const token = localStorage.getItem("access_token");
       if (!token) {
+        clearStoredUser();
         router.replace("/auth/login");
         return;
       }
@@ -23,6 +25,11 @@ export default function ProfilePage() {
         const data = await res.json();
         if (res.ok && data.data) {
           setProfile(data.data);
+          setStoredUser(data.data);
+        } else if (res.status === 401 || res.status === 403) {
+          clearStoredUser();
+          localStorage.removeItem("access_token");
+          router.replace("/auth/login");
         } else {
           setError(data.message || "No se pudo cargar el perfil");
         }

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { setStoredUser, clearStoredUser } from "../../../../utils/user";
 
 export default function GoogleCompleteProfilePage() {
   const router = useRouter();
@@ -72,8 +73,16 @@ export default function GoogleCompleteProfilePage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.messages || data.message || "Error al actualizar perfil");
+        if (res.status === 401 || res.status === 403) {
+          clearStoredUser();
+          localStorage.removeItem("access_token");
+          setError("Sesión expirada. Vuelve a iniciar sesión.");
+          setTimeout(() => router.replace("/auth/login"), 1200);
+        } else {
+          setError(data.messages || data.message || "Error al actualizar perfil");
+        }
       } else {
+        setStoredUser(data.data);
         router.replace("/");
       }
     } catch (err) {

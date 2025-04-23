@@ -12,6 +12,7 @@ export async function logout(router) {
       // Ignorar errores de red
     }
     localStorage.removeItem('access_token');
+    localStorage.removeItem('user_info');
   }
   if (router) {
     router.replace('/auth/login');
