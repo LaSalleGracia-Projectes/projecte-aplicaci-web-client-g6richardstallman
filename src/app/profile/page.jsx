@@ -1,132 +1,81 @@
 "use client";
-
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FaUser, FaEnvelope, FaPhone, FaBuilding, FaHome, FaPen, FaMapMarkerAlt, FaCalendarAlt } from "react-icons/fa";
-import Link from "next/link";
-import ProfileNavBar from "../../components/userProfile/profileNavBar";
+import { logout } from "../../utils/logout";
+import { getStoredUser, setStoredUser, clearStoredUser } from "../../utils/user";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const [userProfile, setUserProfile] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [needsLogin, setNeedsLogin] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      let isLoggedIn = false;
-      try {
-        const userInfo = typeof window !== 'undefined' ? 
-          JSON.parse(localStorage.getItem('user') || '{}') : {};
-        isLoggedIn = userInfo.isLoggedIn && userInfo.token;
-
-        if (process.env.NODE_ENV === "development" && !isLoggedIn) {
-           console.warn("Modo desarrollo: Accediendo al perfil sin datos de login reales.");
-           isLoggedIn = true;
-        }
-
-      } catch (error) {
-        console.error("Error al verificar login:", error);
-        isLoggedIn = false;
+    const fetchProfile = async () => {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        clearStoredUser();
+        router.replace("/auth/login");
+        return;
       }
-
-      if (!isLoggedIn) {
-         setNeedsLogin(true);
-         setLoading(false);
-         return;
-      }
-      
-      setNeedsLogin(false);
       try {
-        if (process.env.NODE_ENV === "development") {
-           await new Promise(resolve => setTimeout(resolve, 800));
-           setUserProfile({
-              nombre: "Usuario",
-              apellido1: "De",
-              apellido2: "Prueba",
-              email: "usuario@ejemplo.com",
-              role: "participante",
-              fechaRegistro: "01/01/2023",
-              ubicacion: "Madrid, España",
-              profileImage: "/img1.webp",
-           });
+        const res = await fetch("http://localhost:8000/api/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (res.ok && data.data) {
+          setProfile(data.data);
+          setStoredUser(data.data);
+        } else if (res.status === 401 || res.status === 403) {
+          clearStoredUser();
+          localStorage.removeItem("access_token");
+          router.replace("/auth/login");
         } else {
+          setError(data.message || "No se pudo cargar el perfil");
         }
-      } catch (error) {
-        console.error("Error al obtener el perfil:", error);
+      } catch (err) {
+        setError("Error de red o del servidor");
       } finally {
         setLoading(false);
       }
     };
+    fetchProfile();
+    // eslint-disable-next-line
+  }, []);
 
-    fetchUserProfile();
-  }, [router]); // router no es estrictamente necesario aquí si no se usa en el fetch real
+  if (loading) return <div>Cargando perfil...</div>;
+  if (error) return <div style={{ color: "red" }}>{error}</div>;
+  if (!profile) return null;
 
-  // Lógica de renderizado simplificada
-  if (loading) {
-    return (
-      <div className="min-h-screen flex bg-gray-50">
-        <ProfileNavBar />
-        <div className="flex-1 p-4 md:p-8 flex justify-center items-center">
-           <p>Cargando perfil...</p> {/* O un spinner SVG simple */}
-        </div>
-      </div>
-    );
-  }
-
-  if (needsLogin) {
-    return (
-      <div className="min-h-screen flex bg-gray-50">
-        <ProfileNavBar />
-        <div className="flex-1 p-4 md:p-8 flex justify-center items-center">
-           <div className="bg-white p-8 rounded-2xl shadow-sm text-center max-w-md">
-             {/* ... Mensaje de necesita login ... */}
-             <Link href="/login" /* ... */>Iniciar sesión</Link>
-           </div>
-        </div>
-      </div>
-    );
-  }
-  
-  if (!userProfile) {
-     return (
-       <div className="min-h-screen flex bg-gray-50">
-         <ProfileNavBar />
-         <div className="flex-1 p-4 md:p-8 flex justify-center items-center">
-           <p className="text-red-600">Error al cargar el perfil.</p>
-         </div>
-       </div>
-     );
-  }
-
-  // Renderizado del perfil si todo está OK
   return (
-    <div className="min-h-screen flex bg-gray-50">
-      <ProfileNavBar />
-      <div className="flex-1 p-4 md:p-8 overflow-y-auto relative">
-        {/* ... Botón Inicio ... */}
-        <div className="max-w-4xl mx-auto pt-16">
-          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-            {/* ... Cabecera del perfil ... */}
-            {/* ... Información de miembro ... */}
-            {/* ... Información personal ... */}
-
-            {/* Sección de actividad */}
-            <div className="px-8 py-6 border-t border-gray-100">
-              <h2 className="text-lg font-semibold mb-4 text-gray-800">Actividad</h2>
-               {/* Nota: Estos números son hardcoded. Necesitan datos reales. */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-red-50 rounded-lg p-4 text-center hover:shadow-md transition-all hover:bg-red-100">
-                  <p className="text-3xl font-bold text-[#e53c3d]">0</p>
-                  <p className="text-gray-700 mt-1">Eventos creados</p>
-                </div>
-                {/* ... otros contadores ... */}
-              </div>
-            </div>
-          </div>
-        </div>
+    <div style={{ maxWidth: 500, margin: "40px auto" }}>
+      <h1>Mi perfil</h1>
+      <div><strong>Nombre:</strong> {profile.nombre}</div>
+      <div><strong>Primer Apellido:</strong> {profile.apellido1}</div>
+      <div><strong>Segundo Apellido:</strong> {profile.apellido2 || "-"}</div>
+      <div><strong>Email:</strong> {profile.email}</div>
+      <div><strong>Rol:</strong> {profile.tipo_usuario}</div>
+      {profile.role === "participante" && (
+        <>
+          <div><strong>DNI:</strong> {profile.dni || "-"}</div>
+          <div><strong>Teléfono:</strong> {profile.telefono || "-"}</div>
+          <div><strong>Dirección:</strong> {profile.direccion || "-"}</div>
+        </>
+      )}
+      {profile.role === "organizador" && (
+        <>
+          <div><strong>Nombre organización:</strong> {profile.nombre_organizacion || "-"}</div>
+          <div><strong>Teléfono de contacto:</strong> {profile.telefono_contacto || "-"}</div>
+          <div><strong>Dirección fiscal:</strong> {profile.direccion_fiscal || "-"}</div>
+          <div><strong>CIF:</strong> {profile.cif || "-"}</div>
+        </>
+      )}
+      <div style={{ marginTop: 24, display: 'flex', gap: 12 }}>
+        <button onClick={() => router.push('/profile/edit')}>Editar perfil</button>
+        <button onClick={() => router.push('/profile/change-password')}>Cambiar contraseña</button>
+        <button onClick={() => router.push('/profile/delete-account')}>Eliminar cuenta</button>
+        <button onClick={() => logout(router)} style={{ color: 'red' }}>Cerrar sesión</button>
       </div>
     </div>
   );
 }
-

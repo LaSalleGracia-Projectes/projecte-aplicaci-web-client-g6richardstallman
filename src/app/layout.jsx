@@ -1,56 +1,15 @@
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Toaster } from 'sonner';
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata = {
-  title: "Eventclix | Tu plataforma de eventos",
-  description: "Descubre y organiza eventos increíbles",
-  icons: {
-    icon: [{ url: "/favicon.ico" }, { url: "/icon.png", type: "image/png" }],
-    shortcut: ["/favicon.ico"],
-    apple: [
-      { url: "/apple-icon.png" },
-      { url: "/apple-icon-180.png", sizes: "180x180", type: "image/png" },
-    ],
-  },
+  title: "Eventflix",
+  description: "Encuentra y gestiona eventos fácilmente",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="es">
-      <body
-        className={`
-          ${geistSans.variable}
-          ${geistMono.variable}
-          antialiased
-          flex
-          flex-col
-          min-h-screen
-        `}
-      >
-          <main className="flex-1">{children}</main>
-          <Toaster 
-            richColors 
-            position="top-right" 
-            closeButton
-            expand={false}
-            toastOptions={{
-              style: {
-                fontFamily: 'var(--font-geist-sans)',
-              },
-              className: 'group',
-            }}
-          />
+      <body className="bg-gray-50 min-h-screen">
+        {children}
       </body>
     </html>
   );
