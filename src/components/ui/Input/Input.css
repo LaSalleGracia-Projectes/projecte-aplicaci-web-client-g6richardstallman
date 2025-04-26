@@ -8,8 +8,6 @@
 }
 .input-base:focus {
   outline: none;
-  border-color: #f87171;
-  box-shadow: 0 0 0 2px #fee2e2;
 }
 .input-base[aria-disabled="true"] {
   background: #f3f4f6;
