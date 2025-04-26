@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { ChevronDownIcon } from "@heroicons/react/24/solid";
+import "./Dropdown.css";
 
 const Dropdown = ({
   options = [],
