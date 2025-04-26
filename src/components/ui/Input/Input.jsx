@@ -1,19 +1,6 @@
 import React, { forwardRef } from "react";
+import "./Input.css";
 
-/**
- * Input reutilizable
- *
- * Props:
- * - value: valor del input
- * - onChange: función para manejar cambios
- * - type: tipo de input (text, email, password, etc)
- * - placeholder: texto de ayuda
- * - name: nombre del input
- * - className: clases extra para personalización
- * - disabled: deshabilitar el input
- * - required: marcar como obligatorio
- * - ...props: cualquier otro atributo estándar de <input>
- */
 const Input = forwardRef(
   (
     {
@@ -38,7 +25,7 @@ const Input = forwardRef(
       name={name}
       disabled={disabled}
       required={required}
-      className={`px-3 py-2 border rounded focus:outline-none ${className}`}
+      className={`input-base${className ? ` ${className}` : ""}`}
       aria-disabled={disabled}
       tabIndex={disabled ? -1 : 0}
       {...props}
