@@ -1,0 +1,20 @@
+.input-base {
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font: inherit;
+  background: #fff;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+
+.input-base:focus {
+  outline: none;
+  border-color: #f87171;
+  box-shadow: 0 0 0 2px #fee2e2;
+}
+
+.input-base[aria-disabled="true"] {
+  background: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
