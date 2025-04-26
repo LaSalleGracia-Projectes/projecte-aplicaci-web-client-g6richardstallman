@@ -1,0 +1,375 @@
+.profile-navbar {
+  width: 280px;
+  min-height: 100vh;
+  background: #ffffff;
+  border-right: 1px solid rgba(239, 68, 68, 0.12);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.04);
+  position: relative;
+  z-index: 10;
+}
+
+.profile-navbar-mobile-header {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  width: 100%;
+  border-bottom: 1px solid rgba(239, 68, 68, 0.12);
+}
+.hamburger-menu-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+.hamburger-menu-button:hover {
+  background-color: rgba(239, 68, 68, 0.08);
+}
+.hamburger-icon {
+  width: 24px;
+  height: 24px;
+  color: #ef4444;
+}
+.profile-navbar-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1.25rem;
+  width: 100%;
+  height: 100%;
+}
+
+.profile-navbar-header {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 0.75rem 0 1.5rem;
+}
+
+.profile-navbar-divider {
+  width: 70%;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    rgba(252, 165, 165, 0.1) 0%,
+    rgba(252, 165, 165, 0.6) 50%,
+    rgba(252, 165, 165, 0.1) 100%
+  );
+  margin: 0.5rem 0 1.5rem;
+  border-radius: 2px;
+}
+
+.profile-navbar-home-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #6b7280;
+  text-decoration: none;
+  padding: 0.6rem 0;
+  width: 100%;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.header-home-link {
+  padding: 0.8rem 1.2rem;
+  margin-bottom: 0;
+  font-size: 1rem;
+  color: #4b5563;
+  font-weight: 500;
+  border-radius: 0.7rem;
+  border: 1px solid transparent;
+  background: rgba(254, 226, 226, 0.3);
+}
+
+.profile-navbar-home-link:hover {
+  color: #ef4444;
+}
+
+.header-home-link:hover {
+  background: rgba(254, 226, 226, 0.5);
+  border-color: rgba(252, 165, 165, 0.3);
+  transform: translateY(-2px);
+}
+
+.profile-navbar-home-icon {
+  width: 20px;
+  height: 20px;
+}
+.profile-navbar-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.profile-navbar-item {
+  width: 100%;
+}
+.profile-navbar-link {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.95rem 1.1rem;
+  border-radius: 0.7rem;
+  color: #4b5563;
+  font-weight: 500;
+  font-size: 1rem;
+  text-decoration: none;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  gap: 0.85rem;
+  border: 1px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+.profile-navbar-link::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 100%;
+  background: rgba(254, 226, 226, 0.4);
+  transition: width 0.3s ease;
+  z-index: 0;
+}
+.profile-navbar-link:hover::before {
+  width: 100%;
+}
+.profile-navbar-link:hover {
+  color: #dc2626;
+  border-color: rgba(252, 165, 165, 0.3);
+  transform: translateX(3px);
+}
+.profile-navbar-link.active {
+  background: linear-gradient(
+    90deg,
+    rgba(254, 226, 226, 0.9) 0%,
+    rgba(254, 202, 202, 0.5) 100%
+  );
+  color: #b91c1c;
+  border-color: rgba(252, 165, 165, 0.5);
+  box-shadow: 0 3px 12px rgba(239, 68, 68, 0.1);
+  position: relative;
+  transform: translateX(0);
+}
+.profile-navbar-link.active::before {
+  display: none;
+}
+.profile-navbar-link.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background: linear-gradient(to bottom, #ef4444, #b91c1c);
+  border-radius: 0 3px 3px 0;
+}
+.profile-navbar-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  position: relative;
+  z-index: 1;
+}
+.profile-navbar-svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 1.5;
+  transition: all 0.3s ease;
+}
+.profile-navbar-link:hover .profile-navbar-svg {
+  transform: scale(1.15);
+  color: #dc2626;
+}
+.profile-navbar-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  position: relative;
+  z-index: 1;
+  font-weight: 500;
+}
+.profile-navbar-footer {
+  margin-top: auto;
+  width: 100%;
+  padding-top: 2rem;
+}
+.logout-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  width: 100%;
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  color: #fff;
+  font-weight: 500;
+  font-size: 1rem;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.7rem;
+  padding: 0.95rem 1.1rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.logout-button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1),
+    rgba(255, 255, 255, 0)
+  );
+  transform: translateY(-100%);
+  transition: transform 0.6s ease;
+}
+.logout-button:hover::before {
+  transform: translateY(0);
+}
+.logout-button:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.3);
+  transform: translateY(-2px);
+}
+.logout-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);
+}
+.logout-button .profile-navbar-svg {
+  stroke: white;
+}
+@media (max-width: 1280px) {
+  .profile-navbar {
+    width: 260px;
+  }
+
+  .profile-navbar-content {
+    padding: 1.75rem 1rem;
+  }
+
+  .header-home-link {
+    padding: 0.7rem 1rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .profile-navbar {
+    width: 100%;
+    min-height: unset;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 100;
+  }
+
+  .profile-navbar-mobile-header {
+    display: flex;
+  }
+
+  .profile-navbar-content {
+    display: none;
+    position: fixed;
+    top: 73px; /* Ajustado a la altura del encabezado móvil */
+    left: 0;
+    width: 100%;
+    height: calc(100vh - 73px);
+    background: white;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateY(-10px);
+    overflow-y: auto;
+    padding: 1.5rem;
+    z-index: 99;
+  }
+
+  .profile-navbar-content.open {
+    display: flex;
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .profile-navbar-header {
+    padding: 0.5rem 0 1rem;
+  }
+
+  .header-home-link {
+    margin: 0;
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .profile-navbar-content {
+    padding: 1.25rem;
+    top: 69px; /* Ajustado para pantallas más pequeñas */
+    height: calc(100vh - 69px);
+  }
+
+  .profile-navbar-list {
+    gap: 0.5rem;
+  }
+
+  .profile-navbar-link {
+    padding: 0.85rem 1rem;
+  }
+
+  .logout-button {
+    padding: 0.85rem 1rem;
+  }
+
+  .header-home-link {
+    padding: 0.7rem 0.9rem;
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-navbar-mobile-header {
+    padding: 0.6rem 0.75rem;
+  }
+
+  .hamburger-menu-button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .hamburger-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .profile-navbar-content {
+    top: 65px; /* Ajustado para móviles pequeños */
+    height: calc(100vh - 65px);
+  }
+
+  .header-home-link {
+    font-size: 0.9rem;
+  }
+
+  .profile-navbar-home-icon {
+    width: 18px;
+    height: 18px;
+  }
+}
