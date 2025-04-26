@@ -5,13 +5,8 @@
   text-decoration: none;
 }
 .logo-img {
-  border-radius: 0.5rem;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
   object-fit: cover;
 }
 .logo-img:hover {
-  transform: scale(1.05);
-}
-.logo-img:active {
-  transform: scale(0.95);
+  cursor: pointer;
 }
