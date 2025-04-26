@@ -5,10 +5,6 @@ import Button from "../../components/ui/Button/Button";
 import Dropdown from "../../components/ui/Dropdown/Dropdown";
 import Input from "../../components/ui/Input/Input";
 import Toast from "../../components/ui/Toast/Toast";
-import "../../components/ui/Button/Button.css";
-import "../../components/ui/Dropdown/Dropdown.css";
-import "../../components/ui/Input/Input.css";
-import "../../components/ui/Toast/Toast.css";
 import "./test.css";
 
 export default function TestPage() {
