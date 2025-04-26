@@ -1,19 +1,6 @@
 import React, { forwardRef } from "react";
 import "./Input.css";
 
-/**
- * Props:
- * - value: valor del input
- * - onChange: función para manejar cambios
- * - type: tipo de input (text, email, password, etc)
- * - placeholder: texto de ayuda
- * - name: nombre del input
- * - className: clases extra para personalización
- * - disabled: deshabilitar el input
- * - required: marcar como obligatorio
- * - ...props: cualquier otro atributo estándar de <input>
- */
-
 const Input = forwardRef(
   (
     {

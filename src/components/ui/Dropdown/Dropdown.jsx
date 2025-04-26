@@ -3,20 +3,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ChevronDownIcon } from "@heroicons/react/24/solid";
 
-/**
- * Props:
- * - options: [{ label, value }] Opcions a mostrar.
- * - onSelect: funció cridada en seleccionar una opció.
- * - trigger: Element React personalitzat per obrir el menú.
- * - className: Classes extra pel contenidor.
- * - menuClassName: Classes extra pel menú desplegable.
- * - children: Contingut personalitzat en comptes d'options.
- * - label: Text o node a mostrar al botó (opcional, mostra opció seleccionada si n'hi ha).
- * - value: Valor controlat per formularis.
- * - onChange: Funció cridada en canviar el valor (compatible amb formularis).
- * - name: Nom del camp per formularis.
- */
-
 const Dropdown = ({
   options = [],
   onSelect,
@@ -33,6 +19,8 @@ const Dropdown = ({
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(null);
   const ref = useRef(null);
+  const triggerRef = useRef(null);
+  const [menuWidth, setMenuWidth] = useState(undefined);
 
   useEffect(() => {
     if (value !== undefined) {
@@ -62,6 +50,12 @@ const Dropdown = ({
     };
   }, []);
 
+  useEffect(() => {
+    if (open && triggerRef.current) {
+      setMenuWidth(triggerRef.current.offsetWidth);
+    }
+  }, [open]);
+
   const handleSelect = (option) => {
     setSelected(option);
     setOpen(false);
@@ -83,12 +77,13 @@ const Dropdown = ({
         tabIndex={0}
         onClick={() => setOpen((v) => !v)}
         name={name}
+        ref={triggerRef}
       >
         {trigger || (
-          <span>
-            {label || selected?.label || "Seleccionar"}{" "}
+          <>
+            {label || selected?.label || "Seleccionar"}
             <ChevronDownIcon className="dropdown-chevron" />
-          </span>
+          </>
         )}
       </button>
       {name && (
@@ -98,6 +93,7 @@ const Dropdown = ({
         <div
           className={`dropdown-menu${menuClassName ? ` ${menuClassName}` : ""}`}
           role="listbox"
+          style={menuWidth ? { width: menuWidth } : {}}
         >
           <div className="dropdown-menu-list">
             {children
