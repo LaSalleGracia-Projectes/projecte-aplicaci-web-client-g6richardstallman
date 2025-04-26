@@ -2,8 +2,6 @@ import React, { forwardRef } from "react";
 import "./Button.css";
 
 /**
- * Botón reutilizable
- *
  * Props:
  * - children: contenido del botón
  * - type: tipo de botón (button, submit, reset)
@@ -12,6 +10,7 @@ import "./Button.css";
  * - onClick: función al hacer click
  * - ...props: cualquier otro atributo estándar de <button>
  */
+
 const Button = forwardRef(
   (
     {
