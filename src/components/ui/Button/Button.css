@@ -1,20 +1,32 @@
 .button {
   padding: 0.6em 1.2em;
-  border: none;
-  border-radius: 4px;
   font-size: 1rem;
   font-weight: 500;
+  border: none;
   cursor: pointer;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.2s ease, transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
+
 .button:disabled,
 .button[aria-disabled="true"] {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
 .button:not(:disabled):hover,
 .button:not([aria-disabled="true"]):hover {
-  transform: scale(1.04);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
+
+.button[block] {
+  display: block;
+  width: 100%;
+}
+
 @media (max-width: 600px) {
   .button {
     font-size: 0.95rem;

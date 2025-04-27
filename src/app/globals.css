@@ -1,8 +1,13 @@
-/* Estilos globales para Eventflix */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --font-family: "Inter", sans-serif;
+}
 
 body {
-  @apply bg-gray-50 text-gray-900;
+  font-family: var(--font-family);
 }

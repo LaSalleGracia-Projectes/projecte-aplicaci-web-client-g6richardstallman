@@ -1,4 +1,6 @@
 import "./globals.css";
+import "./layout.css";
+import { NotificationProvider } from "../context/NotificationContext";
 
 export const metadata = {
   title: "Eventflix",
@@ -8,8 +10,8 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="es">
-      <body className="bg-gray-50 min-h-screen">
-        {children}
+      <body>
+        <NotificationProvider>{children}</NotificationProvider>
       </body>
     </html>
   );

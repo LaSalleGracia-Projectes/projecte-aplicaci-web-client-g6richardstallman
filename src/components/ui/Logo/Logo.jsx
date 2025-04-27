@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import "./Logo.css";
 
-const Logo = ({ size = 120 }) => (
+const Logo = ({ size = 150 }) => (
   <Link href="/" className="logo-link" aria-label="Ir a inicio">
     <Image
       src="/logo.jpg"
