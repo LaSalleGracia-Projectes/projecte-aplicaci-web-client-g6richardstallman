@@ -10,6 +10,7 @@ import { useState } from "react";
 import { setStoredUser } from "../../../utils/user";
 import Dropdown from "../../../components/ui/Dropdown/Dropdown";
 import { useNotification } from "../../../context/NotificationContext";
+import { useRouter } from "next/navigation";
 
 const API_BASE_URL = "http://localhost:8000/api";
 const API_ENDPOINTS = {
@@ -90,6 +91,7 @@ const preparePayload = (form) => {
 export default function RegisterPage() {
   const [form, setForm] = useState(initialState);
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const { showSuccess, showError } = useNotification();
 
@@ -114,7 +116,7 @@ export default function RegisterPage() {
       const res = await fetch(API_ENDPOINTS.googleAuth);
       const data = await res.json();
       if (data.url) {
-        window.location.href = data.url;
+        router.push(data.url);
       } else {
         showError("No se pudo iniciar la autenticación con Google");
       }
@@ -168,7 +170,7 @@ export default function RegisterPage() {
         }
         setForm(initialState);
         setTimeout(() => {
-          window.location.href = "/auth/login";
+          router.push("/auth/login");
         }, 1500);
       }
     } catch (err) {
