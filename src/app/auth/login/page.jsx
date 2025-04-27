@@ -79,7 +79,7 @@ export default function LoginPage() {
         }
 
         setTimeout(() => {
-          window.location.href = "/eventos";
+          window.location.href = "/";
         }, 1000);
       }
     } catch (err) {
