@@ -9,6 +9,7 @@ import Logo from "../../../components/ui/Logo/Logo";
 import Input from "../../../components/ui/Input/Input";
 import Button from "../../../components/ui/Button/Button";
 import { useNotification } from "../../../context/NotificationContext";
+import { useRouter } from "next/navigation";
 
 const API_BASE_URL = "http://localhost:8000/api";
 const API_ENDPOINTS = {
@@ -31,6 +32,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   const { showSuccess, showError } = useNotification();
+  const router = useRouter();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -77,9 +79,8 @@ export default function LoginPage() {
           const profileData = await profileRes.json();
           if (profileData?.data) setStoredUser(profileData.data);
         }
-
         setTimeout(() => {
-          window.location.href = "/eventos";
+          router.push("/");
         }, 1000);
       }
     } catch (err) {
@@ -94,7 +95,7 @@ export default function LoginPage() {
       const res = await fetch(API_ENDPOINTS.googleAuth);
       const data = await res.json();
       if (data.url) {
-        window.location.href = data.url;
+        router.push(data.url);
       } else {
         showError("No se pudo iniciar la autenticación con Google");
       }
@@ -106,7 +107,7 @@ export default function LoginPage() {
   return (
     <div className="login-container">
       <div className="login-logo">
-        <Logo size={140} />
+        <Logo size={200} />
       </div>
       <div className="login-header">
         <h1 className="login-title">Iniciar sesión</h1>

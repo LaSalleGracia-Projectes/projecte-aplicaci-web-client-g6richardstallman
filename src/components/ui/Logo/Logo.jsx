@@ -5,10 +5,10 @@ import "./Logo.css";
 const Logo = ({ size = 150 }) => (
   <Link href="/" className="logo-link" aria-label="Ir a inicio">
     <Image
-      src="/logo.jpg"
+      src="/images/logo.jpg"
       alt="Eventflix Logo"
       width={size}
-      height={Math.round(size * 0.67)}
+      height={size}
       priority
       className="logo-img"
     />

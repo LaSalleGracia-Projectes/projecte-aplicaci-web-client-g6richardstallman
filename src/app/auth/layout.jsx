@@ -6,8 +6,8 @@ export default function AuthLayout({ children }) {
     <div className="auth-layout-container">
       <div className="auth-layout-image-panel">
         <Image
-          src="/registerImage.jpg"
-          alt="Registro Eventflix"
+          src="/images/registerImage.jpg"
+          alt="Imagen de un evento"
           fill
           className="next-image"
           priority

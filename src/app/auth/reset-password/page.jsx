@@ -7,6 +7,7 @@ import Logo from "../../../components/ui/Logo/Logo";
 import Input from "../../../components/ui/Input/Input";
 import Button from "../../../components/ui/Button/Button";
 import { useNotification } from "../../../context/NotificationContext";
+import { useRouter } from "next/navigation";
 
 const API_BASE_URL = "http://localhost:8000/api";
 const API_ENDPOINTS = {
@@ -26,6 +27,7 @@ const validateForm = (form) => {
 export default function ResetPasswordPage() {
   const [form, setForm] = useState({ email: "", identificador: "" });
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const { showSuccess, showError } = useNotification();
 
@@ -73,6 +75,9 @@ export default function ResetPasswordPage() {
           "Si los datos son correctos, recibirás un email con la nueva contraseña."
         );
         setForm({ email: "", identificador: "" });
+        setTimeout(() => {
+          router.push("/auth/login");
+        }, 1500);
       }
     } catch (err) {
       showError("Error de red o del servidor");
@@ -84,7 +89,7 @@ export default function ResetPasswordPage() {
   return (
     <div className="reset-container">
       <div className="reset-logo">
-        <Logo size={140} />
+        <Logo size={200} />
       </div>
       <div className="reset-header">
         <h1 className="reset-title">Restablecer contraseña</h1>
