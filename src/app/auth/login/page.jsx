@@ -106,7 +106,7 @@ export default function LoginPage() {
   return (
     <div className="login-container">
       <div className="login-logo">
-        <Logo size={140} />
+        <Logo size={200} />
       </div>
       <div className="login-header">
         <h1 className="login-title">Iniciar sesión</h1>

@@ -84,7 +84,7 @@ export default function ResetPasswordPage() {
   return (
     <div className="reset-container">
       <div className="reset-logo">
-        <Logo size={140} />
+        <Logo size={200} />
       </div>
       <div className="reset-header">
         <h1 className="reset-title">Restablecer contraseña</h1>

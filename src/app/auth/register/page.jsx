@@ -181,7 +181,7 @@ export default function RegisterPage() {
   return (
     <div className="register-container">
       <div className="register-logo">
-        <Logo size={140} />
+        <Logo size={200} />
       </div>
       <div className="register-header">
         <h1 className="register-title">Crea tu cuenta</h1>
@@ -373,7 +373,7 @@ export default function RegisterPage() {
             disabled={loading}
           >
             <Image
-              src="/googleIcon.png"
+              src="/icons/googleIcon.png"
               alt="Google"
               width={24}
               height={24}
