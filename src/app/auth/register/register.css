@@ -1,0 +1,219 @@
+.register-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.register-logo {
+  margin-bottom: 1.5rem;
+}
+
+.register-header {
+  width: 100%;
+  text-align: center;
+  margin-top: 1rem;
+  margin-bottom: 2.5rem;
+}
+
+.register-title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+.register-subtitle {
+  color: #6b7280;
+  font-size: 1.125rem;
+}
+
+.register-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 40rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.register-input-group {
+  position: relative;
+}
+
+.register-input-gradient {
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(to right, #f87171, #dc2626);
+  border-radius: 0.5rem;
+  filter: blur(8px);
+  opacity: 0.3;
+  transition: opacity 1s;
+  z-index: 0;
+}
+
+.register-input-group:focus-within .register-input-gradient,
+.register-input-group:hover .register-input-gradient {
+  opacity: 1;
+  transition-duration: 0.2s;
+}
+
+.register-input {
+  position: relative;
+  font-size: 1.125rem;
+  padding: 0.75rem 1rem;
+  background: #fff;
+  border-radius: 0.5rem;
+  width: 100%;
+  border: none;
+  outline: none;
+  box-shadow: 0 0 0 1px #e5e7eb;
+  transition: box-shadow 0.3s;
+  z-index: 1;
+}
+
+.register-input:focus {
+  box-shadow: 0 0 0 2px #ef4444;
+}
+
+.register-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .register-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.register-label {
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.register-dropdown {
+  width: 100%;
+  font-size: 1.125rem;
+  border-radius: 0.5rem;
+}
+
+.register-dropdown-menu {
+  width: 100%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f3f4f6;
+  border-radius: 0.5rem;
+  margin-top: 0.25rem;
+  z-index: 50;
+}
+
+.register-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  width: 100%;
+}
+
+.register-btn-main {
+  background: linear-gradient(to right, #dc2626, #ef4444);
+  color: #fff;
+  font-size: 1.25rem;
+  padding: 0.875rem 1.5rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.15);
+  font-weight: 700;
+  width: 100%;
+  border: none;
+  cursor: pointer;
+  transition: box-shadow 0.3s, transform 0.2s;
+}
+
+.register-btn-main:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.register-btn-main:hover:not(:disabled) {
+  box-shadow: 0 8px 32px rgba(239, 68, 68, 0.25);
+  transform: translateY(-2px) scale(1.02);
+}
+
+.register-divider {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 1rem 0;
+}
+
+.register-divider-line {
+  flex: 1;
+  border-top: 1px solid #d1d5db;
+}
+
+.register-divider-text {
+  position: relative;
+  padding: 0 1rem;
+  background: #fff;
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+.register-btn-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #374151;
+  font-size: 1.125rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  font-weight: 600;
+  width: 100%;
+  cursor: pointer;
+  transition: box-shadow 0.3s, background 0.3s;
+}
+
+.register-btn-google:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.register-btn-google:hover:not(:disabled) {
+  background: #f9fafb;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.register-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  text-align: center;
+  margin-top: 2rem;
+  font-size: 1.125rem;
+  color: #4b5563;
+}
+
+.register-footer-link {
+  color: #ef4444;
+  font-weight: 700;
+  transition: color 0.3s, text-decoration 0.3s;
+  text-decoration: none;
+}
+
+.register-footer-link:hover {
+  color: #dc2626;
+  text-decoration: underline;
+}
