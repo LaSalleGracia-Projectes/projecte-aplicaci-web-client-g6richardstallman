@@ -1,148 +1,273 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import Logo from "../../ui/Logo/Logo";
-import Input from "../../ui/Input/Input";
-import Button from "../../ui/Button/Button";
+import React, { useState, useEffect, useRef } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { MagnifyingGlassIcon, UserCircleIcon } from "@heroicons/react/24/solid";
 import Image from "next/image";
-import { logout } from "../../../utils/logout";
 import {
-  getStoredUser,
-  setStoredUser,
-  clearStoredUser,
-} from "../../../utils/user";
+  Bars3Icon,
+  XMarkIcon,
+  UserCircleIcon,
+  ArrowRightOnRectangleIcon,
+  CalendarIcon,
+  UserIcon,
+} from "@heroicons/react/24/outline";
+
+import Logo from "../../ui/Logo/Logo";
+import Button from "../../ui/Button/Button";
+import Dropdown from "../../ui/Dropdown/Dropdown";
+
+import { logout } from "../../../utils/logout";
+import { getStoredUser } from "../../../utils/user";
+
 import "./Header.css";
 
 const Header = () => {
-  const [user, setUser] = useState(() => getStoredUser());
-  const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
-  const menuRef = useRef(null);
+  const pathname = usePathname();
+  const [user, setUser] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const mobileMenuRef = useRef(null);
+
+  const navItems = [
+    { label: "Inicio", path: "/" },
+    { label: "Eventos", path: "/events" },
+    { label: "Categorías", path: "/events/categories" },
+    { label: "Sobre Nosotros", path: "/about" },
+    { label: "Contacto", path: "/contact" },
+  ];
 
   useEffect(() => {
-    const token =
-      typeof window !== "undefined"
-        ? localStorage.getItem("access_token")
-        : null;
-    if (!token) {
-      setUser(null);
-      clearStoredUser();
-      return;
+    const storedUser = getStoredUser();
+    setUser(storedUser);
+
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      fetch("http://localhost:8000/api/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.data) {
+            setUser(data.data);
+          }
+        })
+        .catch((err) => console.error("Error fetching user profile:", err));
     }
-    fetch("http://localhost:8000/api/profile", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.data) {
-          setUser(data.data);
-          setStoredUser(data.data);
-        }
-      });
   }, []);
 
   useEffect(() => {
-    if (!menuOpen) return;
-    const handler = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target))
-        setMenuOpen(false);
+    setMobileMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(event.target)
+      ) {
+        setMobileMenuOpen(false);
+      }
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [menuOpen]);
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    logout(router);
+    setUser(null);
+  };
+
+  const navigate = (path) => {
+    router.push(path);
+  };
+
+  const userOptions = [
+    {
+      label: (
+        <div className="dropdown-item">
+          <UserIcon className="dropdown-icon" />
+          <span>Mi Perfil</span>
+        </div>
+      ),
+      value: "profile",
+      onClick: () => navigate("/profile"),
+    },
+    {
+      label: (
+        <div className="dropdown-item">
+          <ArrowRightOnRectangleIcon className="dropdown-icon" />
+          <span>Cerrar Sesión</span>
+        </div>
+      ),
+      value: "logout",
+      onClick: handleLogout,
+    },
+  ];
 
   return (
     <header className="header">
-      <div className="header-inner">
-        {/* Logo */}
+      <div className="header-container">
         <div className="header-logo">
-          <Logo size={120} />
+          <Logo size={150} />
         </div>
-        {/* Buscador */}
-        <div className="header-search">
-          <div className="header-search-wrapper">
-            <MagnifyingGlassIcon className="header-search-icon" />
-            <Input
-              type="text"
-              placeholder="Buscar eventos..."
-              className="header-search-input"
-            />
-          </div>
-        </div>
-        {/* Botones auth */}
-        <div className="header-user">
-          {!user ? (
-            <>
+
+        <nav className="header-nav">
+          <ul className="nav-list">
+            {navItems.map((item) => (
+              <li key={item.path} className="nav-item">
+                <Link
+                  href={item.path}
+                  className={
+                    pathname === item.path ? "nav-link active" : "nav-link"
+                  }
+                >
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <div className="header-auth">
+          {user ? (
+            <div className="user-menu">
+              <Dropdown
+                trigger={
+                  <div className="user-trigger icon-only">
+                    {user.foto_perfil ? (
+                      <Image
+                        src={user.foto_perfil}
+                        alt={user.nombre || "Usuario"}
+                        width={40}
+                        height={40}
+                        className="user-avatar"
+                      />
+                    ) : (
+                      <UserCircleIcon className="user-icon" />
+                    )}
+                  </div>
+                }
+                options={userOptions}
+                className="user-dropdown"
+                menuClassName="user-dropdown-menu"
+              >
+                {userOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    className="user-dropdown-item"
+                    onClick={option.onClick}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </Dropdown>
+            </div>
+          ) : (
+            <div className="auth-buttons">
               <Link href="/auth/login">
-                <Button className="header-btn header-btn-login">
-                  Iniciar Sesión
-                </Button>
+                <Button className="login-button">Iniciar Sesión</Button>
               </Link>
               <Link href="/auth/register">
-                <Button className="header-btn header-btn-register">
-                  Registrarse
-                </Button>
+                <Button className="register-button">Registrarse</Button>
               </Link>
-            </>
-          ) : (
-            <div className="header-user-menu" ref={menuRef}>
-              <button
-                onClick={() => setMenuOpen((v) => !v)}
-                className="header-user-avatar-btn"
-                aria-label="Menú de usuario"
-              >
-                {user.foto_perfil ? (
-                  <Image
-                    src={user.foto_perfil}
-                    alt="Perfil"
-                    width={36}
-                    height={36}
-                    className="header-user-avatar-img"
-                  />
-                ) : (
-                  <UserCircleIcon className="header-user-avatar-icon" />
-                )}
-              </button>
-              {menuOpen && (
-                <div className="header-dropdown">
-                  <button
-                    className="header-dropdown-item"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      router.push("/profile");
-                    }}
-                  >
-                    Perfil
-                  </button>
-                  <button
-                    className="header-dropdown-item"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      router.push("/profile/eventos");
-                    }}
-                  >
-                    Mis eventos
-                  </button>
-                  <button
-                    className="header-dropdown-item header-dropdown-logout"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      logout(router);
-                      clearStoredUser();
-                      setUser(null);
-                    }}
-                  >
-                    Logout
-                  </button>
-                </div>
-              )}
             </div>
           )}
         </div>
+
+        <button
+          className="mobile-menu-button"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+        >
+          {mobileMenuOpen ? (
+            <XMarkIcon className="menu-icon" />
+          ) : (
+            <Bars3Icon className="menu-icon" />
+          )}
+        </button>
       </div>
+
+      {mobileMenuOpen && (
+        <div className="mobile-menu" ref={mobileMenuRef}>
+          <nav className="mobile-nav">
+            <ul className="mobile-nav-list">
+              {navItems.map((item) => (
+                <li key={item.path} className="mobile-nav-item">
+                  <Link
+                    href={item.path}
+                    className={
+                      pathname === item.path
+                        ? "mobile-nav-link active"
+                        : "mobile-nav-link"
+                    }
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          <div className="mobile-auth">
+            {user ? (
+              <div className="mobile-user-actions">
+                <button
+                  className="mobile-user-option"
+                  onClick={() => {
+                    navigate("/profile");
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  <UserIcon className="option-icon" />
+                  <span>Mi Perfil</span>
+                </button>
+                <button
+                  className="mobile-user-option"
+                  onClick={() => {
+                    navigate("/profile/eventos");
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  <CalendarIcon className="option-icon" />
+                  <span>Mis Eventos</span>
+                </button>
+                <button
+                  className="mobile-user-option logout"
+                  onClick={() => {
+                    handleLogout();
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  <ArrowRightOnRectangleIcon className="option-icon" />
+                  <span>Cerrar Sesión</span>
+                </button>
+              </div>
+            ) : (
+              <div className="mobile-auth-buttons">
+                <Link
+                  href="/auth/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Button className="mobile-login-button" block>
+                    Iniciar Sesión
+                  </Button>
+                </Link>
+                <Link
+                  href="/auth/register"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Button className="mobile-register-button" block>
+                    Registrarse
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 };
