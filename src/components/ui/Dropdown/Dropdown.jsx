@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronDownIcon } from "@heroicons/react/24/solid";
+import { FaChevronDown } from "react-icons/fa";
 import "./Dropdown.css";
 
 const Dropdown = ({
@@ -83,7 +83,7 @@ const Dropdown = ({
         {trigger || (
           <>
             {label || selected?.label || "Seleccionar"}
-            <ChevronDownIcon className="dropdown-chevron" />
+            <FaChevronDown className="dropdown-chevron" />
           </>
         )}
       </button>

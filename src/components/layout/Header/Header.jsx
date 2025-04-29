@@ -4,14 +4,14 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import {
-  Bars3Icon,
-  XMarkIcon,
-  UserCircleIcon,
-  ArrowRightOnRectangleIcon,
-  CalendarIcon,
-  UserIcon,
-} from "@heroicons/react/24/outline";
+import { 
+  FaBars, 
+  FaTimes, 
+  FaUserCircle, 
+  FaSignOutAlt, 
+  FaCalendarAlt, 
+  FaUser 
+} from "react-icons/fa";
 
 import Logo from "../../ui/Logo/Logo";
 import Button from "../../ui/Button/Button";
@@ -87,7 +87,7 @@ const Header = () => {
     {
       label: (
         <div className="dropdown-item">
-          <UserIcon className="dropdown-icon" />
+          <FaUser className="dropdown-icon" />
           <span>Mi Perfil</span>
         </div>
       ),
@@ -97,7 +97,7 @@ const Header = () => {
     {
       label: (
         <div className="dropdown-item">
-          <ArrowRightOnRectangleIcon className="dropdown-icon" />
+          <FaSignOutAlt className="dropdown-icon" />
           <span>Cerrar Sesión</span>
         </div>
       ),
@@ -145,7 +145,7 @@ const Header = () => {
                         className="user-avatar"
                       />
                     ) : (
-                      <UserCircleIcon className="user-icon" />
+                      <FaUserCircle className="user-icon" />
                     )}
                   </div>
                 }
@@ -182,9 +182,9 @@ const Header = () => {
           aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
         >
           {mobileMenuOpen ? (
-            <XMarkIcon className="menu-icon" />
+            <FaTimes className="menu-icon" />
           ) : (
-            <Bars3Icon className="menu-icon" />
+            <FaBars className="menu-icon" />
           )}
         </button>
       </div>
@@ -221,7 +221,7 @@ const Header = () => {
                     setMobileMenuOpen(false);
                   }}
                 >
-                  <UserIcon className="option-icon" />
+                  <FaUser className="option-icon" />
                   <span>Mi Perfil</span>
                 </button>
                 <button
@@ -231,7 +231,7 @@ const Header = () => {
                     setMobileMenuOpen(false);
                   }}
                 >
-                  <CalendarIcon className="option-icon" />
+                  <FaCalendarAlt className="option-icon" />
                   <span>Mis Eventos</span>
                 </button>
                 <button
@@ -241,7 +241,7 @@ const Header = () => {
                     setMobileMenuOpen(false);
                   }}
                 >
-                  <ArrowRightOnRectangleIcon className="option-icon" />
+                  <FaSignOutAlt className="option-icon" />
                   <span>Cerrar Sesión</span>
                 </button>
               </div>

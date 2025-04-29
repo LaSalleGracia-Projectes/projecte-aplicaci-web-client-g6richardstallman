@@ -1,51 +1,26 @@
 "use client";
 
-import React, { useCallback, memo, useState } from "react";
+import React, { useCallback, memo, useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Logo from "../../../components/ui/Logo/Logo";
 import Button from "../../../components/ui/Button/Button";
 import { logout } from "../../../utils/logout";
-import {
-  UserIcon,
-  PencilSquareIcon,
-  KeyIcon,
-  TrashIcon,
-  ArrowRightOnRectangleIcon,
-  HomeIcon,
-  Bars3Icon,
-  XMarkIcon,
-} from "@heroicons/react/24/outline";
+import { getStoredUser } from "../../../utils/user";
+import { 
+  FiUser, 
+  FiEdit, 
+  FiKey, 
+  FiTrash2, 
+  FiLogOut, 
+  FiHome, 
+  FiMenu, 
+  FiX, 
+  FiHeart, 
+  FiTag, // Using FiTag instead of FiTicket which doesn't exist
+  FiCalendar 
+} from "react-icons/fi";
 import "./ProfileNavbar.css";
-
-const navOptions = [
-  {
-    label: "Mi perfil",
-    href: "/profile",
-    icon: <UserIcon className="profile-navbar-svg" aria-hidden="true" />,
-    ariaLabel: "Ver mi perfil",
-  },
-  {
-    label: "Editar perfil",
-    href: "/profile/edit",
-    icon: (
-      <PencilSquareIcon className="profile-navbar-svg" aria-hidden="true" />
-    ),
-    ariaLabel: "Editar mi perfil",
-  },
-  {
-    label: "Cambiar contraseña",
-    href: "/profile/change-password",
-    icon: <KeyIcon className="profile-navbar-svg" aria-hidden="true" />,
-    ariaLabel: "Cambiar mi contraseña",
-  },
-  {
-    label: "Eliminar cuenta",
-    href: "/profile/delete-account",
-    icon: <TrashIcon className="profile-navbar-svg" aria-hidden="true" />,
-    ariaLabel: "Eliminar mi cuenta",
-  },
-];
 
 const NavItem = memo(({ option, isActive, onClick }) => (
   <li className="profile-navbar-item">
@@ -68,6 +43,14 @@ const ProfileNavbar = () => {
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [userRole, setUserRole] = useState(null);
+
+  useEffect(() => {
+    const user = getStoredUser();
+    if (user) {
+      setUserRole(user.role);
+    }
+  }, []);
 
   const handleLogout = useCallback(() => {
     logout(router);
@@ -75,6 +58,68 @@ const ProfileNavbar = () => {
 
   const toggleMenu = () => setMenuOpen((prev) => !prev);
   const closeMenu = () => setMenuOpen(false);
+
+  // Base navigation options for all users
+  const baseNavOptions = [
+    {
+      label: "Mi perfil",
+      href: "/profile",
+      icon: <FiUser className="profile-navbar-svg" aria-hidden="true" />,
+      ariaLabel: "Ver mi perfil",
+    },
+    {
+      label: "Editar perfil",
+      href: "/profile/edit",
+      icon: <FiEdit className="profile-navbar-svg" aria-hidden="true" />,
+      ariaLabel: "Editar mi perfil",
+    },
+    {
+      label: "Cambiar contraseña",
+      href: "/profile/change-password",
+      icon: <FiKey className="profile-navbar-svg" aria-hidden="true" />,
+      ariaLabel: "Cambiar mi contraseña",
+    },
+    {
+      label: "Eliminar cuenta",
+      href: "/profile/delete-account",
+      icon: <FiTrash2 className="profile-navbar-svg" aria-hidden="true" />,
+      ariaLabel: "Eliminar mi cuenta",
+    },
+  ];
+
+  // Role-specific navigation options
+  const participantOptions = [
+    {
+      label: "Favoritos",
+      href: "/profile/favorites",
+      icon: <FiHeart className="profile-navbar-svg" aria-hidden="true" />,
+      ariaLabel: "Mis eventos favoritos",
+    },
+    {
+      label: "Mis Entradas",
+      href: "/profile/tickets",
+      icon: <FiTag className="profile-navbar-svg" aria-hidden="true" />, // Using FiTag instead of FiTicket
+      ariaLabel: "Mis entradas compradas",
+    },
+  ];
+
+  const organizerOptions = [
+    {
+      label: "Mis Eventos",
+      href: "/profile/events",
+      icon: <FiCalendar className="profile-navbar-svg" aria-hidden="true" />,
+      ariaLabel: "Gestionar mis eventos",
+    },
+  ];
+
+  // Determine which navigation options to show based on user role
+  let navOptions = [...baseNavOptions];
+  
+  if (userRole === "participante") {
+    navOptions = [...baseNavOptions.slice(0, 2), ...participantOptions, ...baseNavOptions.slice(2)];
+  } else if (userRole === "organizador") {
+    navOptions = [...baseNavOptions.slice(0, 2), ...organizerOptions, ...baseNavOptions.slice(2)];
+  }
 
   return (
     <nav className="profile-navbar" aria-label="Menú de perfil">
@@ -88,9 +133,9 @@ const ProfileNavbar = () => {
           aria-label="Menú de navegación"
         >
           {menuOpen ? (
-            <XMarkIcon className="hamburger-icon" />
+            <FiX className="hamburger-icon" />
           ) : (
-            <Bars3Icon className="hamburger-icon" />
+            <FiMenu className="hamburger-icon" />
           )}
         </button>
       </div>
@@ -103,7 +148,7 @@ const ProfileNavbar = () => {
             aria-label="Volver a inicio"
             onClick={closeMenu}
           >
-            <HomeIcon className="profile-navbar-home-icon" />
+            <FiHome className="profile-navbar-home-icon" />
             <span>Volver a inicio</span>
           </Link>
         </div>
@@ -127,7 +172,7 @@ const ProfileNavbar = () => {
             onClick={handleLogout}
             aria-label="Cerrar sesión"
           >
-            <ArrowRightOnRectangleIcon
+            <FiLogOut
               className="profile-navbar-svg"
               aria-hidden="true"
             />

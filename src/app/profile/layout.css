@@ -1,0 +1,30 @@
+.profile-layout-container {
+  display: flex;
+  min-height: 100vh;
+  background: #f9fafb;
+}
+.profile-layout-content {
+  flex: 1;
+  padding: 2.5rem 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+@media (max-width: 900px) {
+  .profile-layout-container {
+    flex-direction: column;
+  }
+  .profile-layout-content {
+    padding: 1.5rem 0.5rem;
+    max-width: 100%;
+    min-height: calc(100vh - 80px);
+  }
+}
+@media (max-width: 480px) {
+  .profile-layout-content {
+    padding: 1.25rem 0.5rem;
+  }
+}

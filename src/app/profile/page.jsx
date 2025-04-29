@@ -70,12 +70,6 @@ export default function ProfilePage() {
           <div><strong>CIF:</strong> {profile.cif || "-"}</div>
         </>
       )}
-      <div style={{ marginTop: 24, display: 'flex', gap: 12 }}>
-        <button onClick={() => router.push('/profile/edit')}>Editar perfil</button>
-        <button onClick={() => router.push('/profile/change-password')}>Cambiar contraseña</button>
-        <button onClick={() => router.push('/profile/delete-account')}>Eliminar cuenta</button>
-        <button onClick={() => logout(router)} style={{ color: 'red' }}>Cerrar sesión</button>
-      </div>
     </div>
   );
 }
