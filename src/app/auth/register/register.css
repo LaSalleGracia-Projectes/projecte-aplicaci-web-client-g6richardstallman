@@ -43,20 +43,12 @@
 }
 
 .register-input-gradient {
-  position: absolute;
-  inset: -2px;
-  background: linear-gradient(to right, #f87171, #dc2626);
-  border-radius: 0.5rem;
-  filter: blur(8px);
-  opacity: 0.3;
-  transition: opacity 1s;
-  z-index: 0;
+  display: none;
 }
 
 .register-input-group:focus-within .register-input-gradient,
 .register-input-group:hover .register-input-gradient {
-  opacity: 1;
-  transition-duration: 0.2s;
+  opacity: 0.3;
 }
 
 .register-input {
@@ -66,15 +58,20 @@
   background: #fff;
   border-radius: 0.5rem;
   width: 100%;
-  border: none;
+  border: 1px solid #e5e7eb;
   outline: none;
-  box-shadow: 0 0 0 1px #e5e7eb;
-  transition: box-shadow 0.3s;
   z-index: 1;
 }
 
 .register-input:focus {
-  box-shadow: 0 0 0 2px #ef4444;
+  border-color: #ef4444;
+}
+
+.error-text {
+  color: #ef4444;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  font-weight: 500;
 }
 
 .register-grid {
@@ -145,6 +142,31 @@
   transform: translateY(-2px) scale(1.02);
 }
 
+.spinner-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.spinner {
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top: 3px solid #fff;
+  width: 1.25rem;
+  height: 1.25rem;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
 .register-divider {
   position: relative;
   width: 100%;
@@ -185,6 +207,10 @@
   transition: box-shadow 0.3s, background 0.3s;
 }
 
+.register-btn-google span {
+  white-space: nowrap;
+}
+
 .register-btn-google:disabled {
   opacity: 0.7;
   cursor: not-allowed;
@@ -193,6 +219,19 @@
 .register-btn-google:hover:not(:disabled) {
   background: #f9fafb;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.loading-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-button svg {
+  margin-right: 0.75rem;
+  height: 1.25rem;
+  width: 1.25rem;
+  color: white;
 }
 
 .register-footer {
@@ -216,4 +255,18 @@
 .register-footer-link:hover {
   color: #dc2626;
   text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .register-title {
+    font-size: 1.875rem;
+  }
+
+  .register-subtitle {
+    font-size: 1rem;
+  }
+
+  .register-form {
+    padding: 0 1rem;
+  }
 }

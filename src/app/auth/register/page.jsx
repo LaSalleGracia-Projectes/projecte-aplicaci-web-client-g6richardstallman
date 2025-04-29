@@ -7,17 +7,12 @@ import Button from "../../../components/ui/Button/Button";
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
-import { setStoredUser } from "../../../utils/user";
 import Dropdown from "../../../components/ui/Dropdown/Dropdown";
 import { useNotification } from "../../../context/NotificationContext";
 import { useRouter } from "next/navigation";
-
-const API_BASE_URL = "http://localhost:8000/api";
-const API_ENDPOINTS = {
-  register: `${API_BASE_URL}/register`,
-  profile: `${API_BASE_URL}/profile`,
-  googleAuth: `${API_BASE_URL}/auth/google`,
-};
+import { authService } from "../../../services/auth.service";
+import { userService } from "../../../services/user.service";
+import { googleAuthService } from "../../../services/googleAuth.service";
 
 const initialState = {
   nombre: "",
@@ -34,6 +29,7 @@ const initialState = {
 
 const validateForm = (form) => {
   const errors = {};
+
   if (!form.nombre.trim()) errors.nombre = "El nombre es obligatorio";
   if (!form.apellido1.trim())
     errors.apellido1 = "El primer apellido es obligatorio";
@@ -43,25 +39,31 @@ const validateForm = (form) => {
   if (!form.password) errors.password = "La contraseña es obligatoria";
   else if (form.password.length < 6)
     errors.password = "La contraseña debe tener al menos 6 caracteres";
-  if (!form.role) errors.role = "El rol es obligatorio";
 
   if (form.role === "participante") {
-    if (!form.dni.trim()) errors.dni = "El DNI es obligatorio";
-    else if (!/^\d{8}[A-Z]$/.test(form.dni))
-      errors.dni = "El DNI debe tener 8 números y 1 letra mayúscula";
-    if (!form.telefono.trim()) errors.telefono = "El teléfono es obligatorio";
-    else if (!/^\+34\d{9}$|^\d{9}$/.test(form.telefono))
-      errors.telefono =
-        "El teléfono debe tener 9 dígitos o formato internacional (+34XXXXXXXXX)";
+    if (!form.dni.trim()) {
+      errors.dni = "El DNI es obligatorio";
+    } else if (!/^\d{8}[A-Z]$/.test(form.dni)) {
+      errors.dni = "Formato inválido. Ej: 12345678A";
+    }
+
+    if (!form.telefono.trim()) {
+      errors.telefono = "El teléfono es obligatorio";
+    } else if (!/^\+34\d{9}$|^\d{9}$/.test(form.telefono)) {
+      errors.telefono = "Formato inválido. Ej: 612345678 o +34612345678";
+    }
   } else if (form.role === "organizador") {
-    if (!form.nombre_organizacion.trim())
+    if (!form.nombre_organizacion.trim()) {
       errors.nombre_organizacion =
         "El nombre de la organización es obligatorio";
-    if (!form.telefono_contacto.trim())
+    }
+
+    if (!form.telefono_contacto.trim()) {
       errors.telefono_contacto = "El teléfono de contacto es obligatorio";
-    else if (!/^\+34\d{9}$|^\d{9}$/.test(form.telefono_contacto))
+    } else if (!/^\+34\d{9}$|^\d{9}$/.test(form.telefono_contacto)) {
       errors.telefono_contacto =
-        "El teléfono debe tener 9 dígitos o formato internacional (+34XXXXXXXXX)";
+        "Formato inválido. Ej: 612345678 o +34612345678";
+    }
   }
 
   return errors;
@@ -71,7 +73,7 @@ const preparePayload = (form) => {
   const payload = {
     nombre: form.nombre,
     apellido1: form.apellido1,
-    apellido2: form.apellido2,
+    apellido2: form.apellido2 || "",
     email: form.email,
     password: form.password,
     role: form.role,
@@ -92,7 +94,6 @@ export default function RegisterPage() {
   const [form, setForm] = useState(initialState);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-
   const { showSuccess, showError } = useNotification();
 
   const handleChange = (e) => {
@@ -113,68 +114,76 @@ export default function RegisterPage() {
 
   const handleGoogleAuth = async () => {
     try {
-      const res = await fetch(API_ENDPOINTS.googleAuth);
-      const data = await res.json();
-      if (data.url) {
-        router.push(data.url);
+      setLoading(true);
+      const authUrl = await googleAuthService.getAuthUrl();
+      if (authUrl) {
+        router.push(authUrl);
       } else {
         showError("No se pudo iniciar la autenticación con Google");
       }
     } catch (err) {
       showError("Error al conectar con Google");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
 
     const validationErrors = validateForm(form);
+
     if (Object.keys(validationErrors).length > 0) {
-      if (typeof validationErrors === "string") {
-        showError(validationErrors);
-      } else {
-        const errorMessages = Object.values(validationErrors).join(", ");
-        showError(errorMessages);
-      }
-      setLoading(false);
+      const errorMessages = Object.values(validationErrors).join(", ");
+      showError(errorMessages);
       return;
     }
 
-    const payload = preparePayload(form);
+    setLoading(true);
 
     try {
-      const res = await fetch(API_ENDPOINTS.register, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
+      const payload = preparePayload(form);
+      const data = await authService.register(payload);
 
-      if (!res.ok) {
-        if (typeof data.messages === "object") {
-          const errorMessages = Object.values(data.messages).flat().join(", ");
-          showError(errorMessages);
-        } else {
-          showError(data.messages || data.message || "Error en el registro");
+      showSuccess(
+        "¡Registro exitoso! Revisa tu correo para confirmar tu cuenta."
+      );
+
+      if (data.user) {
+        userService.storeUserInfo(data.user);
+      } else if (data.token) {
+        try {
+          const userData = await userService.getProfile();
+          if (userData.data) {
+            userService.storeUserInfo(userData.data);
+          }
+        } catch (profileError) {
+          console.error("Error al obtener perfil:", profileError);
         }
-      } else {
-        showSuccess("Registro exitoso. Revisa tu correo para confirmar.");
-        if (data.access_token) {
-          localStorage.setItem("access_token", data.access_token);
-          const profileRes = await fetch(API_ENDPOINTS.profile, {
-            headers: { Authorization: `Bearer ${data.access_token}` },
-          });
-          const profileData = await profileRes.json();
-          if (profileData?.data) setStoredUser(profileData.data);
-        }
-        setForm(initialState);
-        setTimeout(() => {
-          router.push("/auth/login");
-        }, 1500);
       }
+
+      setForm(initialState);
+
+      setTimeout(() => {
+        router.push("/auth/login");
+      }, 2000);
     } catch (err) {
-      showError("Error de red o del servidor");
+      if (err.errors && err.errors.messages) {
+        const messages = err.errors.messages;
+        if (typeof messages === "object") {
+          const errorMessages = Object.values(messages)
+            .flat()
+            .filter((msg) => msg)
+            .join(", ");
+          showError(errorMessages || "Error en el formulario");
+        } else {
+          showError(messages || "Error en el registro");
+        }
+      } else if (err.message) {
+        showError(err.message);
+      } else {
+        showError("Ha ocurrido un error durante el registro");
+      }
     } finally {
       setLoading(false);
     }
@@ -220,7 +229,7 @@ export default function RegisterPage() {
               name="apellido2"
               value={form.apellido2}
               onChange={handleChange}
-              placeholder="Segundo Apellido"
+              placeholder="Segundo Apellido (opcional)"
               className="register-input"
             />
           </div>
@@ -251,7 +260,7 @@ export default function RegisterPage() {
           />
         </div>
         <div className="w-full">
-          <label className="register-label">Rol</label>
+          <label className="register-label">Tipo de cuenta</label>
           <Dropdown
             options={[
               { label: "Participante", value: "participante" },
@@ -272,7 +281,7 @@ export default function RegisterPage() {
                 name="dni"
                 value={form.dni}
                 onChange={handleChange}
-                placeholder="DNI"
+                placeholder="DNI (12345678A)"
                 required
                 className="register-input"
               />
@@ -283,7 +292,7 @@ export default function RegisterPage() {
                 name="telefono"
                 value={form.telefono}
                 onChange={handleChange}
-                placeholder="Teléfono"
+                placeholder="Teléfono (612345678)"
                 required
                 className="register-input"
               />
@@ -323,42 +332,10 @@ export default function RegisterPage() {
             disabled={loading}
           >
             {loading ? (
-              <span
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <svg
-                  className="animate-spin"
-                  style={{
-                    marginLeft: "-0.25rem",
-                    marginRight: "0.75rem",
-                    height: "1.25rem",
-                    width: "1.25rem",
-                    color: "white",
-                  }}
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                Registrando...
-              </span>
+              <div className="spinner-container">
+                <div className="spinner"></div>
+                <span>Registrando...</span>
+              </div>
             ) : (
               "Registrarse"
             )}
@@ -381,7 +358,7 @@ export default function RegisterPage() {
               height={24}
               style={{ borderRadius: "50%" }}
             />
-            <span>Registrarse con Google</span>
+            <span>Google</span>
           </Button>
         </div>
       </form>
