@@ -10,6 +10,7 @@ const Dropdown = ({
   trigger,
   className = "",
   menuClassName = "",
+  triggerClassName = "",
   children,
   label,
   value,
@@ -72,7 +73,9 @@ const Dropdown = ({
     >
       <button
         type="button"
-        className="dropdown-trigger"
+        className={`dropdown-trigger${
+          triggerClassName ? ` ${triggerClassName}` : ""
+        }`}
         aria-haspopup="listbox"
         aria-expanded={open}
         tabIndex={0}
