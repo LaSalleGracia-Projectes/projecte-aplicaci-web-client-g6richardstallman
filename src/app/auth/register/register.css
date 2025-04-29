@@ -100,6 +100,30 @@
   border-radius: 0.5rem;
 }
 
+.register-dropdown .dropdown-trigger {
+  width: 25%;
+  font-size: 1.125rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: #fff;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: border-color 0.2s;
+}
+
+.register-dropdown .dropdown-trigger:hover,
+.register-dropdown .dropdown-trigger:focus {
+  border-color: #ef4444;
+}
+
+.register-dropdown .dropdown-chevron {
+  margin-left: auto;
+  color: #6b7280;
+}
+
 .register-dropdown-menu {
   width: 100%;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
