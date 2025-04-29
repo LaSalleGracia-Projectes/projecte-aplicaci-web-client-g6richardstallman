@@ -1,18 +1,25 @@
 "use client";
 
-import React, { createContext, useState, useContext } from "react";
+import React, { createContext, useState, useContext, useRef } from "react";
 import Toast from "../components/ui/Toast/Toast";
 
 const NotificationContext = createContext();
 
-let toastId = 0;
+const MAX_TOASTS = 5;
 
 export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
+  const toastIdRef = useRef(0);
 
   const addNotification = (message, type = "info", duration = 3000) => {
-    const id = toastId++;
-    setNotifications((prev) => [...prev, { id, message, type, duration }]);
+    const id = toastIdRef.current++;
+    setNotifications((prev) => {
+      const newNotifications = [...prev, { id, message, type, duration }];
+      if (newNotifications.length > MAX_TOASTS) {
+        return newNotifications.slice(-MAX_TOASTS);
+      }
+      return newNotifications;
+    });
     return id;
   };
 
@@ -43,7 +50,11 @@ export const NotificationProvider = ({ children }) => {
       }}
     >
       {children}
-      <div className="fixed top-4 right-4 z-[9999] flex flex-col space-y-2 min-w-[280px] max-w-md">
+      <div
+        className="toast-container"
+        role="region"
+        aria-label="Notificaciones"
+      >
         {notifications.map(({ id, message, type, duration }) => (
           <Toast
             key={id}
