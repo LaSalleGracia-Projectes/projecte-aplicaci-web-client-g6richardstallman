@@ -1,41 +1,47 @@
 export const storage = {
-  set(key, value) {
+  set(key, value, useSession = false) {
     if (typeof window === "undefined") return;
     try {
-      localStorage.setItem(key, JSON.stringify(value));
+      const storageMethod = useSession ? sessionStorage : localStorage;
+      storageMethod.setItem(key, JSON.stringify(value));
     } catch (e) {
-      console.error(`Error al guardar en localStorage (${key}):`, e);
+      console.error(`Error al guardar en ${useSession ? 'sessionStorage' : 'localStorage'} (${key}):`, e);
     }
   },
 
-  get(key, defaultValue = null) {
+  get(key, defaultValue = null, useSession = false) {
     if (typeof window === "undefined") return defaultValue;
     try {
-      const item = localStorage.getItem(key);
+      const storageMethod = useSession ? sessionStorage : localStorage;
+      const item = storageMethod.getItem(key);
       return item ? JSON.parse(item) : defaultValue;
     } catch (e) {
-      console.error(`Error al leer de localStorage (${key}):`, e);
+      console.error(`Error al leer de ${useSession ? 'sessionStorage' : 'localStorage'} (${key}):`, e);
       return defaultValue;
     }
   },
 
-  remove(key) {
+  remove(key, useSession = false) {
     if (typeof window === "undefined") return;
-    localStorage.removeItem(key);
+    const storageMethod = useSession ? sessionStorage : localStorage;
+    storageMethod.removeItem(key);
   },
 
-  getToken() {
+  getToken(useSession = true) {
     if (typeof window === "undefined") return null;
-    return localStorage.getItem("access_token");
+    const storageMethod = useSession ? sessionStorage : localStorage;
+    return storageMethod.getItem("access_token");
   },
 
-  setToken(token) {
+  setToken(token, useSession = true) {
     if (typeof window === "undefined") return;
-    localStorage.setItem("access_token", token);
+    const storageMethod = useSession ? sessionStorage : localStorage;
+    storageMethod.setItem("access_token", token);
   },
 
-  removeToken() {
+  removeToken(useSession = true) {
     if (typeof window === "undefined") return;
-    localStorage.removeItem("access_token");
-  }
+    const storageMethod = useSession ? sessionStorage : localStorage;
+    storageMethod.removeItem("access_token");
+  },
 };
