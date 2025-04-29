@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   FaCheckCircle,
   FaExclamationCircle,
@@ -26,12 +26,22 @@ const Toast = ({
 }) => {
   const [isVisible, setIsVisible] = useState(show);
   const [animation, setAnimation] = useState("enter");
+  const progressRef = useRef(null);
 
   useEffect(() => {
     let enterTimer, durationTimer;
     if (show) {
       setIsVisible(true);
       enterTimer = setTimeout(() => setAnimation("visible"), 10);
+
+      if (progressRef.current && duration) {
+        progressRef.current.style.width = "100%";
+        progressRef.current.style.transition = `width ${duration}ms linear`;
+        requestAnimationFrame(() => {
+          if (progressRef.current) progressRef.current.style.width = "0%";
+        });
+      }
+
       if (duration) {
         durationTimer = setTimeout(() => handleClose(), duration);
       }
@@ -53,7 +63,11 @@ const Toast = ({
   if (!isVisible && animation !== "exit") return null;
 
   return (
-    <div className={`toast toast-${type} toast-${animation}`}>
+    <div
+      className={`toast toast-${type} toast-${animation}`}
+      role="alert"
+      aria-live="assertive"
+    >
       {icons[type]}
       <div className="toast-message">{message}</div>
       <button
@@ -63,6 +77,9 @@ const Toast = ({
       >
         <FaTimes className="toast-close-icon" />
       </button>
+      {duration > 0 && (
+        <div className="toast-progress" ref={progressRef} aria-hidden="true" />
+      )}
     </div>
   );
 };
