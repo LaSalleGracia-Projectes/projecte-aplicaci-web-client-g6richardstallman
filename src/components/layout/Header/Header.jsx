@@ -1,24 +1,18 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
-import { 
-  FaBars, 
-  FaTimes, 
-  FaUserCircle, 
-  FaSignOutAlt, 
-  FaCalendarAlt, 
-  FaUser 
-} from "react-icons/fa";
 
 import Logo from "../../ui/Logo/Logo";
 import Button from "../../ui/Button/Button";
-import Dropdown from "../../ui/Dropdown/Dropdown";
+import NavLinks from "./components/NavLinks/NavLinks";
+import UserMenu from "./components/UserMenu/UserMenu";
+import MobileMenu from "./components/MobileMenu/MobileMenu";
+import { FaBars } from "react-icons/fa";
 
-import { logout } from "../../../utils/logout";
-import { getStoredUser } from "../../../utils/user";
+import { userService } from "../../../services/user.service";
+import { authService } from "../../../services/auth.service";
 
 import "./Header.css";
 
@@ -27,7 +21,7 @@ const Header = () => {
   const pathname = usePathname();
   const [user, setUser] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const mobileMenuRef = useRef(null);
+  const [logoSize, setLogoSize] = useState(120);
 
   const navItems = [
     { label: "Inicio", path: "/" },
@@ -38,132 +32,67 @@ const Header = () => {
   ];
 
   useEffect(() => {
-    const storedUser = getStoredUser();
-    setUser(storedUser);
-
-    const token = localStorage.getItem("access_token");
-    if (token) {
-      fetch("http://localhost:8000/api/profile", {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data?.data) {
-            setUser(data.data);
-          }
-        })
-        .catch((err) => console.error("Error fetching user profile:", err));
-    }
-  }, []);
-
-  useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        mobileMenuRef.current &&
-        !mobileMenuRef.current.contains(event.target)
-      ) {
-        setMobileMenuOpen(false);
+    const loadUserData = async () => {
+      const storedUser = userService.getStoredUserInfo();
+      setUser(storedUser);
+
+      if (authService.isAuthenticated()) {
+        try {
+          const response = await userService.getProfile();
+          const userData = response.data || response;
+          setUser(userData);
+          userService.storeUserInfo(userData);
+        } catch (err) {
+          console.error("Error al cargar perfil del usuario:", err);
+        }
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    loadUserData();
   }, []);
 
-  const handleLogout = () => {
-    logout(router);
-    setUser(null);
-  };
+  useEffect(() => {
+    const handleResize = () => {
+      setLogoSize(window.innerWidth >= 992 ? 150 : 120);
+    };
 
-  const navigate = (path) => {
-    router.push(path);
-  };
+    handleResize();
 
-  const userOptions = [
-    {
-      label: (
-        <div className="dropdown-item">
-          <FaUser className="dropdown-icon" />
-          <span>Mi Perfil</span>
-        </div>
-      ),
-      value: "profile",
-      onClick: () => navigate("/profile"),
-    },
-    {
-      label: (
-        <div className="dropdown-item">
-          <FaSignOutAlt className="dropdown-icon" />
-          <span>Cerrar Sesión</span>
-        </div>
-      ),
-      value: "logout",
-      onClick: handleLogout,
-    },
-  ];
+    window.addEventListener("resize", handleResize);
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const handleLogout = useCallback(async () => {
+    try {
+      await authService.logout();
+      setUser(null);
+      router.push("/");
+    } catch (error) {
+      console.error("Error durante el cierre de sesión:", error);
+    }
+  }, [router]);
+
+  const toggleMobileMenu = useCallback(() => {
+    setMobileMenuOpen((prev) => !prev);
+  }, []);
 
   return (
     <header className="header">
       <div className="header-container">
         <div className="header-logo">
-          <Logo size={150} />
+          <Logo size={logoSize} />
         </div>
 
-        <nav className="header-nav">
-          <ul className="nav-list">
-            {navItems.map((item) => (
-              <li key={item.path} className="nav-item">
-                <Link
-                  href={item.path}
-                  className={
-                    pathname === item.path ? "nav-link active" : "nav-link"
-                  }
-                >
-                  {item.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <NavLinks navItems={navItems} currentPath={pathname} />
 
         <div className="header-auth">
           {user ? (
-            <div className="user-menu">
-              <Dropdown
-                trigger={
-                  <div className="user-trigger icon-only">
-                    {user.foto_perfil ? (
-                      <Image
-                        src={user.foto_perfil}
-                        alt={user.nombre || "Usuario"}
-                        width={40}
-                        height={40}
-                        className="user-avatar"
-                      />
-                    ) : (
-                      <FaUserCircle className="user-icon" />
-                    )}
-                  </div>
-                }
-                options={userOptions}
-                className="user-dropdown"
-                menuClassName="user-dropdown-menu"
-              >
-                {userOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    className="user-dropdown-item"
-                    onClick={option.onClick}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </Dropdown>
-            </div>
+            <UserMenu user={user} onLogout={handleLogout} />
           ) : (
             <div className="auth-buttons">
               <Link href="/auth/login">
@@ -178,96 +107,21 @@ const Header = () => {
 
         <button
           className="mobile-menu-button"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          onClick={toggleMobileMenu}
           aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
         >
-          {mobileMenuOpen ? (
-            <FaTimes className="menu-icon" />
-          ) : (
-            <FaBars className="menu-icon" />
-          )}
+          <FaBars className="menu-icon" />
         </button>
       </div>
 
-      {mobileMenuOpen && (
-        <div className="mobile-menu" ref={mobileMenuRef}>
-          <nav className="mobile-nav">
-            <ul className="mobile-nav-list">
-              {navItems.map((item) => (
-                <li key={item.path} className="mobile-nav-item">
-                  <Link
-                    href={item.path}
-                    className={
-                      pathname === item.path
-                        ? "mobile-nav-link active"
-                        : "mobile-nav-link"
-                    }
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          <div className="mobile-auth">
-            {user ? (
-              <div className="mobile-user-actions">
-                <button
-                  className="mobile-user-option"
-                  onClick={() => {
-                    navigate("/profile");
-                    setMobileMenuOpen(false);
-                  }}
-                >
-                  <FaUser className="option-icon" />
-                  <span>Mi Perfil</span>
-                </button>
-                <button
-                  className="mobile-user-option"
-                  onClick={() => {
-                    navigate("/profile/eventos");
-                    setMobileMenuOpen(false);
-                  }}
-                >
-                  <FaCalendarAlt className="option-icon" />
-                  <span>Mis Eventos</span>
-                </button>
-                <button
-                  className="mobile-user-option logout"
-                  onClick={() => {
-                    handleLogout();
-                    setMobileMenuOpen(false);
-                  }}
-                >
-                  <FaSignOutAlt className="option-icon" />
-                  <span>Cerrar Sesión</span>
-                </button>
-              </div>
-            ) : (
-              <div className="mobile-auth-buttons">
-                <Link
-                  href="/auth/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Button className="mobile-login-button" block>
-                    Iniciar Sesión
-                  </Button>
-                </Link>
-                <Link
-                  href="/auth/register"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Button className="mobile-register-button" block>
-                    Registrarse
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <MobileMenu
+        isOpen={mobileMenuOpen}
+        onClose={toggleMobileMenu}
+        navItems={navItems}
+        currentPath={pathname}
+        user={user}
+        onLogout={handleLogout}
+      />
     </header>
   );
 };
