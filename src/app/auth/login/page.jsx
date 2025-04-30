@@ -72,8 +72,10 @@ export default function LoginPage() {
       showSuccess("Login exitoso");
       
       try {
+        // Obtenemos el perfil y lo guardamos en sessionStorage
         const userData = await userService.getProfile();
         if (userData.data) {
+          // Explícitamente guardamos en sessionStorage
           userService.storeUserInfo(userData.data);
         }
       } catch (profileError) {

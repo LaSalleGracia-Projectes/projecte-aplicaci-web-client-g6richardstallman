@@ -42,8 +42,27 @@ export default function GoogleAuthPage() {
   }, [router, showError, showSuccess]);
 
   return (
-    <div className="google-auth-container">
-      <p>Procesando autenticación con Google...</p>
+    <div className="google-auth-container" style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      minHeight: '50vh',
+      padding: '2rem' 
+    }}>
+      <div style={{ marginBottom: '1rem' }}>
+        <div className="spinner" style={{
+          border: '4px solid rgba(239, 68, 68, 0.1)',
+          borderRadius: '50%',
+          borderTop: '4px solid #ef4444',
+          width: '40px',
+          height: '40px',
+          animation: 'spin 1s linear infinite',
+          margin: '0 auto 1rem'
+        }}></div>
+      </div>
+      <p style={{ fontSize: '1.125rem', textAlign: 'center' }}>Procesando autenticación con Google...</p>
+      <p style={{ color: '#6b7280', marginTop: '0.5rem', textAlign: 'center' }}>Serás redirigido automáticamente</p>
     </div>
   );
 }

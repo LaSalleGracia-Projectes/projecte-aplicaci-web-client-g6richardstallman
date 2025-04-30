@@ -109,6 +109,9 @@ export default function ResetPasswordPage() {
             required
             className="reset-input"
           />
+          <small style={{ display: 'block', marginTop: '0.5rem', color: '#6b7280' }}>
+            Introduce tu DNI si eres participante o tu teléfono de contacto si eres organizador
+          </small>
         </div>
         <div className="reset-actions">
           <Button type="submit" className="reset-btn-main" disabled={loading}>

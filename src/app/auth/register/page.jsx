@@ -5,14 +5,13 @@ import Logo from "../../../components/ui/Logo/Logo";
 import Input from "../../../components/ui/Input/Input";
 import Button from "../../../components/ui/Button/Button";
 import Link from "next/link";
-import Image from "next/image";
 import { useState } from "react";
 import Dropdown from "../../../components/ui/Dropdown/Dropdown";
 import { useNotification } from "../../../context/NotificationContext";
 import { useRouter } from "next/navigation";
 import { authService } from "../../../services/auth.service";
-import { userService } from "../../../services/user.service";
 import { googleAuthService } from "../../../services/googleAuth.service";
+import Image from "next/image";
 
 const initialState = {
   nombre: "",
@@ -143,24 +142,11 @@ export default function RegisterPage() {
 
     try {
       const payload = preparePayload(form);
-      const data = await authService.register(payload);
+      await authService.register(payload);
 
       showSuccess(
         "¡Registro exitoso! Revisa tu correo para confirmar tu cuenta."
       );
-
-      if (data.user) {
-        userService.storeUserInfo(data.user);
-      } else if (data.token) {
-        try {
-          const userData = await userService.getProfile();
-          if (userData.data) {
-            userService.storeUserInfo(userData.data);
-          }
-        } catch (profileError) {
-          console.error("Error al obtener perfil:", profileError);
-        }
-      }
 
       setForm(initialState);
 
