@@ -145,7 +145,7 @@ export default function RegisterPage() {
       await authService.register(payload);
 
       showSuccess(
-        "¡Registro exitoso! Revisa tu correo para confirmar tu cuenta."
+        "¡Registro exitoso! Se ha enviado un correo de confirmación."
       );
 
       setForm(initialState);
