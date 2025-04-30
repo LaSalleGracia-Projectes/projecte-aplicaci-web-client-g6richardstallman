@@ -50,7 +50,7 @@ const Toast = ({
       clearTimeout(enterTimer);
       clearTimeout(durationTimer);
     };
-  }, [duration, show]);
+  }, [duration, show, onClose]);
 
   const handleClose = () => {
     setAnimation("exit");

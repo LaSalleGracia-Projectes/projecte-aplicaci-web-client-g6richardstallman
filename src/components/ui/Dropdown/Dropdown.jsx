@@ -54,7 +54,14 @@ const Dropdown = ({
 
   useEffect(() => {
     if (open && triggerRef.current) {
-      setMenuWidth(triggerRef.current.offsetWidth);
+      const triggerWidth = triggerRef.current.offsetWidth;
+      setMenuWidth(Math.max(triggerWidth, 200));
+
+      setTimeout(() => {
+        if (ref.current) {
+          const forceReflow = ref.current.offsetHeight;
+        }
+      }, 0);
     }
   }, [open]);
 
@@ -97,7 +104,7 @@ const Dropdown = ({
         <div
           className={`dropdown-menu${menuClassName ? ` ${menuClassName}` : ""}`}
           role="listbox"
-          style={menuWidth ? { width: menuWidth } : {}}
+          style={menuWidth ? { minWidth: menuWidth, width: "auto" } : {}}
         >
           <div className="dropdown-menu-list">
             {children

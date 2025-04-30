@@ -3,7 +3,7 @@
 import React, { useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FaUser, FaCalendarAlt, FaSignOutAlt, FaTimes } from "react-icons/fa";
+import { FaUser, FaSignOutAlt, FaTimes } from "react-icons/fa";
 import Button from "../../../../ui/Button/Button";
 import "./MobileMenu.css";
 
@@ -81,13 +81,6 @@ const MobileMenu = ({
             >
               <FaUser className="option-icon" />
               <span>Mi Perfil</span>
-            </button>
-            <button
-              className="mobile-user-option"
-              onClick={() => handleNavigate("/profile/eventos")}
-            >
-              <FaCalendarAlt className="option-icon" />
-              <span>Mis Eventos</span>
             </button>
             <button
               className="mobile-user-option logout"

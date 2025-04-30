@@ -4,9 +4,11 @@
   justify-content: center;
   text-decoration: none;
 }
+
 .logo-img {
   height: auto;
 }
+
 .logo-img:hover {
   cursor: pointer;
 }
