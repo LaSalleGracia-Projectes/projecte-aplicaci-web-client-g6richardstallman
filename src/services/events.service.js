@@ -4,177 +4,254 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export const eventsService = {
   async getAllEvents() {
-    const response = await fetch(`${API_URL}/eventos`);
-    const data = await this._handleResponse(response);
-
-    if (data.eventos) {
-      data.eventos = this._processImageUrls(data.eventos);
-    } else if (Array.isArray(data)) {
-      return this._processImageUrls(data);
+    try {
+      const response = await fetch(`${API_URL}/eventos`);
+      const data = await this._handleResponse(response);
+      
+      if (data && data.eventos) {
+        return {
+          message: data.message || "Eventos obtenidos con éxito",
+          eventos: this._processImageUrls(data.eventos),
+          total: data.eventos.length
+        };
+      }
+      return data;
+    } catch (err) {
+      console.error('Error fetching events:', err);
+      throw err;
     }
-
-    return data;
   },
 
   async getEventById(eventId) {
-    const response = await fetch(`${API_URL}/eventos/${eventId}`);
-    return this._handleResponse(response);
+    try {
+      const response = await fetch(`${API_URL}/eventos/${eventId}`);
+      const data = await this._handleResponse(response);
+      
+      if (data && data.evento && data.evento.imagen) {
+        data.evento.imagen_url = this._buildImageUrl(data.evento.imagen);
+      }
+      
+      return data;
+    } catch (err) {
+      console.error(`Error fetching event with ID ${eventId}:`, err);
+      throw err;
+    }
   },
 
   async getEventsByCategory(category) {
-    const response = await fetch(
-      `${API_URL}/eventos/categoria/${encodeURIComponent(category)}`
-    );
-    return this._handleResponse(response);
+    try {
+      const url = `${API_URL}/eventos/categoria/${encodeURIComponent(category)}`;
+      const response = await fetch(url);
+      const data = await this._handleResponse(response);
+      
+      if (data && data.eventos) {
+        data.eventos = this._processImageUrls(data.eventos);
+      }
+      
+      return data;
+    } catch (err) {
+      console.error(`Error fetching events for category ${category}:`, err);
+      throw err;
+    }
+  },
+
+  async getEventsMinPrices() {
+    try {
+      const response = await fetch(`${API_URL}/eventos/precios-minimos`);
+      return this._handleResponse(response);
+    } catch (err) {
+      console.error('Error fetching minimum prices:', err);
+      throw err;
+    }
+  },
+
+  async getEventMinPrice(eventId) {
+    try {
+      const response = await fetch(`${API_URL}/eventos/${eventId}/precio-minimo`);
+      return this._handleResponse(response);
+    } catch (err) {
+      console.error(`Error fetching minimum price for event ${eventId}:`, err);
+      throw err;
+    }
+  },
+
+  async getEventsMaxPrices() {
+    try {
+      const response = await fetch(`${API_URL}/eventos/precios-maximos`);
+      return this._handleResponse(response);
+    } catch (err) {
+      console.error('Error fetching maximum prices:', err);
+      throw err;
+    }
+  },
+
+  async getEventMaxPrice(eventId) {
+    try {
+      const response = await fetch(`${API_URL}/eventos/${eventId}/precio-maximo`);
+      return this._handleResponse(response);
+    } catch (err) {
+      console.error(`Error fetching maximum price for event ${eventId}:`, err);
+      throw err;
+    }
+  },
+
+  async getEventTicketTypes(eventId) {
+    try {
+      const response = await fetch(`${API_URL}/eventos/${eventId}/tipos-entrada`);
+      return this._handleResponse(response);
+    } catch (err) {
+      console.error(`Error fetching ticket types for event ${eventId}:`, err);
+      throw err;
+    }
   },
 
   async createEvent(eventData) {
-    const formData = new FormData();
-
-    formData.append("titulo", eventData.titulo);
-    formData.append("descripcion", eventData.descripcion);
-    formData.append("fecha", eventData.fecha);
-    formData.append("hora", eventData.hora);
-    formData.append("ubicacion", eventData.ubicacion);
-    formData.append("categoria", eventData.categoria);
-    formData.append("es_online", eventData.es_online ? "1" : "0");
-
-    if (eventData.imagen && eventData.imagen instanceof File) {
-      formData.append("imagen", eventData.imagen);
-    }
-
-    eventData.tipos_entrada.forEach((tipo, index) => {
-      formData.append(`tipos_entrada[${index}][nombre]`, tipo.nombre);
-      formData.append(`tipos_entrada[${index}][precio]`, tipo.precio);
-      formData.append(
-        `tipos_entrada[${index}][descripcion]`,
-        tipo.descripcion || ""
-      );
-      formData.append(
-        `tipos_entrada[${index}][es_ilimitado]`,
-        tipo.es_ilimitado ? "1" : "0"
-      );
-
-      if (!tipo.es_ilimitado) {
-        formData.append(
-          `tipos_entrada[${index}][cantidad_disponible]`,
-          tipo.cantidad_disponible
-        );
-      }
-    });
-
     const token = storage.getToken();
-
-    const headers = {};
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
+    if (!token) {
+      throw new Error("No se encontró token de autenticación");
     }
-    headers["Accept"] = "application/json";
+
+    const formData = this._prepareEventFormData(eventData);
 
     try {
       const response = await fetch(`${API_URL}/eventos`, {
         method: "POST",
-        headers,
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Accept": "application/json"
+        },
         body: formData,
       });
 
       return this._handleResponse(response);
-    } catch (networkError) {
-      console.error("Error de red al crear evento:", networkError);
-      throw {
-        status: 0,
-        message: "Error de conexión",
-        errors: {
-          message:
-            "No se pudo conectar con el servidor. Verifica tu conexión a internet.",
-        },
-      };
+    } catch (err) {
+      console.error("Error creating event:", err);
+      throw this._formatNetworkError(err);
     }
   },
 
   async updateEvent(eventId, eventData) {
-    const formData = new FormData();
-
-    Object.keys(eventData).forEach((key) => {
-      if (key === "imagen" && eventData[key] instanceof File) {
-        formData.append(key, eventData[key]);
-      } else if (key === "tipos_entrada" && Array.isArray(eventData[key])) {
-        eventData[key].forEach((tipo, index) => {
-          Object.keys(tipo).forEach((tipoKey) => {
-            formData.append(
-              `tipos_entrada[${index}][${tipoKey}]`,
-              tipo[tipoKey]
-            );
-          });
-        });
-      } else if (key !== "imagen") {
-        formData.append(key, eventData[key]);
-      }
-    });
-
     const token = storage.getToken();
+    if (!token) {
+      throw new Error("No se encontró token de autenticación");
+    }
 
-    const response = await fetch(`${API_URL}/eventos/${eventId}`, {
-      method: "POST",
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      body: formData,
-    });
-
+    const formData = this._prepareEventFormData(eventData);
     formData.append("_method", "PUT");
 
-    return this._handleResponse(response);
+    try {
+      const response = await fetch(`${API_URL}/eventos/${eventId}`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Accept": "application/json"
+        },
+        body: formData,
+      });
+
+      return this._handleResponse(response);
+    } catch (err) {
+      console.error(`Error updating event ${eventId}:`, err);
+      throw this._formatNetworkError(err);
+    }
   },
 
   async deleteEvent(eventId) {
     const token = storage.getToken();
     if (!token) {
-      throw new Error("No authorization token found");
+      throw new Error("No se encontró token de autenticación");
     }
 
-    const response = await fetch(`${API_URL}/eventos/${eventId}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    try {
+      const response = await fetch(`${API_URL}/eventos/${eventId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Accept": "application/json"
+        },
+      });
 
-    return this._handleResponse(response);
+      return this._handleResponse(response);
+    } catch (err) {
+      console.error(`Error deleting event ${eventId}:`, err);
+      throw this._formatNetworkError(err);
+    }
   },
 
   async getMyEvents() {
     const token = storage.getToken();
     if (!token) {
-      throw new Error("No authorization token found");
+      throw new Error("No se encontró token de autenticación");
     }
 
-    const response = await fetch(`${API_URL}/mis-eventos`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    try {
+      const response = await fetch(`${API_URL}/mis-eventos`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Accept": "application/json"
+        },
+      });
 
-    return this._handleResponse(response);
+      const data = await this._handleResponse(response);
+      
+      if (data && data.eventos) {
+        data.eventos = this._processImageUrls(data.eventos);
+      }
+      
+      return data;
+    } catch (err) {
+      console.error("Error fetching my events:", err);
+      throw this._formatNetworkError(err);
+    }
   },
 
-  async getEventMinPrice(eventId) {
-    const response = await fetch(`${API_URL}/eventos/${eventId}/precio-minimo`);
-    return this._handleResponse(response);
-  },
+  _prepareEventFormData(eventData) {
+    const formData = new FormData();
 
-  async getEventMaxPrice(eventId) {
-    const response = await fetch(`${API_URL}/eventos/${eventId}/precio-maximo`);
-    return this._handleResponse(response);
-  },
+    if (eventData.titulo) formData.append("titulo", eventData.titulo);
+    if (eventData.descripcion) formData.append("descripcion", eventData.descripcion);
+    if (eventData.fecha) formData.append("fecha", eventData.fecha);
+    if (eventData.hora) formData.append("hora", eventData.hora);
+    if (eventData.ubicacion) formData.append("ubicacion", eventData.ubicacion);
+    if (eventData.categoria) formData.append("categoria", eventData.categoria);
+    
+    if (typeof eventData.es_online !== 'undefined') {
+      formData.append("es_online", eventData.es_online ? "1" : "0");
+    }
 
-  async getPriceRanges() {
-    const minPricesResponse = await fetch(`${API_URL}/eventos/precios-minimos`);
-    const maxPricesResponse = await fetch(`${API_URL}/eventos/precios-maximos`);
+    if (eventData.es_online && eventData.enlace_streaming) {
+      formData.append("enlace_streaming", eventData.enlace_streaming);
+    }
 
-    const minPrices = await this._handleResponse(minPricesResponse);
-    const maxPrices = await this._handleResponse(maxPricesResponse);
+    if (eventData.imagen instanceof File) {
+      formData.append("imagen", eventData.imagen);
+    }
 
-    return { minPrices, maxPrices };
+    if (Array.isArray(eventData.tipos_entrada) && eventData.tipos_entrada.length > 0) {
+      eventData.tipos_entrada.forEach((tipo, index) => {
+        if (tipo.idTipoEntrada) {
+          formData.append(`tipos_entrada[${index}][idTipoEntrada]`, tipo.idTipoEntrada);
+        }
+        
+        formData.append(`tipos_entrada[${index}][nombre]`, tipo.nombre);
+        formData.append(`tipos_entrada[${index}][precio]`, tipo.precio);
+        formData.append(`tipos_entrada[${index}][es_ilimitado]`, tipo.es_ilimitado ? "1" : "0");
+        
+        if (tipo.descripcion) {
+          formData.append(`tipos_entrada[${index}][descripcion]`, tipo.descripcion);
+        }
+        
+        if (typeof tipo.activo !== 'undefined') {
+          formData.append(`tipos_entrada[${index}][activo]`, tipo.activo ? "1" : "0");
+        }
+        
+        if (!tipo.es_ilimitado && tipo.cantidad_disponible) {
+          formData.append(`tipos_entrada[${index}][cantidad_disponible]`, tipo.cantidad_disponible);
+        }
+      });
+    }
+
+    return formData;
   },
 
   async _handleResponse(response) {
@@ -205,21 +282,47 @@ export const eventsService = {
     return {
       status: response.status,
       statusText: response.statusText,
-      message: `HTTP error! status: ${response.status}`,
-      errors: errorData || { message: "Error desconocido" },
+      message: errorData.message || `Error HTTP: ${response.status}`,
+      errors: errorData.errors || { message: errorData.message || "Error desconocido" },
+    };
+  },
+
+  _formatNetworkError(err) {
+    return {
+      status: err.status || 0,
+      message: "Error de conexión",
+      errors: err.errors || {
+        message: "No se pudo conectar con el servidor. Verifica tu conexión a internet.",
+      },
     };
   },
 
   _processImageUrls(events) {
     if (!Array.isArray(events)) return events;
 
-    return events.map((event) => {
-      if (event.imagen_url && !event.imagen_url.startsWith("http")) {
-        event.imagen_url = `${API_URL}${
-          event.imagen_url.startsWith("/") ? "" : "/"
-        }${event.imagen_url}`;
+    return events.map(event => {
+      if (!event) return {};
+      
+      const processed = {...event};
+      
+      if (processed.imagen) {
+        processed.imagen_url = this._buildImageUrl(processed.imagen);
       }
-      return event;
+      
+      return processed;
     });
   },
+
+  _buildImageUrl(imagePath) {
+    if (!imagePath) return null;
+    
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath;
+    }
+    
+    const baseUrl = `${API_URL.replace('/api', '')}/storage/`;
+    const cleanPath = imagePath.replace(/^\/storage\//, '');
+    
+    return `${baseUrl}${cleanPath}`;
+  }
 };
