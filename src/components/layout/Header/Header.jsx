@@ -1,148 +1,127 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import Logo from "../../ui/Logo/Logo";
-import Input from "../../ui/Input/Input";
-import Button from "../../ui/Button/Button";
+import React, { useState, useEffect, useCallback } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { MagnifyingGlassIcon, UserCircleIcon } from "@heroicons/react/24/solid";
-import Image from "next/image";
-import { logout } from "../../../utils/logout";
-import {
-  getStoredUser,
-  setStoredUser,
-  clearStoredUser,
-} from "../../../utils/user";
+
+import Logo from "../../ui/Logo/Logo";
+import Button from "../../ui/Button/Button";
+import NavLinks from "./components/NavLinks/NavLinks";
+import UserMenu from "./components/UserMenu/UserMenu";
+import MobileMenu from "./components/MobileMenu/MobileMenu";
+import { FaBars } from "react-icons/fa";
+
+import { userService } from "../../../services/user.service";
+import { authService } from "../../../services/auth.service";
+
 import "./Header.css";
 
 const Header = () => {
-  const [user, setUser] = useState(() => getStoredUser());
-  const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
-  const menuRef = useRef(null);
+  const pathname = usePathname();
+  const [user, setUser] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [logoSize, setLogoSize] = useState(120);
+
+  const navItems = [
+    { label: "Inicio", path: "/" },
+    { label: "Eventos", path: "/events" },
+    { label: "Categorías", path: "/events/categories" },
+    { label: "Sobre Nosotros", path: "/about" },
+    { label: "Contacto", path: "/contact" },
+  ];
 
   useEffect(() => {
-    const token =
-      typeof window !== "undefined"
-        ? localStorage.getItem("access_token")
-        : null;
-    if (!token) {
-      setUser(null);
-      clearStoredUser();
-      return;
-    }
-    fetch("http://localhost:8000/api/profile", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.data) {
-          setUser(data.data);
-          setStoredUser(data.data);
+    setMobileMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    const loadUserData = async () => {
+      const storedUser = userService.getStoredUserInfo();
+      setUser(storedUser);
+
+      if (authService.isAuthenticated()) {
+        try {
+          const response = await userService.getProfile();
+          const userData = response.data || response;
+          setUser(userData);
+          userService.storeUserInfo(userData);
+        } catch (err) {
+          console.error("Error al cargar perfil del usuario:", err);
         }
-      });
+      }
+    };
+
+    loadUserData();
   }, []);
 
   useEffect(() => {
-    if (!menuOpen) return;
-    const handler = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target))
-        setMenuOpen(false);
+    const handleResize = () => {
+      setLogoSize(window.innerWidth >= 992 ? 150 : 120);
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [menuOpen]);
+
+    handleResize();
+
+    window.addEventListener("resize", handleResize);
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const handleLogout = useCallback(async () => {
+    try {
+      await authService.logout();
+      setUser(null);
+      router.push("/");
+    } catch (error) {
+      console.error("Error durante el cierre de sesión:", error);
+    }
+  }, [router]);
+
+  const toggleMobileMenu = useCallback(() => {
+    setMobileMenuOpen((prev) => !prev);
+  }, []);
 
   return (
     <header className="header">
-      <div className="header-inner">
-        {/* Logo */}
+      <div className="header-container">
         <div className="header-logo">
-          <Logo size={120} />
+          <Logo size={logoSize} />
         </div>
-        {/* Buscador */}
-        <div className="header-search">
-          <div className="header-search-wrapper">
-            <MagnifyingGlassIcon className="header-search-icon" />
-            <Input
-              type="text"
-              placeholder="Buscar eventos..."
-              className="header-search-input"
-            />
-          </div>
-        </div>
-        {/* Botones auth */}
-        <div className="header-user">
-          {!user ? (
-            <>
+
+        <NavLinks navItems={navItems} currentPath={pathname} />
+
+        <div className="header-auth">
+          {user ? (
+            <UserMenu user={user} onLogout={handleLogout} />
+          ) : (
+            <div className="auth-buttons">
               <Link href="/auth/login">
-                <Button className="header-btn header-btn-login">
-                  Iniciar Sesión
-                </Button>
+                <Button className="login-button">Iniciar Sesión</Button>
               </Link>
               <Link href="/auth/register">
-                <Button className="header-btn header-btn-register">
-                  Registrarse
-                </Button>
+                <Button className="register-button">Registrarse</Button>
               </Link>
-            </>
-          ) : (
-            <div className="header-user-menu" ref={menuRef}>
-              <button
-                onClick={() => setMenuOpen((v) => !v)}
-                className="header-user-avatar-btn"
-                aria-label="Menú de usuario"
-              >
-                {user.foto_perfil ? (
-                  <Image
-                    src={user.foto_perfil}
-                    alt="Perfil"
-                    width={36}
-                    height={36}
-                    className="header-user-avatar-img"
-                  />
-                ) : (
-                  <UserCircleIcon className="header-user-avatar-icon" />
-                )}
-              </button>
-              {menuOpen && (
-                <div className="header-dropdown">
-                  <button
-                    className="header-dropdown-item"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      router.push("/profile");
-                    }}
-                  >
-                    Perfil
-                  </button>
-                  <button
-                    className="header-dropdown-item"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      router.push("/profile/eventos");
-                    }}
-                  >
-                    Mis eventos
-                  </button>
-                  <button
-                    className="header-dropdown-item header-dropdown-logout"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      logout(router);
-                      clearStoredUser();
-                      setUser(null);
-                    }}
-                  >
-                    Logout
-                  </button>
-                </div>
-              )}
             </div>
           )}
         </div>
+
+        <button
+          className="mobile-menu-button"
+          onClick={toggleMobileMenu}
+          aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+        >
+          <FaBars className="menu-icon" />
+        </button>
       </div>
+
+      <MobileMenu
+        isOpen={mobileMenuOpen}
+        onClose={toggleMobileMenu}
+        navItems={navItems}
+        currentPath={pathname}
+        user={user}
+        onLogout={handleLogout}
+      />
     </header>
   );
 };

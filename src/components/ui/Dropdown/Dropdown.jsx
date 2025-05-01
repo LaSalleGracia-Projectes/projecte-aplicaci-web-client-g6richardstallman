@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronDownIcon } from "@heroicons/react/24/solid";
+import { FaChevronDown } from "react-icons/fa";
 import "./Dropdown.css";
 
 const Dropdown = ({
@@ -10,6 +10,7 @@ const Dropdown = ({
   trigger,
   className = "",
   menuClassName = "",
+  triggerClassName = "",
   children,
   label,
   value,
@@ -53,7 +54,14 @@ const Dropdown = ({
 
   useEffect(() => {
     if (open && triggerRef.current) {
-      setMenuWidth(triggerRef.current.offsetWidth);
+      const triggerWidth = triggerRef.current.offsetWidth;
+      setMenuWidth(Math.max(triggerWidth, 200));
+
+      setTimeout(() => {
+        if (ref.current) {
+          const forceReflow = ref.current.offsetHeight;
+        }
+      }, 0);
     }
   }, [open]);
 
@@ -72,7 +80,9 @@ const Dropdown = ({
     >
       <button
         type="button"
-        className="dropdown-trigger"
+        className={`dropdown-trigger${
+          triggerClassName ? ` ${triggerClassName}` : ""
+        }`}
         aria-haspopup="listbox"
         aria-expanded={open}
         tabIndex={0}
@@ -83,7 +93,7 @@ const Dropdown = ({
         {trigger || (
           <>
             {label || selected?.label || "Seleccionar"}
-            <ChevronDownIcon className="dropdown-chevron" />
+            <FaChevronDown className="dropdown-chevron" />
           </>
         )}
       </button>
@@ -94,7 +104,7 @@ const Dropdown = ({
         <div
           className={`dropdown-menu${menuClassName ? ` ${menuClassName}` : ""}`}
           role="listbox"
-          style={menuWidth ? { width: menuWidth } : {}}
+          style={menuWidth ? { minWidth: menuWidth, width: "auto" } : {}}
         >
           <div className="dropdown-menu-list">
             {children
