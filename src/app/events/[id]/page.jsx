@@ -1,244 +1,375 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getEventById } from "../../../services/events.service";
-import { FiCalendar, FiMapPin, FiClock, FiTag, FiHeart } from "react-icons/fi";
+import Link from "next/link";
+import { eventsService } from "../../../services/events.service";
+import { favoritesService } from "../../../services/favorites.service";
+import { storage } from "../../../utils/storage";
+import { FiCalendar, FiMapPin, FiClock, FiTag, FiHeart, FiUser, FiAlertTriangle, FiChevronLeft, FiShare2, FiDollarSign, FiUsers } from "react-icons/fi";
+import "./events-details.css";
 
 export default function EventDetailPage() {
-  const params = useParams();
-  const router = useRouter();
-  const { id } = params;
-  
+  // State management
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
-
-  useEffect(() => {
-    const fetchEventDetails = async () => {
-      if (!id) return;
+  
+  // Hooks
+  const params = useParams();
+  const router = useRouter();
+  const { id } = params;
+  
+  // Fetch event details
+  const fetchEventDetails = useCallback(async () => {
+    if (!id) return;
+    
+    try {
+      setLoading(true);
       
-      try {
-        setLoading(true);
-        console.log("Fetching event with ID:", id);
+      const result = await eventsService.getEventById(id);
+      
+      if (result && result.evento) {
+        setEvent(result.evento);
+        document.title = `${result.evento.nombreEvento} | Eventflix`;
         
-        const result = await getEventById(id);
-        console.log("API Response:", result);
-        
-        if (result && result.evento) {
-          setEvent(result.evento);
-          
-          // Check if the event is in favorites if the user is authenticated
-          const token = localStorage.getItem('access_token');
-          if (token) {
-            try {
-              const favResponse = await fetch(`http://localhost:8000/api/favoritos/check/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-              });
-              const favData = await favResponse.json();
-              setIsFavorite(favData.isFavorito || false);
-            } catch (err) {
-              console.error("Error checking favorite status:", err);
-            }
+        // Check favorite status
+        if (storage.getToken(false)) {
+          try {
+            const favResponse = await favoritesService.checkIsFavorite(id);
+            setIsFavorite(favResponse.isFavorito || false);
+          } catch (err) {
+            console.error("Error checking favorite status:", err);
           }
-        } else {
-          setError('No se pudo cargar el evento o no existe');
         }
-      } catch (err) {
-        console.error("Error loading event:", err);
-        setError('Error al cargar los detalles del evento');
-      } finally {
-        setLoading(false);
+      } else {
+        setError('No se encontró información sobre este evento');
       }
-    };
-
-    fetchEventDetails();
+    } catch (err) {
+      console.error("Error loading event:", err);
+      setError('Error al cargar los detalles del evento');
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
 
+  useEffect(() => {
+    fetchEventDetails();
+    
+    // Clean up
+    return () => {
+      document.title = "Eventflix";
+    };
+  }, [fetchEventDetails]);
+
+  // Toggle favorite status
   const toggleFavorite = async () => {
-    const token = localStorage.getItem('access_token');
+    const token = storage.getToken(false);
     if (!token) {
-      router.push('/auth/login?redirect=' + encodeURIComponent(`/events/${id}`));
+      router.push(`/auth/login?redirect=${encodeURIComponent(`/events/${id}`)}`);
       return;
     }
 
     try {
-      const url = `http://localhost:8000/api/favoritos${isFavorite ? `/${id}` : ''}`;
-      const method = isFavorite ? 'DELETE' : 'POST';
-      const body = isFavorite ? null : JSON.stringify({ idEvento: id });
-      
-      const response = await fetch(url, {
-        method,
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: method === 'POST' ? body : undefined
-      });
-      
-      const result = await response.json();
-      
-      if (response.ok) {
-        setIsFavorite(!isFavorite);
+      if (isFavorite) {
+        await favoritesService.removeFromFavorites(id);
       } else {
-        console.error("Error toggling favorite:", result);
+        await favoritesService.addToFavorites(id);
       }
+      
+      setIsFavorite(!isFavorite);
     } catch (err) {
-      console.error("Error toggling favorite:", err);
+      console.error("Error toggling favorite status:", err);
     }
   };
 
+  // Navigate to tickets page
   const buyTickets = () => {
     router.push(`/events/${id}/tickets`);
   };
+  
+  // Share event functionality
+  const shareEvent = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: event.nombreEvento,
+        text: `Mira este evento: ${event.nombreEvento}`,
+        url: window.location.href
+      }).catch(err => console.error('Error sharing event:', err));
+    } else {
+      // Fallback
+      navigator.clipboard.writeText(window.location.href)
+        .then(() => alert('¡Enlace copiado al portapapeles!'))
+        .catch(err => console.error('Error copying to clipboard:', err));
+    }
+  };
 
+  // Format date string
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('es-ES', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }).format(date);
+  };
+  
+  // Loading state
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
+      <div className="event-loading">
+        <div className="loading-spinner" aria-label="Cargando detalles del evento"></div>
+        <p>Cargando evento...</p>
       </div>
     );
   }
 
+  // Error state
   if (error) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8 text-center">
-        <h2 className="text-2xl font-bold text-red-600 mb-4">Error</h2>
-        <p className="text-gray-700 mb-6">{error}</p>
-        <button 
-          onClick={() => router.push('/events')}
-          className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
-        >
-          Ver otros eventos
-        </button>
+      <div className="event-error">
+        <div className="error-icon">
+          <FiAlertTriangle />
+        </div>
+        <h2 className="error-title">Error al cargar el evento</h2>
+        <p className="error-message">{error}</p>
+        <Link href="/events" className="btn-primary">
+          <FiChevronLeft />
+          Volver a eventos
+        </Link>
       </div>
     );
   }
 
+  // No event data
   if (!event) return null;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-        {/* Event Hero Section */}
-        <div className="relative h-80">
-          <img 
-            src={event.imagen_url || '/img/default-event.jpg'} 
-            alt={event.nombreEvento}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end">
-            <div className="p-6 text-white">
-              <div className="flex items-center mb-2">
-                <span className="px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-full">
-                  {event.categoria}
-                </span>
+    <div className="event-detail-container">
+      {/* Hero Section */}
+      <section className="event-hero">
+        <img 
+          src={event.imagen_url || '/img/default-event.jpg'} 
+          alt={event.nombreEvento}
+          className="event-hero-image"
+        />
+        <div className="event-hero-overlay">
+          <div className="event-hero-content">
+            {event.categoria && (
+              <span className="event-category">
+                {event.categoria}
+              </span>
+            )}
+            <h1 className="event-title">{event.nombreEvento}</h1>
+            <div className="event-meta">
+              <div className="event-meta-item">
+                <FiCalendar className="event-meta-icon" />
+                <span>{formatDate(event.fechaEvento)}</span>
               </div>
-              <h1 className="text-3xl md:text-4xl font-bold mb-2">{event.nombreEvento}</h1>
-              <div className="flex flex-wrap gap-4 text-sm">
-                <div className="flex items-center">
-                  <FiCalendar className="mr-2" />
-                  <span>{new Date(event.fechaEvento).toLocaleDateString()}</span>
-                </div>
-                <div className="flex items-center">
-                  <FiClock className="mr-2" />
+              {event.hora && (
+                <div className="event-meta-item">
+                  <FiClock className="event-meta-icon" />
                   <span>{event.hora}</span>
                 </div>
-                <div className="flex items-center">
-                  <FiMapPin className="mr-2" />
+              )}
+              {event.ubicacion && (
+                <div className="event-meta-item">
+                  <FiMapPin className="event-meta-icon" />
                   <span>{event.ubicacion}</span>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
-        
-        {/* Event Details */}
-        <div className="p-6">
-          <div className="flex justify-between mb-6">
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">Detalles del evento</h2>
-              <div className="prose max-w-none">
-                <p className="text-gray-700">{event.descripcion}</p>
-              </div>
+      </section>
+      
+      {/* Main Content */}
+      <div className="event-content">
+        <div className="event-main-content">
+          {/* Description */}
+          <section className="event-description-section">
+            <h2 className="event-description-title">Acerca de este evento</h2>
+            <div className="event-description-content">
+              {event.descripcion || "No hay descripción disponible para este evento."}
             </div>
-            <div className="flex flex-col gap-4">
-              <button
-                onClick={toggleFavorite}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md ${
-                  isFavorite 
-                    ? "bg-pink-100 text-pink-600 border border-pink-300" 
-                    : "bg-gray-100 text-gray-700 border border-gray-300"
-                }`}
-              >
-                <FiHeart className={isFavorite ? "fill-pink-600" : ""} />
-                {isFavorite ? "En favoritos" : "Añadir a favoritos"}
-              </button>
+          </section>
+          
+          {/* Tickets Section */}
+          {event.tiposEntrada && event.tiposEntrada.length > 0 && (
+            <section className="event-tickets-section">
+              <h2 className="event-tickets-title">Entradas disponibles</h2>
+              <div className="event-tickets-grid">
+                {event.tiposEntrada.map(ticket => {
+                  const soldOut = !ticket.es_ilimitado && 
+                    ((ticket.cantidad_disponible - (ticket.entradas_vendidas || 0)) <= 0);
+                  const lowStock = !ticket.es_ilimitado && 
+                    ((ticket.cantidad_disponible - (ticket.entradas_vendidas || 0)) <= 5) &&
+                    ((ticket.cantidad_disponible - (ticket.entradas_vendidas || 0)) > 0);
+                  
+                  return (
+                    <div key={ticket.id} className="event-ticket-card">
+                      <div className="event-ticket-header">
+                        <span className="event-ticket-name">{ticket.nombre}</span>
+                        <span className="event-ticket-price">€{ticket.precio}</span>
+                      </div>
+                      {ticket.descripcion && (
+                        <p className="event-ticket-description">{ticket.descripcion}</p>
+                      )}
+                      <div className="event-ticket-status">
+                        <span className={`event-ticket-stock ${lowStock ? 'event-ticket-low-stock' : ''} ${soldOut ? 'event-ticket-sold-out' : ''}`}>
+                          {ticket.es_ilimitado ? (
+                            'Disponibilidad ilimitada'
+                          ) : soldOut ? (
+                            'Agotado'
+                          ) : lowStock ? (
+                            `¡Solo ${ticket.cantidad_disponible - (ticket.entradas_vendidas || 0)} disponibles!`
+                          ) : (
+                            `${ticket.cantidad_disponible - (ticket.entradas_vendidas || 0)} disponibles`
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
               
+              <div className="event-tickets-action">
+                <button
+                  onClick={buyTickets}
+                  className="btn-primary"
+                >
+                  <FiTag />
+                  Comprar entradas
+                </button>
+              </div>
+            </section>
+          )}
+        </div>
+        
+        {/* Sidebar */}
+        <div className="event-sidebar">
+          {/* Action Buttons */}
+          <div className="event-sidebar-card">
+            <div className="event-actions">
               <button
                 onClick={buyTickets}
-                className="px-6 py-3 bg-red-600 text-white font-semibold rounded-md hover:bg-red-700 transition flex items-center justify-center gap-2"
+                className="btn-primary"
               >
                 <FiTag />
                 Comprar entradas
               </button>
+              
+              <button
+                onClick={toggleFavorite}
+                className={`btn-secondary ${isFavorite ? 'btn-secondary-active' : ''}`}
+              >
+                <FiHeart className={isFavorite ? "btn-icon fill-red-500" : "btn-icon"} />
+                {isFavorite ? "Guardado en favoritos" : "Añadir a favoritos"}
+              </button>
+              
+              <button
+                onClick={shareEvent}
+                className="btn-secondary"
+              >
+                <FiShare2 className="btn-icon" />
+                Compartir evento
+              </button>
             </div>
+          </div>
+          
+          {/* Date and Location Details */}
+          <div className="event-sidebar-card">
+            <h3 className="event-sidebar-title">Información del evento</h3>
+            <ul className="event-details-list">
+              <li className="event-details-item">
+                <div className="event-details-icon">
+                  <FiCalendar />
+                </div>
+                <div className="event-details-content">
+                  <h4>Fecha</h4>
+                  <p>{formatDate(event.fechaEvento)}</p>
+                </div>
+              </li>
+              {event.hora && (
+                <li className="event-details-item">
+                  <div className="event-details-icon">
+                    <FiClock />
+                  </div>
+                  <div className="event-details-content">
+                    <h4>Hora</h4>
+                    <p>{event.hora}</p>
+                  </div>
+                </li>
+              )}
+              {event.ubicacion && (
+                <li className="event-details-item">
+                  <div className="event-details-icon">
+                    <FiMapPin />
+                  </div>
+                  <div className="event-details-content">
+                    <h4>Ubicación</h4>
+                    <p>{event.ubicacion}</p>
+                  </div>
+                </li>
+              )}
+              {event.tiposEntrada && event.tiposEntrada.length > 0 && (
+                <li className="event-details-item">
+                  <div className="event-details-icon">
+                    <FiDollarSign />
+                  </div>
+                  <div className="event-details-content">
+                    <h4>Precio</h4>
+                    <p>
+                      {event.tiposEntrada.reduce((min, ticket) => 
+                        Math.min(min, parseFloat(ticket.precio)), 
+                        parseFloat(event.tiposEntrada[0].precio)
+                      ).toFixed(2)} € - {
+                      event.tiposEntrada.reduce((max, ticket) => 
+                        Math.max(max, parseFloat(ticket.precio)), 0
+                      ).toFixed(2)} €
+                    </p>
+                  </div>
+                </li>
+              )}
+              {event.asistentes_maximos && (
+                <li className="event-details-item">
+                  <div className="event-details-icon">
+                    <FiUsers />
+                  </div>
+                  <div className="event-details-content">
+                    <h4>Aforo máximo</h4>
+                    <p>{event.asistentes_maximos} personas</p>
+                  </div>
+                </li>
+              )}
+            </ul>
           </div>
           
           {/* Organizer Info */}
           {event.organizador && (
-            <div className="mt-8 border-t pt-6">
-              <h3 className="text-xl font-semibold mb-4">Organizado por</h3>
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-gray-700 text-xl font-bold">
+            <div className="event-sidebar-card">
+              <h3 className="event-sidebar-title">Organizado por</h3>
+              <div className="event-organizer">
+                <div className="event-organizer-avatar">
                   {event.organizador.nombre_organizacion?.charAt(0) || "O"}
                 </div>
-                <div className="ml-4">
-                  <h4 className="font-medium">{event.organizador.nombre_organizacion}</h4>
-                  <p className="text-gray-600 text-sm">
-                    {event.organizador.user?.nombre} {event.organizador.user?.apellido1}
-                  </p>
+                <div className="event-organizer-info">
+                  <h4>{event.organizador.nombre_organizacion}</h4>
+                  {event.organizador.user && (
+                    <p>
+                      {event.organizador.user.nombre} {event.organizador.user.apellido1}
+                    </p>
+                  )}
                 </div>
               </div>
-            </div>
-          )}
-          
-          {/* Available Tickets Section (can be expanded in the future) */}
-          {event.tiposEntrada && event.tiposEntrada.length > 0 && (
-            <div className="mt-8 border-t pt-6">
-              <h3 className="text-xl font-semibold mb-4">Entradas disponibles</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {event.tiposEntrada.map(tipo => (
-                  <div 
-                    key={tipo.id} 
-                    className="border rounded-lg p-4 flex justify-between items-center"
-                  >
-                    <div>
-                      <h4 className="font-medium">{tipo.nombre}</h4>
-                      <p className="text-gray-600">{tipo.descripcion}</p>
-                      <p className="text-gray-700 mt-1">
-                        {tipo.es_ilimitado 
-                          ? 'Disponibilidad: Ilimitada' 
-                          : `Disponibles: ${tipo.cantidad_disponible - (tipo.entradas_vendidas || 0)}`
-                        }
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xl font-bold">€{tipo.precio}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
               
-              <div className="mt-6 flex justify-center">
-                <button
-                  onClick={buyTickets}
-                  className="px-8 py-3 bg-red-600 text-white font-semibold rounded-md hover:bg-red-700 transition"
-                >
-                  Comprar entradas
-                </button>
-              </div>
+              {event.organizador.id && (
+                <Link href={`/organizers/${event.organizador.id}`} className="event-organizer-link">
+                  Ver perfil del organizador
+                </Link>
+              )}
             </div>
           )}
         </div>

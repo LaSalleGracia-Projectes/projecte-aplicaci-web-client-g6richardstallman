@@ -40,7 +40,8 @@ const Header = () => {
       const storedUser = userService.getStoredUserInfo();
       setUser(storedUser);
 
-      if (authService.isAuthenticated()) {
+      const hasToken = localStorage.getItem('token') || sessionStorage.getItem('token');
+      if (hasToken && storedUser) {
         try {
           const response = await userService.getProfile();
           const userData = response.data || response;

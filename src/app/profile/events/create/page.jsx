@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { eventsService } from "../../../services/events.service";
-import { userService } from "../../../services/user.service";
-import { useNotification } from "../../../context/NotificationContext";
+import { eventsService } from "../../../../services/events.service";
+import { userService } from "../../../../services/user.service";
+import { useNotification } from "../../../../context/NotificationContext";
 import { 
   FiCalendar, FiClock, FiMapPin, FiTag, 
   FiEdit, FiTrash2, FiPlus, FiImage, 
@@ -17,6 +17,7 @@ import "./create-event.css";
 export default function CreateEventPage() {
   const router = useRouter();
   const { showSuccess, showError, showInfo, showWarning } = useNotification();
+  const fileInputRef = useRef(null);
   
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -24,15 +25,14 @@ export default function CreateEventPage() {
   const [imagePreview, setImagePreview] = useState(null);
   const [imageUploadDisabled, setImageUploadDisabled] = useState(false);
   const [technicalError, setTechnicalError] = useState('');
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
   
-  // Categorías disponibles para eventos
-  const categories = [
+  const [categories, setCategories] = useState([
     'Música', 'Deportes', 'Arte', 'Teatro', 'Cine', 
     'Tecnología', 'Gastronomía', 'Moda', 'Literatura', 'Educación',
     'Networking', 'Conferencias', 'Festivales', 'Exposiciones', 'Turismo'
-  ];
+  ]);
   
-  // Estado del formulario
   const [formData, setFormData] = useState({
     titulo: "",
     descripcion: "",
@@ -53,7 +53,6 @@ export default function CreateEventPage() {
     ],
   });
 
-  // Verificar que el usuario sea organizador
   useEffect(() => {
     const checkUserType = async () => {
       try {
@@ -61,7 +60,9 @@ export default function CreateEventPage() {
         
         if (!user) {
           try {
-            const { data } = await userService.getProfile();
+            const profileData = await userService.getProfile();
+            const data = profileData.data || profileData;
+            
             if (data?.tipo_usuario?.toLowerCase() !== "organizador") {
               showError("Solo los organizadores pueden crear eventos");
               router.replace("/profile");
@@ -90,7 +91,6 @@ export default function CreateEventPage() {
     checkUserType();
   }, [router, showError]);
 
-  // Manejar cambio en campos normales
   const handleInputChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -98,7 +98,6 @@ export default function CreateEventPage() {
       [name]: type === "checkbox" ? checked : value
     }));
     
-    // Limpiar error cuando el usuario corrige
     if (formErrors[name]) {
       setFormErrors(prev => ({
         ...prev,
@@ -107,7 +106,6 @@ export default function CreateEventPage() {
     }
   }, [formErrors]);
 
-  // Manejar cambio en imagen
   const handleImageChange = useCallback((e) => {
     if (imageUploadDisabled) {
       showInfo("La subida de imágenes está temporalmente deshabilitada");
@@ -117,13 +115,11 @@ export default function CreateEventPage() {
     const file = e.target.files[0];
     if (!file) return;
     
-    // Validar tipo de archivo
     if (!file.type.startsWith('image/')) {
       showError("Por favor, selecciona un archivo de imagen válido");
       return;
     }
     
-    // Validar tamaño (máximo 5MB)
     if (file.size > 5 * 1024 * 1024) {
       showError("La imagen no debe superar los 5MB");
       return;
@@ -134,14 +130,12 @@ export default function CreateEventPage() {
       imagen: file
     }));
     
-    // Crear preview
     const reader = new FileReader();
     reader.onload = (e) => {
       setImagePreview(e.target.result);
     };
     reader.readAsDataURL(file);
     
-    // Limpiar error
     if (formErrors.imagen) {
       setFormErrors(prev => ({
         ...prev,
@@ -150,7 +144,6 @@ export default function CreateEventPage() {
     }
   }, [formErrors, imageUploadDisabled, showError, showInfo]);
 
-  // Manejar cambios en tipos de entrada
   const handleTicketTypeChange = useCallback((index, e) => {
     const { name, value, type, checked } = e.target;
     
@@ -166,7 +159,6 @@ export default function CreateEventPage() {
       };
     });
     
-    // Limpiar error para ese tipo de entrada
     setFormErrors(prev => {
       const key = `tipos_entrada.${index}.${name}`;
       if (prev[key]) {
@@ -178,7 +170,6 @@ export default function CreateEventPage() {
     });
   }, []);
 
-  // Añadir tipo de entrada
   const addTicketType = useCallback(() => {
     setFormData(prev => ({
       ...prev,
@@ -195,9 +186,7 @@ export default function CreateEventPage() {
     }));
   }, []);
 
-  // Eliminar tipo de entrada
   const removeTicketType = useCallback((index) => {
-    // Mantener al menos un tipo de entrada
     if (formData.tipos_entrada.length <= 1) {
       showInfo("Debe existir al menos un tipo de entrada");
       return;
@@ -207,15 +196,23 @@ export default function CreateEventPage() {
       ...prev,
       tipos_entrada: prev.tipos_entrada.filter((_, i) => i !== index)
     }));
+    
+    setFormErrors(prev => {
+      const newErrors = {...prev};
+      Object.keys(newErrors).forEach(key => {
+        if (key.startsWith(`tipos_entrada.${index}.`)) {
+          delete newErrors[key];
+        }
+      });
+      return newErrors;
+    });
   }, [formData.tipos_entrada.length, showInfo]);
 
-  // Validar formulario
   const validateForm = useCallback(() => {
     const errors = {};
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    // Validar campos principales
     if (!formData.titulo.trim()) errors.titulo = "El título es obligatorio";
     if (!formData.descripcion.trim()) errors.descripcion = "La descripción es obligatoria";
     if (!formData.fecha) {
@@ -230,7 +227,6 @@ export default function CreateEventPage() {
     if (!formData.ubicacion.trim()) errors.ubicacion = "La ubicación es obligatoria";
     if (!formData.categoria) errors.categoria = "La categoría es obligatoria";
     
-    // Validar tipos de entrada
     formData.tipos_entrada.forEach((ticket, index) => {
       if (!ticket.nombre.trim()) errors[`tipos_entrada.${index}.nombre`] = "El nombre es obligatorio";
       
@@ -249,7 +245,6 @@ export default function CreateEventPage() {
     return Object.keys(errors).length === 0;
   }, [formData]);
 
-  // Enviar formulario
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     
@@ -262,12 +257,10 @@ export default function CreateEventPage() {
     setTechnicalError('');
     
     try {
-      // Si la imagen está deshabilitada, aseguramos enviar null
       const dataToSend = imageUploadDisabled ? 
         { ...formData, imagen: null } : 
         formData;
 
-      // Preparamos los datos con los formatos correctos
       const preparedData = {
         ...dataToSend,
         tipos_entrada: dataToSend.tipos_entrada.map(tipo => ({
@@ -280,6 +273,7 @@ export default function CreateEventPage() {
       const result = await eventsService.createEvent(preparedData);
       
       showSuccess("¡Evento creado correctamente!");
+      
       setTimeout(() => {
         router.push("/profile/events");
       }, 1500);
@@ -290,11 +284,9 @@ export default function CreateEventPage() {
         setImageUploadDisabled(true);
         setTechnicalError('Error en el servidor: La función de procesamiento de imágenes no está disponible');
         
-        // Si el error fue por la imagen, intentar de nuevo sin imagen
         if (formData.imagen) {
           showWarning("El servidor no puede procesar imágenes en este momento. Intenta crear el evento sin imagen.");
           
-          // Limpiar la imagen
           setFormData(prev => ({
             ...prev,
             imagen: null
@@ -303,10 +295,12 @@ export default function CreateEventPage() {
         } else {
           showError("Error en el servidor. Contacta al administrador del sistema.");
         }
-      } else if (err.status === 401 || err.status === 403) {
+      } else if (err.status === 401) {
+        showError("Sesión expirada. Por favor, inicia sesión de nuevo.");
+        setTimeout(() => router.replace("/auth/login"), 2000);
+      } else if (err.status === 403) {
         showError("No tienes permiso para crear eventos");
       } else if (err.errors?.errors) {
-        // Errores de validación del backend
         const serverErrors = {};
         Object.entries(err.errors.errors).forEach(([key, value]) => {
           serverErrors[key] = Array.isArray(value) ? value[0] : value;
@@ -320,6 +314,12 @@ export default function CreateEventPage() {
       setLoading(false);
     }
   }, [formData, imageUploadDisabled, router, showError, showSuccess, showWarning, validateForm]);
+
+  const triggerFileInput = useCallback(() => {
+    if (!imageUploadDisabled && fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  }, [imageUploadDisabled]);
 
   if (initialLoading) {
     return (
@@ -351,7 +351,6 @@ export default function CreateEventPage() {
 
       <form onSubmit={handleSubmit} className="create-event-form">
         <div className="form-grid">
-          {/* Columna izquierda */}
           <div className="form-column">
             <div className="form-section">
               <h2>Información básica</h2>
@@ -368,6 +367,8 @@ export default function CreateEventPage() {
                   onChange={handleInputChange}
                   className={formErrors.titulo ? "error" : ""}
                   placeholder="Ej. Concierto de Rock en Vivo"
+                  autoComplete="off"
+                  maxLength={100}
                 />
                 {formErrors.titulo && <div className="error-message">{formErrors.titulo}</div>}
               </div>
@@ -384,8 +385,10 @@ export default function CreateEventPage() {
                   className={formErrors.descripcion ? "error" : ""}
                   rows={5}
                   placeholder="Describe tu evento detalladamente"
+                  maxLength={1000}
                 ></textarea>
                 {formErrors.descripcion && <div className="error-message">{formErrors.descripcion}</div>}
+                <small className="char-counter">{formData.descripcion.length}/1000</small>
               </div>
               
               <div className="form-row">
@@ -431,6 +434,7 @@ export default function CreateEventPage() {
                   value={formData.categoria}
                   onChange={handleInputChange}
                   className={formErrors.categoria ? "error" : ""}
+                  disabled={categoriesLoading}
                 >
                   <option value="">Seleccionar categoría</option>
                   {categories.map(cat => (
@@ -467,13 +471,13 @@ export default function CreateEventPage() {
                   onChange={handleInputChange}
                   className={formErrors.ubicacion ? "error" : ""}
                   placeholder={formData.es_online ? "URL o plataforma (Zoom, Teams, etc.)" : "Dirección física"}
+                  maxLength={255}
                 />
                 {formErrors.ubicacion && <div className="error-message">{formErrors.ubicacion}</div>}
               </div>
             </div>
           </div>
           
-          {/* Columna derecha */}
           <div className="form-column">
             <div className="form-section">
               <h2>Imagen del evento</h2>
@@ -502,7 +506,16 @@ export default function CreateEventPage() {
                 ) : (
                   <div 
                     className="image-placeholder"
-                    onClick={() => document.getElementById("imagen").click()}
+                    onClick={triggerFileInput}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        triggerFileInput();
+                      }
+                    }}
+                    tabIndex={0}
+                    role="button"
+                    aria-label="Subir imagen del evento"
                   >
                     <FiImage size={40} />
                     <p>Haz clic para subir una imagen</p>
@@ -516,6 +529,7 @@ export default function CreateEventPage() {
                   accept="image/*"
                   onChange={handleImageChange}
                   style={{ display: "none" }}
+                  ref={fileInputRef}
                   disabled={imageUploadDisabled}
                 />
                 {formErrors.imagen && <div className="error-message">{formErrors.imagen}</div>}
@@ -561,6 +575,7 @@ export default function CreateEventPage() {
                         onChange={(e) => handleTicketTypeChange(index, e)}
                         className={formErrors[`tipos_entrada.${index}.nombre`] ? "error" : ""}
                         placeholder="Ej. VIP, General, Estudiante"
+                        maxLength={50}
                       />
                       {formErrors[`tipos_entrada.${index}.nombre`] && (
                         <div className="error-message">{formErrors[`tipos_entrada.${index}.nombre`]}</div>
@@ -596,6 +611,7 @@ export default function CreateEventPage() {
                         onChange={(e) => handleTicketTypeChange(index, e)}
                         rows={2}
                         placeholder="Describe los beneficios de este tipo de entrada"
+                        maxLength={255}
                       ></textarea>
                     </div>
                     
@@ -627,6 +643,7 @@ export default function CreateEventPage() {
                           onChange={(e) => handleTicketTypeChange(index, e)}
                           className={formErrors[`tipos_entrada.${index}.cantidad_disponible`] ? "error" : ""}
                           min="1"
+                          max="100000"
                         />
                         {formErrors[`tipos_entrada.${index}.cantidad_disponible`] && (
                           <div className="error-message">
@@ -643,8 +660,11 @@ export default function CreateEventPage() {
                 type="button" 
                 onClick={addTicketType}
                 className="add-ticket-button"
+                disabled={formData.tipos_entrada.length >= 5}
+                aria-label="Añadir otro tipo de entrada"
               >
                 <FiPlus /> Añadir otro tipo de entrada
+                {formData.tipos_entrada.length >= 5 && <span> (Máximo 5)</span>}
               </button>
             </div>
           </div>

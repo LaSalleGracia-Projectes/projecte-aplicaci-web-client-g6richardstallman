@@ -1,7 +1,7 @@
 /* Estilos generales de la página */
 .tickets-page {
   width: 100%;
-  max-width: 1000px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 0.5rem;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -10,6 +10,9 @@
 /* Cabecera */
 .tickets-header {
   margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .tickets-title {
@@ -19,7 +22,7 @@
 }
 
 .tickets-icon {
-  color: #ef4444;
+  color: #3b82f6;
   width: 2rem;
   height: 2rem;
 }
@@ -28,6 +31,41 @@
   font-size: 1.8rem;
   color: #1f2937;
   margin: 0;
+}
+
+/* Botón de actualizar */
+.refresh-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #f9fafb;
+  border: 1px solid #d1d5db;
+  color: #4b5563;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.refresh-button:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.refresh-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.refresh-button:focus-visible {
+  outline: 3px solid #3b82f6;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
 }
 
 /* Estado de carga */
@@ -43,9 +81,9 @@
 .tickets-spinner {
   width: 50px;
   height: 50px;
-  border: 3px solid rgba(239, 68, 68, 0.2);
+  border: 3px solid rgba(59, 130, 246, 0.2);
   border-radius: 50%;
-  border-top-color: #ef4444;
+  border-top-color: #3b82f6;
   animation: spin 1s ease-in-out infinite;
   margin-bottom: 1.5rem;
 }
@@ -93,19 +131,9 @@
   position: relative;
 }
 
-.primary-icon {
+.tickets-empty-icon svg {
   width: 50px;
   height: 50px;
-}
-
-.secondary-icon {
-  position: absolute;
-  width: 26px;
-  height: 26px;
-  top: 15px;
-  right: 15px;
-  color: #1e40af;
-  opacity: 0.7;
 }
 
 .pulse-animation {
@@ -132,6 +160,13 @@
   line-height: 1.6;
 }
 
+.tickets-empty-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 .explore-button {
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
@@ -144,18 +179,21 @@
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
-}
-
-.button-icon {
-  width: 20px;
-  height: 20px;
+  min-width: 180px;
 }
 
 .explore-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
   background-image: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+}
+
+.explore-button:focus-visible {
+  outline: 3px solid #3b82f6;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
 }
 
 /* Lista de entradas */
@@ -171,7 +209,9 @@
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  will-change: transform, box-shadow;
+  border-left: 4px solid #3b82f6;
 }
 
 .ticket-card:hover {
@@ -235,6 +275,7 @@
   width: 1rem;
   height: 1rem;
   margin-top: 0.2rem;
+  flex-shrink: 0;
 }
 
 .ticket-card-actions {
@@ -249,6 +290,10 @@
 .view-ticket-button,
 .download-ticket-button,
 .download-invoice-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   padding: 0.75rem 1rem;
   border-radius: 8px;
   font-weight: 500;
@@ -258,17 +303,18 @@
   flex: 1;
   text-align: center;
   min-width: 140px;
+  will-change: transform;
 }
 
 .view-ticket-button {
-  background-color: #3b82f6;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
   border: none;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
 }
 
 .view-ticket-button:hover {
-  background-color: #2563eb;
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
   transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
 }
@@ -282,6 +328,8 @@
 .download-ticket-button:hover {
   background-color: #e5e7eb;
   transform: translateY(-1px);
+  color: #3b82f6;
+  border-color: #93c5fd;
 }
 
 .download-invoice-button {
@@ -293,6 +341,16 @@
 .download-invoice-button:hover {
   background-color: #e5e7eb;
   transform: translateY(-1px);
+  color: #3b82f6;
+  border-color: #93c5fd;
+}
+
+.view-ticket-button:focus-visible,
+.download-ticket-button:focus-visible,
+.download-invoice-button:focus-visible {
+  outline: 3px solid #3b82f6;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
 }
 
 .view-ticket-button:disabled,
@@ -301,6 +359,43 @@
   opacity: 0.7;
   cursor: progress;
   transform: none;
+}
+
+/* Prevenir animaciones para usuarios que prefieren reducirlas */
+@media (prefers-reduced-motion: reduce) {
+  .ticket-card,
+  .explore-button,
+  .view-ticket-button,
+  .download-ticket-button,
+  .download-invoice-button {
+    transition: none;
+  }
+  
+  .spinning,
+  .tickets-spinner,
+  .pulse-animation {
+    animation: none;
+  }
+}
+
+/* Optimizar el rendimiento de animaciones */
+@media (prefers-reduced-motion: no-preference) {
+  .ticket-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .spinning {
+    animation: spin 1s linear infinite;
+  }
+
+  .pulse-animation {
+    animation: pulse-glow 2.5s infinite ease-in-out;
+  }
+
+  .explore-button:hover,
+  .view-ticket-button:hover {
+    transform: translateY(-2px);
+  }
 }
 
 /* Media queries */
@@ -325,6 +420,41 @@
   .download-invoice-button {
     width: 100%;
   }
+  
+  .tickets-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .refresh-button {
+    align-self: flex-end;
+  }
+}
+
+@media (max-width: 640px) {
+  .tickets-empty {
+    padding: 3rem 1.5rem;
+  }
+  
+  .tickets-empty-icon {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .tickets-empty-icon svg {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .tickets-empty-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .explore-button {
+    width: 100%;
+  }
 }
 
 @media (max-width: 480px) {
@@ -335,10 +465,20 @@
   }
   
   .tickets-empty {
-    padding: 3rem 1.5rem;
+    padding: 2.5rem 1rem;
   }
   
   .ticket-card-detail {
     font-size: 0.875rem;
+  }
+  
+  .tickets-empty-icon {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .tickets-empty-icon svg {
+    width: 30px;
+    height: 30px;
   }
 }

@@ -1,6 +1,4 @@
-/* Reutilizamos los estilos de la página de eventos favoritos */
-/* Para mantener consistencia visual */
-
+/* Estilos base reutilizados de la página de favoritos con mejoras específicas para organizadores */
 .favorites-page {
   width: 100%;
   max-width: 1200px;
@@ -12,6 +10,9 @@
 /* Cabecera */
 .favorites-header {
   margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .favorites-title {
@@ -26,10 +27,50 @@
   height: 2rem;
 }
 
+/* Color específico para organizadores */
+.organizer-icon {
+  color: #8b5cf6;
+}
+
 .favorites-title h1 {
   font-size: 1.8rem;
   color: #1f2937;
   margin: 0;
+}
+
+/* Botón de actualizar */
+.refresh-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #f9fafb;
+  border: 1px solid #d1d5db;
+  color: #4b5563;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.refresh-button:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.refresh-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.refresh-button:focus-visible {
+  outline: 3px solid #8b5cf6;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.3);
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
 }
 
 /* Estado de carga */
@@ -45,9 +86,9 @@
 .favorites-spinner {
   width: 50px;
   height: 50px;
-  border: 3px solid rgba(239, 68, 68, 0.2);
+  border: 3px solid rgba(139, 92, 246, 0.2);
   border-radius: 50%;
-  border-top-color: #ef4444;
+  border-top-color: #8b5cf6;
   animation: spin 1s ease-in-out infinite;
   margin-bottom: 1.5rem;
 }
@@ -66,39 +107,63 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.favorites-empty::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(to right, #8b5cf6, #a78bfa, #ddd6fe);
+  border-radius: 5px 5px 0 0;
 }
 
 .favorites-empty-icon {
-  width: 70px;
-  height: 70px;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
-  background-color: #fee2e2;
-  color: #b91c1c;
+  background: radial-gradient(circle, #ddd6fe 0%, #a78bfa 100%);
+  color: #4c1d95;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 1.5rem;
+  box-shadow: 0 10px 25px rgba(139, 92, 246, 0.2);
+  position: relative;
 }
 
-.favorites-empty-icon svg {
-  width: 36px;
-  height: 36px;
+.organizer-empty-icon {
+  background: radial-gradient(circle, #ddd6fe 0%, #a78bfa 100%);
+  color: #4c1d95;
 }
 
 .favorites-empty h2 {
   margin: 0 0 1rem;
   font-size: 1.5rem;
   color: #1f2937;
+  font-weight: 600;
 }
 
 .favorites-empty p {
   color: #6b7280;
   margin-bottom: 2rem;
   max-width: 500px;
+  line-height: 1.6;
 }
 
-.explore-events-button {
-  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+.favorites-empty-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.explore-button {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
   color: white;
   border: none;
   padding: 0.85rem 1.75rem;
@@ -106,13 +171,23 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 180px;
 }
 
-.explore-events-button:hover {
+.explore-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.3);
-  background-image: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+  box-shadow: 0 6px 16px rgba(139, 92, 246, 0.3);
+  background-image: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+}
+
+.explore-button:focus-visible {
+  outline: 3px solid #8b5cf6;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.3);
 }
 
 /* Grid de favoritos */
@@ -128,9 +203,14 @@
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  will-change: transform, box-shadow;
   display: flex;
   flex-direction: column;
+}
+
+.organizer-card {
+  border-left: 4px solid #8b5cf6;
 }
 
 .favorite-card:hover {
@@ -143,6 +223,7 @@
   height: 180px;
   position: relative;
   overflow: hidden;
+  background-color: #f3f4f6;
 }
 
 .favorite-card-image img {
@@ -150,6 +231,7 @@
   height: 100%;
   object-fit: cover;
   transition: transform 0.4s ease;
+  will-change: transform;
 }
 
 .favorite-card:hover .favorite-card-image img {
@@ -166,6 +248,29 @@
   color: #9ca3af;
 }
 
+.favorite-card-no-image.organizer-logo {
+  background: linear-gradient(135deg, #ddd6fe 0%, #a78bfa 100%);
+  color: white;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.favorite-card-no-image.organizer-logo span {
+  font-size: 48px;
+  font-weight: bold;
+  position: relative;
+  z-index: 2;
+}
+
+.favorite-card-no-image.organizer-logo svg {
+  opacity: 0.3;
+  position: absolute;
+  width: 100px;
+  height: 100px;
+}
+
 .favorite-card-content {
   padding: 1.25rem;
   flex: 1;
@@ -177,18 +282,32 @@
   margin: 0 0 1rem;
   color: #1f2937;
   line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  /* Mejora en la solución de truncado de texto */
+  max-height: 3.4rem;
   overflow: hidden;
-  text-overflow: ellipsis;
-  height: 3.4rem;
+  position: relative;
+  padding-right: 1rem; /* Espacio para los puntos suspensivos */
+}
+
+/* Mejorar el pseudoelemento para evitar problemas con fondos no blancos */
+.favorite-card-title::after {
+  content: "...";
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  padding: 0 4px;
+  background-color: #fff;
+  box-shadow: -4px 0 8px 8px #fff;
 }
 
 .favorite-card-details {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 0.75rem 0.5rem;
+}
+
+.organizer-details {
+  grid-template-columns: 1fr;
 }
 
 .favorite-card-detail {
@@ -200,7 +319,7 @@
 }
 
 .detail-icon {
-  color: #ef4444;
+  color: #8b5cf6;
   flex-shrink: 0;
   width: 1rem;
   height: 1rem;
@@ -223,7 +342,7 @@
   width: 100%;
   padding: 0.75rem;
   border-radius: 8px;
-  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
   color: white;
   font-weight: 500;
   border: none;
@@ -232,8 +351,14 @@
 }
 
 .view-event-button:hover {
-  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+  background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
   transform: translateY(-1px);
+}
+
+.view-event-button:focus-visible {
+  outline: 3px solid #8b5cf6;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.3);
 }
 
 .remove-favorite-button {
@@ -250,8 +375,14 @@
 
 .remove-favorite-button:hover {
   background-color: #f3f4f6;
-  color: #ef4444;
-  border-color: #fecaca;
+  color: #8b5cf6;
+  border-color: #ddd6fe;
+}
+
+.remove-favorite-button:focus-visible {
+  outline: 3px solid #8b5cf6;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.3);
 }
 
 .removing-text {
@@ -264,41 +395,40 @@
   background-color: #f3f4f6;
 }
 
-/* Estilos específicos para organizadores favoritos */
-
-.organizer-icon {
-  background: linear-gradient(135deg, #c4b5fd 0%, #8b5cf6 100%);
+/* Prevenir animaciones para usuarios que prefieren reducirlas */
+@media (prefers-reduced-motion: reduce) {
+  .favorite-card,
+  .favorite-card-image img,
+  .explore-button,
+  .view-event-button {
+    transition: none;
+  }
+  
+  .spinning,
+  .favorites-spinner,
+  .pulse-animation {
+    animation: none;
+  }
 }
 
-.organizer-card {
-  border-left: 4px solid #8b5cf6;
-}
+/* Optimizar el rendimiento de animaciones */
+@media (prefers-reduced-motion: no-preference) {
+  .favorite-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
 
-.organizer-details {
-  grid-template-columns: 1fr;
-}
+  .favorite-card-image img {
+    transition: transform 0.4s ease;
+  }
 
-.favorite-card-no-image.organizer-logo {
-  background: linear-gradient(135deg, #ddd6fe 0%, #a78bfa 100%);
-  color: white;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+  .spinning {
+    animation: spin 1s linear infinite;
+  }
 
-.favorite-card-no-image.organizer-logo span {
-  font-size: 48px;
-  font-weight: bold;
-  position: absolute;
-  z-index: 2;
-}
-
-.favorite-card-no-image.organizer-logo svg {
-  opacity: 0.3;
-  position: absolute;
-  width: 100px;
-  height: 100px;
+  .explore-button:hover,
+  .view-event-button:hover {
+    transform: translateY(-2px);
+  }
 }
 
 /* Responsive */
@@ -309,6 +439,50 @@
   
   .favorites-empty {
     padding: 3rem 1.5rem;
+  }
+
+  .favorites-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .refresh-button {
+    align-self: flex-end;
+  }
+}
+
+@media (max-width: 640px) {
+  .favorites-empty {
+    padding: 3rem 1.5rem;
+  }
+  
+  .favorites-empty-icon {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .favorites-empty-icon svg {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .favorites-empty-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .explore-button {
+    width: 100%;
+  }
+
+  .favorite-card-no-image.organizer-logo span {
+    font-size: 36px;
+  }
+
+  .favorite-card-no-image.organizer-logo svg {
+    width: 80px;
+    height: 80px;
   }
 }
 
@@ -333,14 +507,5 @@
   .favorites-empty-icon svg {
     width: 30px;
     height: 30px;
-  }
-
-  .favorite-card-no-image.organizer-logo span {
-    font-size: 36px;
-  }
-
-  .favorite-card-no-image.organizer-logo svg {
-    width: 80px;
-    height: 80px;
   }
 }

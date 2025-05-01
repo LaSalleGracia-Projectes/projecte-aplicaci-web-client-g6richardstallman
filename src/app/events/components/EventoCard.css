@@ -1,0 +1,275 @@
+/* Estilos para el componente EventoCard - Optimizado con dimensiones fijas */
+
+.evento-card-container {
+  display: block;
+  height: 100%;
+  text-decoration: none;
+  color: inherit;
+}
+
+.evento-card {
+  background-color: #ffffff;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1px solid #f0f0f0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  /* Asegurar que todas las tarjetas tengan el mismo ancho proporcional */
+  width: 100%;
+  /* Establecer una altura mínima para las tarjetas */
+  min-height: 340px;
+}
+
+.evento-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Contenedor de imagen con proporción fija */
+.evento-card-image-container {
+  position: relative;
+  width: 100%;
+  /* Proporción de aspecto 4:3 siempre consistente */
+  height: 0;
+  padding-bottom: 75%; /* 3:4 aspect ratio */
+  overflow: hidden;
+  background-color: #f3f4f6;
+}
+
+.evento-card-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.evento-card-image-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #f3f4f6;
+}
+
+.evento-card-image-placeholder-icon {
+  color: #9ca3af;
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.evento-card-image-placeholder-text {
+  color: #6b7280;
+  font-size: 0.75rem;
+}
+
+/* Sistema consistente de badges */
+.evento-card-badge-container {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  z-index: 5;
+}
+
+.evento-card-badge {
+  background-color: #dc2626;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.25rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  max-width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.evento-card-badge-icon {
+  flex-shrink: 0;
+  width: 0.7rem;
+  height: 0.7rem;
+}
+
+.evento-card-badge-online {
+  background-color: #2563eb;
+}
+
+.evento-card-badge-limited {
+  background-color: #f59e0b;
+  animation: pulse 1.5s infinite;
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  left: auto;
+}
+
+.evento-card-price {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(to right, #dc2626, #b91c1c);
+  color: white;
+  padding: 0.3rem 0.75rem;
+  font-weight: 600;
+  font-size: 0.8rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Contenido del evento con alturas fijas */
+.evento-card-content {
+  padding: 0.75rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  /* Mínimo de contenido */
+  min-height: 120px;
+  /* Máximo de contenido */
+  max-height: 160px;
+}
+
+.evento-card-title-container {
+  height: 2.75rem; /* Altura fija para títulos de 2 líneas */
+  margin-bottom: 0.5rem;
+}
+
+.evento-card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  transition: color 0.2s ease;
+  margin: 0;
+  line-height: 1.375;
+}
+
+.evento-card:hover .evento-card-title {
+  color: #dc2626;
+}
+
+.evento-card-location {
+  height: 1.25rem; /* Altura fija para la ubicación */
+  margin-bottom: 0.25rem;
+  overflow: hidden;
+}
+
+.evento-card-location-text {
+  font-size: 0.75rem;
+  color: #4b5563;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  max-width: 100%;
+}
+
+.evento-card-location-icon {
+  flex-shrink: 0;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-right: 0.25rem;
+  color: #6b7280;
+}
+
+.evento-card-location-text-value {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100% - 1rem);
+}
+
+/* Espacio flexible para empujar el footer al fondo */
+.evento-card-spacer {
+  flex-grow: 1;
+  min-height: 0.25rem;
+}
+
+/* Footer con fecha y hora standardizados */
+.evento-card-footer {
+  margin-top: auto; /* Push to bottom */
+  padding-top: 0.5rem;
+  border-top: 1px solid #f3f4f6;
+  font-size: 0.75rem;
+  color: #4b5563;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.evento-card-date, .evento-card-time {
+  display: flex;
+  align-items: center;
+}
+
+.evento-card-date-icon, .evento-card-time-icon {
+  flex-shrink: 0;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-right: 0.25rem;
+  color: #dc2626;
+}
+
+/* Animaciones */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Optimizaciones para accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+  .evento-card {
+    transition: none !important;
+  }
+  
+  .evento-card:hover {
+    transform: none !important;
+  }
+  
+  .evento-card-badge-limited {
+    animation: none !important;
+  }
+}
+
+/* Accesibilidad para foco */
+.evento-card-container:focus-visible {
+  outline: 2px solid #dc2626;
+  outline-offset: 2px;
+}
+
+/* Optimizaciones para pantallas pequeñas */
+@media (max-width: 640px) {
+  .evento-card {
+    min-height: 320px;
+  }
+  
+  .evento-card-content {
+    min-height: 100px;
+  }
+  
+  .evento-card-title-container {
+    height: 2.5rem;
+  }
+}

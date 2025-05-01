@@ -41,7 +41,7 @@ export const authService = {
 
   async logout() {
     try {
-      const token = storage.getToken(false);
+      const token = storage.getToken(false) || storage.getToken(true);
       if (!token) return { status: "success", message: "Ya cerrado sesión" };
 
       const response = await fetch(`${API_URL}/logout`, {
@@ -53,14 +53,18 @@ export const authService = {
       });
 
       const data = await this._handleResponse(response);
-
+      
       storage.removeToken(false);
+      storage.removeToken(true);
       storage.remove("user_info", false);
+      storage.remove("user_info", true);
 
       return data;
     } catch (error) {
       storage.removeToken(false);
+      storage.removeToken(true);
       storage.remove("user_info", false);
+      storage.remove("user_info", true);
       throw error;
     }
   },
