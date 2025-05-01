@@ -5,7 +5,12 @@ export const storage = {
       const storageMethod = useSession ? sessionStorage : localStorage;
       storageMethod.setItem(key, JSON.stringify(value));
     } catch (e) {
-      console.error(`Error al guardar en ${useSession ? 'sessionStorage' : 'localStorage'} (${key}):`, e);
+      console.error(
+        `Error al guardar en ${
+          useSession ? "sessionStorage" : "localStorage"
+        } (${key}):`,
+        e
+      );
     }
   },
 
@@ -16,7 +21,12 @@ export const storage = {
       const item = storageMethod.getItem(key);
       return item ? JSON.parse(item) : defaultValue;
     } catch (e) {
-      console.error(`Error al leer de ${useSession ? 'sessionStorage' : 'localStorage'} (${key}):`, e);
+      console.error(
+        `Error al leer de ${
+          useSession ? "sessionStorage" : "localStorage"
+        } (${key}):`,
+        e
+      );
       return defaultValue;
     }
   },
@@ -27,7 +37,6 @@ export const storage = {
     storageMethod.removeItem(key);
   },
 
-  // Los métodos de token ahora usan sessionStorage por defecto
   getToken(useSession = true) {
     if (typeof window === "undefined") return null;
     const storageMethod = useSession ? sessionStorage : localStorage;
