@@ -1,6 +1,13 @@
 "use client";
 
-import React, { createContext, useState, useContext, useRef } from "react";
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import Toast from "../components/ui/Toast/Toast";
 
 const NotificationContext = createContext();
@@ -11,49 +18,74 @@ export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const toastIdRef = useRef(0);
 
-  const addNotification = (message, type = "info", duration = 3000) => {
-    const id = toastIdRef.current++;
-    setNotifications((prev) => {
-      const newNotifications = [...prev, { id, message, type, duration }];
-      if (newNotifications.length > MAX_TOASTS) {
-        return newNotifications.slice(-MAX_TOASTS);
-      }
-      return newNotifications;
-    });
-    return id;
-  };
+  const addNotification = useCallback(
+    (message, type = "info", duration = 3000) => {
+      const id = toastIdRef.current++;
+      setNotifications((prev) => {
+        const newNotifications = [...prev, { id, message, type, duration }];
+        if (newNotifications.length > MAX_TOASTS) {
+          return newNotifications.slice(-MAX_TOASTS);
+        }
+        return newNotifications;
+      });
+      return id;
+    },
+    []
+  );
 
-  const showSuccess = (message, duration = 3000) =>
-    addNotification(message, "success", duration);
-  const showError = (message, duration = 4000) =>
-    addNotification(message, "error", duration);
-  const showInfo = (message, duration = 3000) =>
-    addNotification(message, "info", duration);
-  const showWarning = (message, duration = 4000) =>
-    addNotification(message, "warning", duration);
+  const showSuccess = useCallback(
+    (message, duration = 3000) => addNotification(message, "success", duration),
+    [addNotification]
+  );
 
-  const removeNotification = (id) => {
+  const showError = useCallback(
+    (message, duration = 4000) => addNotification(message, "error", duration),
+    [addNotification]
+  );
+
+  const showInfo = useCallback(
+    (message, duration = 3000) => addNotification(message, "info", duration),
+    [addNotification]
+  );
+
+  const showWarning = useCallback(
+    (message, duration = 4000) => addNotification(message, "warning", duration),
+    [addNotification]
+  );
+
+  const removeNotification = useCallback((id) => {
     setNotifications((prev) =>
       prev.filter((notification) => notification.id !== id)
     );
-  };
+  }, []);
+
+  const contextValue = useMemo(
+    () => ({
+      addNotification,
+      showSuccess,
+      showError,
+      showInfo,
+      showWarning,
+      removeNotification,
+    }),
+    [
+      addNotification,
+      showSuccess,
+      showError,
+      showInfo,
+      showWarning,
+      removeNotification,
+    ]
+  );
 
   return (
-    <NotificationContext.Provider
-      value={{
-        addNotification,
-        showSuccess,
-        showError,
-        showInfo,
-        showWarning,
-        removeNotification,
-      }}
-    >
+    <NotificationContext.Provider value={contextValue}>
       {children}
       <div
         className="toast-container"
         role="region"
         aria-label="Notificaciones"
+        aria-live="polite"
       >
         {notifications.map(({ id, message, type, duration }) => (
           <Toast
