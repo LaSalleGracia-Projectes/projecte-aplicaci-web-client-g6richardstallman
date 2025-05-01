@@ -1,57 +1,62 @@
 export const storage = {
-  set(key, value, useSession = true) {
-    if (typeof window === "undefined") return;
+  set(key, value, persistent = false) {
     try {
-      const storageMethod = useSession ? sessionStorage : localStorage;
-      storageMethod.setItem(key, JSON.stringify(value));
-    } catch (e) {
-      console.error(
-        `Error al guardar en ${
-          useSession ? "sessionStorage" : "localStorage"
-        } (${key}):`,
-        e
-      );
+      const serializedValue = JSON.stringify(value);
+      if (persistent) {
+        localStorage.setItem(key, serializedValue);
+      } else {
+        sessionStorage.setItem(key, serializedValue);
+      }
+    } catch (error) {
+      console.error("Error storing data:", error);
     }
   },
 
-  get(key, defaultValue = null, useSession = true) {
-    if (typeof window === "undefined") return defaultValue;
+  get(key, defaultValue = null, persistent = false) {
     try {
-      const storageMethod = useSession ? sessionStorage : localStorage;
-      const item = storageMethod.getItem(key);
-      return item ? JSON.parse(item) : defaultValue;
-    } catch (e) {
-      console.error(
-        `Error al leer de ${
-          useSession ? "sessionStorage" : "localStorage"
-        } (${key}):`,
-        e
-      );
+      const storage = persistent ? localStorage : sessionStorage;
+      const value = storage.getItem(key);
+      if (value === null) {
+        return defaultValue;
+      }
+      return JSON.parse(value);
+    } catch (error) {
+      console.error("Error retrieving data:", error);
       return defaultValue;
     }
   },
 
-  remove(key, useSession = true) {
-    if (typeof window === "undefined") return;
-    const storageMethod = useSession ? sessionStorage : localStorage;
-    storageMethod.removeItem(key);
+  remove(key, persistent = false) {
+    try {
+      if (persistent) {
+        localStorage.removeItem(key);
+      } else {
+        sessionStorage.removeItem(key);
+      }
+    } catch (error) {
+      console.error("Error removing data:", error);
+    }
   },
 
-  getToken(useSession = true) {
-    if (typeof window === "undefined") return null;
-    const storageMethod = useSession ? sessionStorage : localStorage;
-    return storageMethod.getItem("access_token");
+  setToken(token, persistent = false) {
+    this.set("auth_token", token, persistent);
   },
 
-  setToken(token, useSession = true) {
-    if (typeof window === "undefined") return;
-    const storageMethod = useSession ? sessionStorage : localStorage;
-    storageMethod.setItem("access_token", token);
+  getToken(persistent = false) {
+    return this.get("auth_token", null, persistent);
   },
 
-  removeToken(useSession = true) {
-    if (typeof window === "undefined") return;
-    const storageMethod = useSession ? sessionStorage : localStorage;
-    storageMethod.removeItem("access_token");
+  removeToken(persistent = false) {
+    this.remove("auth_token", persistent);
+    this.remove("auth_token", !persistent);
+  },
+
+  clearAll() {
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch (error) {
+      console.error("Error clearing storage:", error);
+    }
   },
 };
