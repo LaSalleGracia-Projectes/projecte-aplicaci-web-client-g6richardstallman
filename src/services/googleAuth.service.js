@@ -23,10 +23,10 @@ export const googleAuthService = {
     const data = await this._handleResponse(response);
 
     if (data.token) {
-      storage.setToken(data.token, true);
+      storage.setToken(data.token, false);
 
       if (data.user) {
-        storage.set("user_info", data.user, true);
+        storage.set("user_info", data.user, false);
       }
     }
 
