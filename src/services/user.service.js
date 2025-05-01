@@ -4,7 +4,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export const userService = {
   async getUser() {
-    const token = storage.getToken(true);
+    const token = storage.getToken(false);
     if (!token) {
       throw new Error("No authorization token found");
     }
@@ -20,7 +20,7 @@ export const userService = {
   },
 
   async getProfile() {
-    const token = storage.getToken(true);
+    const token = storage.getToken(false);
     if (!token) {
       throw new Error("No authorization token found");
     }
@@ -33,12 +33,12 @@ export const userService = {
     });
 
     const data = await this._handleResponse(response);
-    storage.set("user_info", data.data || data, true);
+    storage.set("user_info", data.data || data, false);
     return data;
   },
 
   async updateProfile(userData) {
-    const token = storage.getToken();
+    const token = storage.getToken(false);
     if (!token) {
       throw new Error("No authorization token found");
     }
@@ -53,12 +53,12 @@ export const userService = {
     });
 
     const data = await this._handleResponse(response);
-    storage.set("user_info", data.data || data);
+    storage.set("user_info", data.data || data, false);
     return data;
   },
 
   async changePassword(passwordData) {
-    const token = storage.getToken();
+    const token = storage.getToken(false);
     if (!token) {
       throw new Error("No authorization token found");
     }
@@ -76,7 +76,7 @@ export const userService = {
   },
 
   async deleteAccount(confirmationData) {
-    const token = storage.getToken();
+    const token = storage.getToken(false);
     if (!token) {
       throw new Error("No authorization token found");
     }
@@ -97,15 +97,15 @@ export const userService = {
   },
 
   getStoredUserInfo() {
-    return storage.get("user_info", null, true);
+    return storage.get("user_info", null, false);
   },
 
   storeUserInfo(user) {
-    storage.set("user_info", user, true);
+    storage.set("user_info", user, false);
   },
 
   clearUserInfo() {
-    storage.remove("user_info", true);
+    storage.remove("user_info", false);
   },
 
   async _handleResponse(response) {
