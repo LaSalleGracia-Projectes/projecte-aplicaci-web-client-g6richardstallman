@@ -1,39 +1,39 @@
-import { storage } from '../utils/storage';
+import { storage } from "../utils/storage";
 
-const API_URL = "http://localhost:8000/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export const userService = {
   async getUser() {
-    const token = storage.getToken(true);  // Usar explícitamente sessionStorage
+    const token = storage.getToken(true);
     if (!token) {
       throw new Error("No authorization token found");
     }
-    
+
     const response = await fetch(`${API_URL}/user`, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Authorization': `Bearer ${token}`,
-      }
+        Authorization: `Bearer ${token}`,
+      },
     });
-    
+
     return this._handleResponse(response);
   },
-  
+
   async getProfile() {
-    const token = storage.getToken(true);  // Usar explícitamente sessionStorage
+    const token = storage.getToken(true);
     if (!token) {
       throw new Error("No authorization token found");
     }
-    
+
     const response = await fetch(`${API_URL}/profile`, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Authorization': `Bearer ${token}`,
-      }
+        Authorization: `Bearer ${token}`,
+      },
     });
-    
+
     const data = await this._handleResponse(response);
-    storage.set('user_info', data.data || data, true);  // Guardar en sessionStorage
+    storage.set("user_info", data.data || data, true);
     return data;
   },
 
@@ -42,37 +42,36 @@ export const userService = {
     if (!token) {
       throw new Error("No authorization token found");
     }
-    
+
     const response = await fetch(`${API_URL}/profile`, {
-      method: 'PUT',
+      method: "PUT",
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(userData)
+      body: JSON.stringify(userData),
     });
-    
+
     const data = await this._handleResponse(response);
-    storage.set('user_info', data.data || data);
+    storage.set("user_info", data.data || data);
     return data;
   },
-  
+
   async changePassword(passwordData) {
     const token = storage.getToken();
     if (!token) {
       throw new Error("No authorization token found");
     }
-    
-    // Corregimos la ruta a la versión correcta de la API
+
     const response = await fetch(`${API_URL}/change-password`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(passwordData)
+      body: JSON.stringify(passwordData),
     });
-    
+
     return this._handleResponse(response);
   },
 
@@ -81,43 +80,40 @@ export const userService = {
     if (!token) {
       throw new Error("No authorization token found");
     }
-    
-    // Aseguramos que confirm_deletion siempre sea true en la petición al backend
-    // ya que el backend espera confirm_deletion como accepted (true)
+
     const response = await fetch(`${API_URL}/account`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         password: confirmationData.password,
-        confirm_deletion: true  // Siempre enviamos true, independiente del valor en confirmationData
-      })
+        confirm_deletion: true,
+      }),
     });
-    
+
     return this._handleResponse(response);
   },
 
   getStoredUserInfo() {
-    return storage.get('user_info', null, true);  // Leer de sessionStorage
+    return storage.get("user_info", null, true);
   },
 
   storeUserInfo(user) {
-    storage.set('user_info', user, true);  // Guardar en sessionStorage
+    storage.set("user_info", user, true);
   },
 
   clearUserInfo() {
-    storage.remove('user_info', true);  // Eliminar de sessionStorage
+    storage.remove("user_info", true);
   },
 
-  // Helper method to handle API responses
   async _handleResponse(response) {
     if (!response.ok) {
       const errorData = await this._parseErrorResponse(response);
       throw this._formatErrorResponse(response, errorData);
     }
-    
+
     return response.json();
   },
 
@@ -134,7 +130,7 @@ export const userService = {
       status: response.status,
       statusText: response.statusText,
       message: `HTTP error! status: ${response.status}`,
-      errors: errorData
+      errors: errorData,
     };
-  }
-}
+  },
+};

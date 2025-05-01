@@ -1,6 +1,6 @@
 import { storage } from "../utils/storage";
 
-const API_URL = "http://localhost:8000/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export const authService = {
   async register(userData) {
@@ -13,7 +13,6 @@ export const authService = {
         body: JSON.stringify(userData),
       });
 
-      // Simplemente devolvemos la respuesta, sin almacenar token ni datos
       return this._handleResponse(response);
     } catch (error) {
       throw error;
@@ -32,7 +31,6 @@ export const authService = {
 
       const data = await this._handleResponse(response);
       if (data.access_token) {
-        // Guardamos explícitamente en sessionStorage (true)
         storage.setToken(data.access_token, true);
       }
       return data;
@@ -88,7 +86,6 @@ export const authService = {
   },
 
   isAuthenticated() {
-    // Verificamos siempre en sessionStorage (true)
     return !!storage.getToken(true);
   },
 
