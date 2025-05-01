@@ -4,42 +4,71 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export const organizersService = {
   async getAllOrganizers() {
-    const response = await fetch(`${API_URL}/organizadores`);
-    return this._handleResponse(response);
+    try {
+      const token = storage.getToken();
+      const headers = {
+        Accept: "application/json",
+      };
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${API_URL}/organizadores`, {
+        headers,
+      });
+      return this._handleResponse(response);
+    } catch (error) {
+      console.error("Error getting organizers:", error);
+      throw error;
+    }
   },
 
   async getOrganizerById(organizerId) {
-    const response = await fetch(`${API_URL}/organizadores/${organizerId}`);
-    return this._handleResponse(response);
+    try {
+      const token = storage.getToken();
+      const headers = {
+        Accept: "application/json",
+      };
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${API_URL}/organizadores/${organizerId}`, {
+        headers,
+      });
+      return this._handleResponse(response);
+    } catch (error) {
+      console.error(`Error getting organizer ${organizerId}:`, error);
+      throw error;
+    }
   },
 
   async getOrganizerEvents(organizerId) {
-    const response = await fetch(
-      `${API_URL}/organizadores/${organizerId}/eventos`
-    );
-    return this._handleResponse(response);
-  },
-
-  async checkIsFavorite(organizerId) {
     try {
       const token = storage.getToken();
-      if (!token) {
-        return { is_favorite: false };
+      const headers = {
+        Accept: "application/json",
+      };
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
       }
 
       const response = await fetch(
-        `${API_URL}/organizadores/${organizerId}/es-favorito`,
+        `${API_URL}/organizadores/${organizerId}/eventos`,
         {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers,
         }
       );
-
       return this._handleResponse(response);
     } catch (error) {
-      return { is_favorite: false };
+      console.error(
+        `Error getting events for organizer ${organizerId}:`,
+        error
+      );
+      throw error;
     }
   },
 
@@ -61,11 +90,14 @@ export const organizersService = {
   },
 
   _formatErrorResponse(response, errorData) {
-    return {
+    const formattedError = {
       status: response.status,
       statusText: response.statusText,
       message: `HTTP error! status: ${response.status}`,
       errors: errorData,
     };
+
+    console.error("API Error:", formattedError);
+    return formattedError;
   },
 };
