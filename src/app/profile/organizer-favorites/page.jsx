@@ -2,41 +2,36 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { favoritesService } from "../../../services/favorites.service";
+import { organizerFavoritesService } from "../../../services/organizerFavorites.service";
 import { useNotification } from "../../../context/NotificationContext";
-import { 
-  FiHeart, 
-  FiCalendar, 
-  FiMapPin, 
-  FiTag, 
-  FiClock, 
-  FiArrowRight, 
-  FiSearch 
-} from "react-icons/fi";
-import "./favorites.css";
+import { FiUsers, FiCalendar, FiArrowRight, FiBriefcase } from "react-icons/fi";
+import "../favorites/favorites.css"; // Reutilizamos los estilos de favorites
 
-export default function FavoritesPage() {
+export default function OrganizerFavoritesPage() {
   const router = useRouter();
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [removingId, setRemovingId] = useState(null);
   const { showSuccess, showError } = useNotification();
+  // Usamos una referencia para evitar múltiples llamadas
   const isLoaded = useRef(false);
 
   useEffect(() => {
+    // Evitamos llamadas repetidas
     if (isLoaded.current) return;
 
     const getFavorites = async () => {
       try {
-        const response = await favoritesService.getFavoriteEvents();
+        const response = await organizerFavoritesService.getFavoriteOrganizers();
         if (response && response.data) {
           setFavorites(response.data || []);
         }
       } catch (err) {
-        console.error("Error al cargar favoritos:", err);
-        showError("No se pudieron cargar tus eventos favoritos");
+        console.error("Error al cargar organizadores favoritos:", err);
+        showError("No se pudieron cargar tus organizadores favoritos");
       } finally {
         setLoading(false);
+        // Marcamos que ya hemos cargado los datos
         isLoaded.current = true;
       }
     };
@@ -44,12 +39,12 @@ export default function FavoritesPage() {
     getFavorites();
   }, [showError]);
 
-  const handleRemoveFavorite = async (eventId) => {
+  const handleRemoveFavorite = async (organizerId) => {
     try {
-      setRemovingId(eventId);
-      await favoritesService.removeFromFavorites(eventId);
-      setFavorites(prev => prev.filter(fav => fav.id_evento !== eventId));
-      showSuccess("Evento eliminado de favoritos");
+      setRemovingId(organizerId);
+      await organizerFavoritesService.removeFromFavorites(organizerId);
+      setFavorites(prev => prev.filter(fav => fav.organizador?.id !== organizerId));
+      showSuccess("Organizador eliminado de favoritos");
     } catch (error) {
       showError("Error al eliminar de favoritos");
     } finally {
@@ -57,28 +52,15 @@ export default function FavoritesPage() {
     }
   };
 
-  const handleViewEvent = (eventId) => {
-    router.push(`/eventos/${eventId}`);
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('es-ES', {
-      day: 'numeric', month: 'long', year: 'numeric'
-    }).format(date);
-  };
-
-  const formatTime = (timeString) => {
-    if (!timeString) return "";
-    return timeString.substring(0, 5);
+  const handleViewOrganizer = (organizerId) => {
+    router.push(`/organizadores/${organizerId}`);
   };
 
   if (loading) {
     return (
       <div className="favorites-loading">
         <div className="favorites-spinner"></div>
-        <p>Cargando tus eventos favoritos...</p>
+        <p>Cargando tus organizadores favoritos...</p>
       </div>
     );
   }
@@ -87,82 +69,71 @@ export default function FavoritesPage() {
     <div className="favorites-page">
       <div className="favorites-header">
         <div className="favorites-title">
-          <FiHeart className="favorites-icon" />
-          <h1>Mis eventos favoritos</h1>
+          <FiUsers className="favorites-icon" />
+          <h1>Mis organizadores favoritos</h1>
         </div>
       </div>
 
       {!favorites || favorites.length === 0 ? (
         <div className="favorites-empty">
           <div className="favorites-empty-icon">
-            <FiSearch />
+            <FiBriefcase />
           </div>
-          <h2>No tienes eventos favoritos</h2>
+          <h2>No tienes organizadores favoritos</h2>
           <p>
-            Explora eventos y guárdalos como favoritos para acceder rápidamente a ellos desde aquí.
+            Explora los perfiles de organizadores y añádelos a favoritos para acceder rápidamente a ellos.
           </p>
           <div className="favorites-empty-actions">
             <button 
-              onClick={() => router.push('/eventos')}
+              onClick={() => router.push('/organizadores')}
               className="explore-button"
             >
-              Explorar eventos
+              Ver organizadores
             </button>
           </div>
         </div>
       ) : (
         <div className="favorites-grid">
           {favorites.map(favorite => (
-            <div className="favorite-card" key={favorite.id}>
+            <div className="favorite-card" key={favorite.id || Math.random().toString(36).substring(2, 9)}>
               <div className="favorite-card-image">
-                {favorite.evento?.imagen_url ? (
+                {favorite.organizador?.logo_url ? (
                   <Image 
-                    src={favorite.evento.imagen_url} 
-                    alt={favorite.evento.titulo} 
+                    src={favorite.organizador.logo_url} 
+                    alt={favorite.organizador.nombre_organizacion} 
                     width={300}
                     height={180}
                     objectFit="cover"
                   />
                 ) : (
                   <div className="favorite-card-no-image">
-                    <span>Sin imagen</span>
+                    <span>{favorite.organizador.nombre_organizacion?.charAt(0) || "O"}</span>
                   </div>
                 )}
               </div>
               <div className="favorite-card-content">
-                <h3 className="favorite-card-title">{favorite.evento?.titulo}</h3>
+                <h3 className="favorite-card-title">{favorite.organizador?.nombre_organizacion}</h3>
+                
                 <div className="favorite-card-details">
                   <div className="favorite-card-detail">
                     <FiCalendar className="detail-icon" />
-                    <span>{formatDate(favorite.evento?.fecha)}</span>
-                  </div>
-                  <div className="favorite-card-detail">
-                    <FiClock className="detail-icon" />
-                    <span>{formatTime(favorite.evento?.hora)}</span>
-                  </div>
-                  <div className="favorite-card-detail">
-                    <FiMapPin className="detail-icon" />
-                    <span>{favorite.evento?.ubicacion || "Online"}</span>
-                  </div>
-                  <div className="favorite-card-detail">
-                    <FiTag className="detail-icon" />
-                    <span>{favorite.evento?.categoria}</span>
+                    <span>{favorite.organizador?.num_eventos || 0} eventos organizados</span>
                   </div>
                 </div>
               </div>
               <div className="favorite-card-actions">
                 <button 
                   className="view-event-button"
-                  onClick={() => handleViewEvent(favorite.evento.id)}
+                  onClick={() => handleViewOrganizer(favorite.organizador.id)}
                 >
-                  Ver evento <FiArrowRight />
+                  Ver organizador <FiArrowRight />
                 </button>
-                <button 
+                <button
                   className="remove-favorite-button"
-                  onClick={() => handleRemoveFavorite(favorite.evento.id)}
-                  disabled={removingId === favorite.evento.id}
+                  onClick={() => handleRemoveFavorite(favorite.organizador.id)}
+                  disabled={removingId === favorite.organizador.id}
                 >
-                  {removingId === favorite.evento.id ? (
+                  {removingId === favorite.organizador.id ? (
                     <span className="removing-text">Eliminando...</span>
                   ) : (
                     <>Quitar de favoritos</>

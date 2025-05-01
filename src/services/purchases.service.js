@@ -1,4 +1,6 @@
-import { apiClient } from '../utils/api';
+import { storage } from '../utils/storage';
+
+const API_URL = "http://localhost:8000/api";
 
 export const purchasesService = {
   /**
@@ -6,7 +8,19 @@ export const purchasesService = {
    * @returns {Promise<Object>} - Lista de compras
    */
   async getMyPurchases() {
-    return apiClient.get('/compras', true);
+    const token = storage.getToken();
+    if (!token) {
+      throw new Error("No authorization token found");
+    }
+    
+    const response = await fetch(`${API_URL}/compras`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+    
+    return this._handleResponse(response);
   },
 
   /**
@@ -15,7 +29,21 @@ export const purchasesService = {
    * @returns {Promise<Object>} - Resultado de la compra
    */
   async purchaseTickets(purchaseData) {
-    return apiClient.post('/compras', purchaseData, true);
+    const token = storage.getToken();
+    if (!token) {
+      throw new Error("No authorization token found");
+    }
+    
+    const response = await fetch(`${API_URL}/compras`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(purchaseData)
+    });
+    
+    return this._handleResponse(response);
   },
 
   /**
@@ -24,7 +52,19 @@ export const purchasesService = {
    * @returns {Promise<Object>} - Detalles de la compra
    */
   async getTicketDetail(purchaseId) {
-    return apiClient.get(`/compras/${purchaseId}`, true);
+    const token = storage.getToken();
+    if (!token) {
+      throw new Error("No authorization token found");
+    }
+    
+    const response = await fetch(`${API_URL}/compras/${purchaseId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+    
+    return this._handleResponse(response);
   },
 
   /**
@@ -33,6 +73,45 @@ export const purchasesService = {
    * @returns {Promise<Object>} - Datos de la factura
    */
   async generateInvoice(purchaseId) {
-    return apiClient.get(`/compras/${purchaseId}/factura`, true);
+    const token = storage.getToken();
+    if (!token) {
+      throw new Error("No authorization token found");
+    }
+    
+    const response = await fetch(`${API_URL}/compras/${purchaseId}/factura`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+    
+    return this._handleResponse(response);
+  },
+
+  // Helper method to handle API responses
+  async _handleResponse(response) {
+    if (!response.ok) {
+      const errorData = await this._parseErrorResponse(response);
+      throw this._formatErrorResponse(response, errorData);
+    }
+    
+    return response.json();
+  },
+
+  async _parseErrorResponse(response) {
+    try {
+      return await response.json();
+    } catch (e) {
+      return { message: response.statusText };
+    }
+  },
+
+  _formatErrorResponse(response, errorData) {
+    return {
+      status: response.status,
+      statusText: response.statusText,
+      message: `HTTP error! status: ${response.status}`,
+      errors: errorData
+    };
   }
 };

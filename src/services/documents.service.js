@@ -1,5 +1,6 @@
-import { apiClient } from '../utils/api';
 import { storage } from '../utils/storage';
+
+const API_URL = "http://localhost:8000/api";
 
 export const documentsService = {
   /**
@@ -13,7 +14,7 @@ export const documentsService = {
       throw new Error("No hay token de autenticación");
     }
     
-    const url = `${apiClient.baseUrl}/factura/${invoiceId}/pdf`;
+    const url = `${API_URL}/factura/${invoiceId}/pdf`;
     
     try {
       window.open(`${url}?token=${token}`, '_blank');
@@ -35,7 +36,7 @@ export const documentsService = {
       throw new Error("No hay token de autenticación");
     }
     
-    const url = `${apiClient.baseUrl}/entrada/${ticketId}/pdf`;
+    const url = `${API_URL}/entrada/${ticketId}/pdf`;
     
     try {
       window.open(`${url}?token=${token}`, '_blank');
@@ -44,5 +45,32 @@ export const documentsService = {
       console.error("Error al obtener PDF de entrada:", error);
       throw error;
     }
+  },
+
+  // Helper method to handle API responses
+  async _handleResponse(response) {
+    if (!response.ok) {
+      const errorData = await this._parseErrorResponse(response);
+      throw this._formatErrorResponse(response, errorData);
+    }
+    
+    return response.json();
+  },
+
+  async _parseErrorResponse(response) {
+    try {
+      return await response.json();
+    } catch (e) {
+      return { message: response.statusText };
+    }
+  },
+
+  _formatErrorResponse(response, errorData) {
+    return {
+      status: response.status,
+      statusText: response.statusText,
+      message: `HTTP error! status: ${response.status}`,
+      errors: errorData
+    };
   }
-};
+}

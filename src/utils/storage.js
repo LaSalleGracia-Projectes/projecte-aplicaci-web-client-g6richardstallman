@@ -1,5 +1,5 @@
 export const storage = {
-  set(key, value, useSession = false) {
+  set(key, value, useSession = true) {
     if (typeof window === "undefined") return;
     try {
       const storageMethod = useSession ? sessionStorage : localStorage;
@@ -9,7 +9,7 @@ export const storage = {
     }
   },
 
-  get(key, defaultValue = null, useSession = false) {
+  get(key, defaultValue = null, useSession = true) {
     if (typeof window === "undefined") return defaultValue;
     try {
       const storageMethod = useSession ? sessionStorage : localStorage;
@@ -21,12 +21,13 @@ export const storage = {
     }
   },
 
-  remove(key, useSession = false) {
+  remove(key, useSession = true) {
     if (typeof window === "undefined") return;
     const storageMethod = useSession ? sessionStorage : localStorage;
     storageMethod.removeItem(key);
   },
 
+  // Los métodos de token ahora usan sessionStorage por defecto
   getToken(useSession = true) {
     if (typeof window === "undefined") return null;
     const storageMethod = useSession ? sessionStorage : localStorage;

@@ -1,9 +1,10 @@
 // Componente para mostrar un evento en el listado
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import PropTypes from 'prop-types';
 import { FaMapMarkerAlt, FaCalendarAlt, FaClock } from 'react-icons/fa';
+import { FiCalendar } from 'react-icons/fi';
 
 // Formateadores de fecha/hora extraídos como funciones puras
 const formatearFecha = (fechaString) => {
@@ -41,22 +42,33 @@ const EventoCard = ({ evento }) => {
   // Definimos una URL de imagen por defecto
   const imagenUrl = evento.imagen_url || '/img/default-event.jpg';
 
+  // Manejo de errores de imagen
+  const [imageError, setImageError] = useState(false);
+
   return (
     <Link href={`/eventos/${evento.id}`} className="block h-full" aria-label={`Ver detalles de ${evento.nombreEvento}`}>  
       <article className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden flex flex-col h-full">
         {/* Imagen con altura fija - Optimizada */}
         <div className="relative w-full aspect-[4/3]">
-          <Image
-            src={imagenUrl}
-            alt={evento.nombreEvento}
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="object-cover"
-            priority={false}
-            loading="lazy"
-            placeholder="blur"
-            blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN88P//fwAJtAPdcCRGlQAAAABJRU5ErkJggg=="
-          />
+          {!imageError ? (
+            <Image
+              src={imagenUrl}
+              alt={evento.nombreEvento}
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className="object-cover"
+              priority={false}
+              loading="lazy"
+              placeholder="blur"
+              blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN88P//fwAJtAPdcCRGlQAAAABJRU5ErkJggg=="
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <div className="evento-card-image-placeholder flex items-center justify-center bg-gray-200 h-full">
+              <FiCalendar size={40} className="text-gray-500" />
+              <p className="text-gray-500 text-sm mt-2">Imagen no disponible</p>
+            </div>
+          )}
           {evento.categoria && (
             <span className="absolute top-3 left-3 bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded-md">
               {evento.categoria}
