@@ -31,7 +31,7 @@ export const authService = {
 
       const data = await this._handleResponse(response);
       if (data.access_token) {
-        storage.setToken(data.access_token, true);
+        storage.setToken(data.access_token, false);
       }
       return data;
     } catch (error) {
@@ -41,7 +41,7 @@ export const authService = {
 
   async logout() {
     try {
-      const token = storage.getToken(true);
+      const token = storage.getToken(false);
       if (!token) return { status: "success", message: "Ya cerrado sesión" };
 
       const response = await fetch(`${API_URL}/logout`, {
@@ -54,13 +54,13 @@ export const authService = {
 
       const data = await this._handleResponse(response);
 
-      storage.removeToken();
-      storage.remove("user_info");
+      storage.removeToken(false);
+      storage.remove("user_info", false);
 
       return data;
     } catch (error) {
-      storage.removeToken();
-      storage.remove("user_info");
+      storage.removeToken(false);
+      storage.remove("user_info", false);
       throw error;
     }
   },
@@ -75,18 +75,6 @@ export const authService = {
     });
 
     return this._handleResponse(response);
-  },
-
-  redirectToLogin(router) {
-    if (router) {
-      router.replace("/auth/login");
-    } else if (typeof window !== "undefined") {
-      window.location.href = "/auth/login";
-    }
-  },
-
-  isAuthenticated() {
-    return !!storage.getToken(true);
   },
 
   async _handleResponse(response) {
