@@ -12,10 +12,12 @@ import { useRouter } from "next/navigation";
 import { authService } from "../../../services/auth.service";
 import { userService } from "../../../services/user.service";
 import { googleAuthService } from "../../../services/googleAuth.service";
+import { storage } from "../../../utils/storage";
 
 const initialState = {
   email: "",
-  password: ""
+  password: "",
+  rememberMe: false,
 };
 
 const validateForm = (form) => {
@@ -35,8 +37,11 @@ export default function LoginPage() {
   const router = useRouter();
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   };
 
   const handleGoogleAuth = async () => {
@@ -57,7 +62,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     const validationErrors = validateForm(form);
     if (Object.keys(validationErrors).length > 0) {
       const errorMessages = Object.values(validationErrors).join(", ");
@@ -68,22 +73,41 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const data = await authService.login(form);
+      const data = await authService.login({
+        email: form.email,
+        password: form.password,
+      });
+
+      if (data.access_token) {
+        if (form.rememberMe) {
+          localStorage.setItem("auth_token", JSON.stringify(data.access_token));
+          sessionStorage.removeItem("auth_token");
+        } else {
+          localStorage.removeItem("auth_token");
+        }
+      }
+
       showSuccess("Login exitoso");
-      
+
       try {
-        // Obtenemos el perfil y lo guardamos en sessionStorage
         const userData = await userService.getProfile();
         if (userData.data) {
-          // Explícitamente guardamos en sessionStorage
-          userService.storeUserInfo(userData.data);
+          if (form.rememberMe) {
+            localStorage.setItem("user_info", JSON.stringify(userData.data));
+            sessionStorage.removeItem("user_info");
+          } else {
+            localStorage.removeItem("user_info");
+          }
         }
       } catch (profileError) {
-        console.error("Error al obtener perfil después del login:", profileError);
+        console.error(
+          "Error al obtener perfil después del login:",
+          profileError
+        );
       }
-      
+
       setForm(initialState);
-      
+
       setTimeout(() => {
         router.push("/");
       }, 1000);
@@ -130,6 +154,7 @@ export default function LoginPage() {
             required
             autoFocus
             className="login-input"
+            aria-label="Email"
           />
         </div>
         <div className="login-input-group">
@@ -142,13 +167,35 @@ export default function LoginPage() {
             placeholder="Contraseña"
             required
             className="login-input"
+            aria-label="Contraseña"
           />
         </div>
+        <div className="login-remember-me">
+          <label className="login-checkbox-container">
+            <input
+              type="checkbox"
+              name="rememberMe"
+              checked={form.rememberMe}
+              onChange={handleChange}
+              className="login-checkbox"
+            />
+            <span className="login-checkbox-label">Recordarme</span>
+          </label>
+        </div>
         <div className="login-actions">
-          <Button type="submit" className="login-btn-main" disabled={loading}>
+          <Button
+            type="submit"
+            className="login-btn-main"
+            disabled={loading}
+            aria-busy={loading}
+          >
             {loading ? (
               <div className="spinner-container">
-                <div className="spinner"></div>
+                <div
+                  className="spinner"
+                  role="status"
+                  aria-label="Cargando"
+                ></div>
                 <span>Entrando...</span>
               </div>
             ) : (
@@ -165,6 +212,7 @@ export default function LoginPage() {
             onClick={handleGoogleAuth}
             className="login-btn-google"
             disabled={loading}
+            aria-label="Iniciar sesión con Google"
           >
             <Image
               src="/icons/googleIcon.png"

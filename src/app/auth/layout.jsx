@@ -4,13 +4,14 @@ import Image from "next/image";
 import "./layout.css";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { storage } from "../../utils/storage";
 
 export default function AuthLayout({ children }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const token = sessionStorage.getItem("access_token");
+    const token = storage.getToken();
 
     if (token) {
       router.replace("/");
