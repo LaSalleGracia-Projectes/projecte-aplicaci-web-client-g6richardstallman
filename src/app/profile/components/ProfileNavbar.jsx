@@ -5,8 +5,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Logo from "../../../components/ui/Logo/Logo";
 import Button from "../../../components/ui/Button/Button";
-import { logout } from "../../../utils/logout";
-import { getStoredUser } from "../../../utils/user";
+import { authService } from "../../../services/auth.service";
+import { userService } from "../../../services/user.service";
 import { 
   FiUser, 
   FiEdit, 
@@ -17,9 +17,13 @@ import {
   FiMenu, 
   FiX, 
   FiHeart, 
-  FiTag, // Using FiTag instead of FiTicket which doesn't exist
-  FiCalendar 
+  FiTag, 
+  FiCalendar,
+  FiDollarSign,
+  FiCreditCard,
+  FiUsers
 } from "react-icons/fi";
+import { useNotification } from "../../../context/NotificationContext";
 import "./ProfileNavbar.css";
 
 const NavItem = memo(({ option, isActive, onClick }) => (
@@ -43,18 +47,48 @@ const ProfileNavbar = () => {
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [userRole, setUserRole] = useState(null);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const { showSuccess, showError } = useNotification();
 
   useEffect(() => {
-    const user = getStoredUser();
-    if (user) {
-      setUserRole(user.role);
-    }
+    const fetchUserInfo = async () => {
+      try {
+        // Primero intentamos obtener del almacenamiento local
+        const storedUser = userService.getStoredUserInfo();
+        if (storedUser) {
+          setUser(storedUser);
+          setLoading(false);
+          return;
+        }
+
+        // Si no está en almacenamiento, hacemos la petición
+        const { data } = await userService.getProfile();
+        if (data) {
+          setUser(data);
+          userService.storeUserInfo(data);
+        }
+      } catch (error) {
+        console.error("Error al cargar información del usuario:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserInfo();
   }, []);
 
-  const handleLogout = useCallback(() => {
-    logout(router);
-  }, [router]);
+  const handleLogout = useCallback(async () => {
+    try {
+      await authService.logout();
+      showSuccess("Sesión cerrada correctamente");
+      router.replace('/auth/login');
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+      showError("Error al cerrar sesión");
+      router.replace('/auth/login');
+    }
+  }, [router, showSuccess, showError]);
 
   const toggleMenu = () => setMenuOpen((prev) => !prev);
   const closeMenu = () => setMenuOpen(false);
@@ -90,17 +124,23 @@ const ProfileNavbar = () => {
   // Role-specific navigation options
   const participantOptions = [
     {
-      label: "Favoritos",
+      label: "Eventos Favoritos",
       href: "/profile/favorites",
       icon: <FiHeart className="profile-navbar-svg" aria-hidden="true" />,
       ariaLabel: "Mis eventos favoritos",
     },
     {
+      label: "Organizadores Favoritos",
+      href: "/profile/organizer-favorites",
+      icon: <FiUsers className="profile-navbar-svg" aria-hidden="true" />,
+      ariaLabel: "Mis organizadores favoritos",
+    },
+    {
       label: "Mis Entradas",
       href: "/profile/tickets",
-      icon: <FiTag className="profile-navbar-svg" aria-hidden="true" />, // Using FiTag instead of FiTicket
+      icon: <FiTag className="profile-navbar-svg" aria-hidden="true" />,
       ariaLabel: "Mis entradas compradas",
-    },
+    }
   ];
 
   const organizerOptions = [
@@ -110,15 +150,25 @@ const ProfileNavbar = () => {
       icon: <FiCalendar className="profile-navbar-svg" aria-hidden="true" />,
       ariaLabel: "Gestionar mis eventos",
     },
+    {
+      label: "Ventas",
+      href: "/profile/sales",
+      icon: <FiDollarSign className="profile-navbar-svg" aria-hidden="true" />,
+      ariaLabel: "Ver mis ventas",
+    }
   ];
 
-  // Determine which navigation options to show based on user role
+  // Determine which navigation options to show based on user type
   let navOptions = [...baseNavOptions];
   
-  if (userRole === "participante") {
-    navOptions = [...baseNavOptions.slice(0, 2), ...participantOptions, ...baseNavOptions.slice(2)];
-  } else if (userRole === "organizador") {
-    navOptions = [...baseNavOptions.slice(0, 2), ...organizerOptions, ...baseNavOptions.slice(2)];
+  if (!loading && user) {
+    const userType = user.tipo_usuario?.toLowerCase() || '';
+    
+    if (userType === "participante") {
+      navOptions = [...baseNavOptions.slice(0, 2), ...participantOptions, ...baseNavOptions.slice(2)];
+    } else if (userType === "organizador") {
+      navOptions = [...baseNavOptions.slice(0, 2), ...organizerOptions, ...baseNavOptions.slice(2)];
+    }
   }
 
   return (
@@ -155,16 +205,20 @@ const ProfileNavbar = () => {
 
         <div className="profile-navbar-divider" />
 
-        <ul className="profile-navbar-list" role="list">
-          {navOptions.map((option) => (
-            <NavItem
-              key={option.href}
-              option={option}
-              isActive={pathname === option.href}
-              onClick={closeMenu}
-            />
-          ))}
-        </ul>
+        {loading ? (
+          <div className="profile-navbar-loading">Cargando menú...</div>
+        ) : (
+          <ul className="profile-navbar-list" role="list">
+            {navOptions.map((option) => (
+              <NavItem
+                key={option.href}
+                option={option}
+                isActive={pathname === option.href}
+                onClick={closeMenu}
+              />
+            ))}
+          </ul>
+        )}
 
         <div className="profile-navbar-footer">
           <Button
