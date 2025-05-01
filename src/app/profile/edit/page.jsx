@@ -1,189 +1,544 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { setStoredUser, clearStoredUser } from "../../../utils/user";
+import { userService } from "../../../services/user.service";
+import { authService } from "../../../services/auth.service";
+import { useNotification } from "../../../context/NotificationContext";
+import {
+  FiUser,
+  FiMail,
+  FiSave,
+  FiPhone,
+  FiMapPin,
+  FiCreditCard,
+  FiBriefcase,
+  FiHome,
+} from "react-icons/fi";
+import "./edit.css";
 
 export default function ProfileEditPage() {
   const router = useRouter();
   const [profile, setProfile] = useState(null);
-  const [form, setForm] = useState({});
+  const [newValues, setNewValues] = useState({});
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
+  const { showSuccess, showError, showInfo } = useNotification();
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const token = localStorage.getItem("access_token");
-      if (!token) {
-        router.replace("/auth/login");
-        return;
-      }
       try {
-        const res = await fetch("http://localhost:8000/api/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        if (res.ok && data.data) {
-          setProfile(data.data);
-          setForm({ ...data.data });
-        } else {
-          setError(data.message || "No se pudo cargar el perfil");
+        const storedUser = userService.getStoredUserInfo();
+        if (storedUser) {
+          setProfile(storedUser);
+          setLoading(false);
+        }
+
+        const { data } = await userService.getProfile();
+        if (data) {
+          setProfile(data);
+          userService.storeUserInfo(data);
         }
       } catch (err) {
-        setError("Error de red o del servidor");
+        if (err.status === 401 || err.status === 403) {
+          userService.clearUserInfo();
+          authService.redirectToLogin(router);
+        } else {
+          showError(err.errors?.message || "No se pudo cargar el perfil");
+        }
       } finally {
         setLoading(false);
       }
     };
+
     fetchProfile();
-    // eslint-disable-next-line
-  }, []);
+  }, [router, showError]);
+
+  const validateField = (name, value) => {
+    let fieldError = null;
+    const isParticipante =
+      profile?.tipo_usuario?.toLowerCase() === "participante";
+    const isOrganizador =
+      profile?.tipo_usuario?.toLowerCase() === "organizador";
+
+    if (value && value.trim() !== "") {
+      switch (name) {
+        case "nombre":
+        case "apellido1":
+          if (value.trim() === "") {
+            fieldError = `El ${
+              name === "nombre" ? "nombre" : "primer apellido"
+            } es obligatorio`;
+          }
+          break;
+        case "telefono":
+        case "telefono_contacto":
+          const phoneRegex = /^[0-9]{9}$/;
+          if (!phoneRegex.test(value.trim())) {
+            fieldError = "Debe ser un número válido de 9 dígitos";
+          }
+          break;
+        case "dni":
+          if (isParticipante && value.trim() === "") {
+            fieldError = "El DNI es obligatorio";
+          }
+          break;
+        case "nombre_organizacion":
+          if (isOrganizador && value.trim() === "") {
+            fieldError = "El nombre de la organización es obligatorio";
+          }
+          break;
+      }
+    }
+
+    return fieldError;
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+
+    setNewValues((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    const fieldError = validateField(name, value);
+    setErrors((prev) => ({
+      ...prev,
+      [name]: fieldError,
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSaving(true);
-    setError(null);
-    setSuccess(null);
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-      setError("No hay sesión activa");
-      setSaving(false);
-      clearStoredUser();
+
+    let hasErrors = false;
+    Object.keys(newValues).forEach((key) => {
+      if (errors[key]) {
+        hasErrors = true;
+      }
+    });
+
+    if (hasErrors) {
+      showError("Por favor, corrige los errores en los campos modificados");
       return;
     }
-    // Construir payload solo con campos editables
-    const payload = {
-      nombre: form.nombre,
-      apellido1: form.apellido1,
-      apellido2: form.apellido2,
-      email: form.email,
-    };
-    if (profile.role === "participante") {
-      payload.dni = form.dni;
-      payload.telefono = form.telefono;
-      payload.direccion = form.direccion;
-    } else if (profile.role === "organizador") {
-      payload.nombre_organizacion = form.nombre_organizacion;
-      payload.telefono_contacto = form.telefono_contacto;
-      payload.direccion_fiscal = form.direccion_fiscal;
-      payload.cif = form.cif;
-    }
-    try {
-      const res = await fetch("http://localhost:8000/api/profile", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        if (res.status === 401 || res.status === 403) {
-          clearStoredUser();
-          localStorage.removeItem("access_token");
-          setError("Sesión expirada. Vuelve a iniciar sesión.");
-          setTimeout(() => router.replace("/auth/login"), 1200);
-        } else {
-          setError(data.messages || data.message || "Error al actualizar perfil");
-        }
-      } else {
-        setSuccess("Perfil actualizado correctamente");
-        setProfile(data.data);
-        setStoredUser(data.data);
-        setTimeout(() => {
-          router.replace("/profile");
-        }, 1200);
+
+    const formDataToSend = {};
+
+    Object.keys(newValues).forEach((key) => {
+      if (newValues[key] !== undefined) {
+        formDataToSend[key] = newValues[key];
       }
+    });
+
+    if (Object.keys(formDataToSend).length === 0) {
+      showInfo("No se ha realizado ningún cambio");
+      router.push("/profile");
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const { data } = await userService.updateProfile(formDataToSend);
+      showSuccess("Perfil actualizado correctamente");
+      setProfile(data);
+      userService.storeUserInfo(data);
+      setTimeout(() => {
+        router.push("/profile");
+      }, 1500);
     } catch (err) {
-      setError("Error de red o del servidor");
+      if (err.status === 401 || err.status === 403) {
+        userService.clearUserInfo();
+        authService.redirectToLogin(router);
+      } else if (err.errors?.messages) {
+        setErrors(err.errors.messages);
+        showError("Por favor, corrige los errores señalados");
+      } else {
+        showError(
+          err.errors?.message || err.message || "Error al actualizar el perfil"
+        );
+      }
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) return <div>Cargando perfil...</div>;
-  if (error) return <div style={{ color: "red" }}>{error}</div>;
+  const handleCancel = () => {
+    showInfo("Cambios descartados");
+    router.push("/profile");
+  };
+
+  if (loading)
+    return (
+      <div className="profile-edit-loading">
+        <div className="profile-edit-spinner"></div>
+        <p>Cargando información de perfil...</p>
+      </div>
+    );
+
   if (!profile) return null;
 
+  const isParticipante = profile.tipo_usuario?.toLowerCase() === "participante";
+  const isOrganizador = profile.tipo_usuario?.toLowerCase() === "organizador";
+
   return (
-    <div style={{ maxWidth: 500, margin: "40px auto" }}>
-      <h1>Editar perfil</h1>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Nombre</label>
-          <input name="nombre" value={form.nombre || ""} onChange={handleChange} required />
+    <div className="profile-edit-page">
+      <div className="profile-edit-header">
+        <div className="profile-edit-title">
+          <FiUser className="profile-edit-icon" />
+          <h1>Editar perfil</h1>
         </div>
-        <div>
-          <label>Primer Apellido</label>
-          <input name="apellido1" value={form.apellido1 || ""} onChange={handleChange} required />
+      </div>
+
+      <div className="profile-edit-container">
+        <div className="profile-edit-info">
+          <p>
+            Introduce cambios solo en los campos que deseas actualizar. Los
+            campos que dejes en blanco mantendrán su valor actual.
+          </p>
         </div>
-        <div>
-          <label>Segundo Apellido</label>
-          <input name="apellido2" value={form.apellido2 || ""} onChange={handleChange} />
-        </div>
-        <div>
-          <label>Email</label>
-          <input name="email" type="email" value={form.email || ""} onChange={handleChange} required />
-        </div>
-        {profile.role === "participante" && (
-          <>
-            <div>
-              <label>DNI</label>
-              <input name="dni" value={form.dni || ""} onChange={handleChange} required />
+
+        <form onSubmit={handleSubmit} className="profile-edit-form">
+          <div className="profile-edit-card">
+            <div className="profile-edit-card-header">
+              <h2>Información personal</h2>
             </div>
-            <div>
-              <label>Teléfono</label>
-              <input name="telefono" value={form.telefono || ""} onChange={handleChange} required />
+            <div className="profile-edit-card-content">
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="nombre">
+                    <FiUser className="input-icon" />
+                    <span>Nombre</span>
+                    <span className="current-value">
+                      Actual: {profile.nombre}
+                    </span>
+                  </label>
+                  <input
+                    id="nombre"
+                    name="nombre"
+                    type="text"
+                    placeholder="Nuevo nombre"
+                    value={
+                      newValues.nombre === null ? "" : newValues.nombre || ""
+                    }
+                    onChange={handleChange}
+                    className={errors.nombre ? "error" : ""}
+                  />
+                  {errors.nombre && (
+                    <div className="field-error">{errors.nombre}</div>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="apellido1">
+                    <FiUser className="input-icon" />
+                    <span>Primer Apellido</span>
+                    <span className="current-value">
+                      Actual: {profile.apellido1}
+                    </span>
+                  </label>
+                  <input
+                    id="apellido1"
+                    name="apellido1"
+                    type="text"
+                    placeholder="Nuevo primer apellido"
+                    value={
+                      newValues.apellido1 === null
+                        ? ""
+                        : newValues.apellido1 || ""
+                    }
+                    onChange={handleChange}
+                    className={errors.apellido1 ? "error" : ""}
+                  />
+                  {errors.apellido1 && (
+                    <div className="field-error">{errors.apellido1}</div>
+                  )}
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="apellido2">
+                    <FiUser className="input-icon" />
+                    <span>Segundo Apellido</span>
+                    <span className="current-value">
+                      Actual: {profile.apellido2 || "No establecido"}
+                    </span>
+                  </label>
+                  <input
+                    id="apellido2"
+                    name="apellido2"
+                    type="text"
+                    placeholder="Nuevo segundo apellido"
+                    value={
+                      newValues.apellido2 === null
+                        ? ""
+                        : newValues.apellido2 || ""
+                    }
+                    onChange={handleChange}
+                    className={errors.apellido2 ? "error" : ""}
+                  />
+                  {errors.apellido2 && (
+                    <div className="field-error">{errors.apellido2}</div>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="email">
+                    <FiMail className="input-icon" />
+                    <span>Email</span>
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    value={profile.email}
+                    readOnly
+                    className="input-readonly"
+                  />
+                  <div className="field-info">
+                    El correo electrónico no puede ser modificado.
+                  </div>
+                </div>
+              </div>
             </div>
-            <div>
-              <label>Dirección</label>
-              <input name="direccion" value={form.direccion || ""} onChange={handleChange} />
+          </div>
+
+          {isParticipante && (
+            <div className="profile-edit-card">
+              <div className="profile-edit-card-header">
+                <h2>Datos de participante</h2>
+              </div>
+              <div className="profile-edit-card-content">
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="dni">
+                      <FiCreditCard className="input-icon" />
+                      <span>DNI</span>
+                      <span className="current-value">
+                        Actual: {profile.dni}
+                      </span>
+                    </label>
+                    <input
+                      id="dni"
+                      name="dni"
+                      type="text"
+                      placeholder="Nuevo DNI"
+                      value={newValues.dni === null ? "" : newValues.dni || ""}
+                      onChange={handleChange}
+                      className={errors.dni ? "error" : ""}
+                    />
+                    {errors.dni && (
+                      <div className="field-error">{errors.dni}</div>
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="telefono">
+                      <FiPhone className="input-icon" />
+                      <span>Teléfono</span>
+                      <span className="current-value">
+                        Actual: {profile.telefono}
+                      </span>
+                    </label>
+                    <input
+                      id="telefono"
+                      name="telefono"
+                      type="tel"
+                      placeholder="Nuevo teléfono"
+                      value={
+                        newValues.telefono === null
+                          ? ""
+                          : newValues.telefono || ""
+                      }
+                      onChange={handleChange}
+                      className={errors.telefono ? "error" : ""}
+                    />
+                    {errors.telefono && (
+                      <div className="field-error">{errors.telefono}</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group full-width">
+                    <label htmlFor="direccion">
+                      <FiMapPin className="input-icon" />
+                      <span>Dirección</span>
+                      <span className="current-value">
+                        Actual: {profile.direccion || "No establecida"}
+                      </span>
+                    </label>
+                    <input
+                      id="direccion"
+                      name="direccion"
+                      type="text"
+                      placeholder="Nueva dirección"
+                      value={
+                        newValues.direccion === null
+                          ? ""
+                          : newValues.direccion || ""
+                      }
+                      onChange={handleChange}
+                      className={errors.direccion ? "error" : ""}
+                    />
+                    {errors.direccion && (
+                      <div className="field-error">{errors.direccion}</div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
-          </>
-        )}
-        {profile.role === "organizador" && (
-          <>
-            <div>
-              <label>Nombre organización</label>
-              <input name="nombre_organizacion" value={form.nombre_organizacion || ""} onChange={handleChange} required />
-            </div>
-            <div>
-              <label>Teléfono de contacto</label>
-              <input name="telefono_contacto" value={form.telefono_contacto || ""} onChange={handleChange} required />
-            </div>
-            <div>
-              <label>Dirección fiscal</label>
-              <input name="direccion_fiscal" value={form.direccion_fiscal || ""} onChange={handleChange} />
-            </div>
-            <div>
-              <label>CIF</label>
-              <input name="cif" value={form.cif || ""} onChange={handleChange} />
-            </div>
-          </>
-        )}
-        <button type="submit" disabled={saving} style={{ marginTop: 16 }}>
-          {saving ? "Guardando..." : "Guardar cambios"}
-        </button>
-      </form>
-      {error && (
-        <div style={{ color: "red", marginTop: 10 }}>
-          {typeof error === "string" ? error : (
-            <ul>
-              {Object.values(error).map((msg, i) => (
-                <li key={i}>{Array.isArray(msg) ? msg.join(", ") : msg}</li>
-              ))}
-            </ul>
           )}
-        </div>
-      )}
-      {success && <div style={{ color: "green", marginTop: 10 }}>{success}</div>}
+
+          {isOrganizador && (
+            <div className="profile-edit-card">
+              <div className="profile-edit-card-header">
+                <h2>Datos de organizador</h2>
+              </div>
+              <div className="profile-edit-card-content">
+                <div className="form-row">
+                  <div className="form-group full-width">
+                    <label htmlFor="nombre_organizacion">
+                      <FiBriefcase className="input-icon" />
+                      <span>Nombre de la organización</span>
+                      <span className="current-value">
+                        Actual: {profile.nombre_organizacion}
+                      </span>
+                    </label>
+                    <input
+                      id="nombre_organizacion"
+                      name="nombre_organizacion"
+                      type="text"
+                      placeholder="Nuevo nombre de organización"
+                      value={
+                        newValues.nombre_organizacion === null
+                          ? ""
+                          : newValues.nombre_organizacion || ""
+                      }
+                      onChange={handleChange}
+                      className={errors.nombre_organizacion ? "error" : ""}
+                    />
+                    {errors.nombre_organizacion && (
+                      <div className="field-error">
+                        {errors.nombre_organizacion}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="cif">
+                      <FiCreditCard className="input-icon" />
+                      <span>CIF</span>
+                      <span className="current-value">
+                        Actual: {profile.cif || "No establecido"}
+                      </span>
+                    </label>
+                    <input
+                      id="cif"
+                      name="cif"
+                      type="text"
+                      placeholder="Nuevo CIF"
+                      value={newValues.cif === null ? "" : newValues.cif || ""}
+                      onChange={handleChange}
+                      className={errors.cif ? "error" : ""}
+                    />
+                    {errors.cif && (
+                      <div className="field-error">{errors.cif}</div>
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="telefono_contacto">
+                      <FiPhone className="input-icon" />
+                      <span>Teléfono de contacto</span>
+                      <span className="current-value">
+                        Actual: {profile.telefono_contacto}
+                      </span>
+                    </label>
+                    <input
+                      id="telefono_contacto"
+                      name="telefono_contacto"
+                      type="tel"
+                      placeholder="Nuevo teléfono de contacto"
+                      value={
+                        newValues.telefono_contacto === null
+                          ? ""
+                          : newValues.telefono_contacto || ""
+                      }
+                      onChange={handleChange}
+                      className={errors.telefono_contacto ? "error" : ""}
+                    />
+                    {errors.telefono_contacto && (
+                      <div className="field-error">
+                        {errors.telefono_contacto}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group full-width">
+                    <label htmlFor="direccion_fiscal">
+                      <FiHome className="input-icon" />
+                      <span>Dirección fiscal</span>
+                      <span className="current-value">
+                        Actual: {profile.direccion_fiscal || "No establecida"}
+                      </span>
+                    </label>
+                    <input
+                      id="direccion_fiscal"
+                      name="direccion_fiscal"
+                      type="text"
+                      placeholder="Nueva dirección fiscal"
+                      value={
+                        newValues.direccion_fiscal === null
+                          ? ""
+                          : newValues.direccion_fiscal || ""
+                      }
+                      onChange={handleChange}
+                      className={errors.direccion_fiscal ? "error" : ""}
+                    />
+                    {errors.direccion_fiscal && (
+                      <div className="field-error">
+                        {errors.direccion_fiscal}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="profile-edit-actions">
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="cancel-button"
+              disabled={saving}
+            >
+              Cancelar
+            </button>
+            <button type="submit" className="save-button" disabled={saving}>
+              {saving ? (
+                <>
+                  <div className="button-spinner"></div>
+                  <span>Guardando...</span>
+                </>
+              ) : (
+                <>
+                  <FiSave />
+                  <span>Guardar cambios</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

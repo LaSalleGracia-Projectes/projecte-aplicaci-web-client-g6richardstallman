@@ -43,20 +43,12 @@
 }
 
 .login-input-gradient {
-  position: absolute;
-  inset: -2px;
-  background: linear-gradient(to right, #f87171, #dc2626);
-  border-radius: 0.5rem;
-  filter: blur(8px);
-  opacity: 0.3;
-  transition: opacity 1s;
-  z-index: 0;
+  display: none;
 }
 
 .login-input-group:focus-within .login-input-gradient,
 .login-input-group:hover .login-input-gradient {
-  opacity: 1;
-  transition-duration: 0.2s;
+  opacity: 0.3;
 }
 
 .login-input {
@@ -66,15 +58,13 @@
   background: #fff;
   border-radius: 0.5rem;
   width: 100%;
-  border: none;
+  border: 1px solid #e5e7eb;
   outline: none;
-  box-shadow: 0 0 0 1px #e5e7eb;
-  transition: box-shadow 0.3s;
   z-index: 1;
 }
 
 .login-input:focus {
-  box-shadow: 0 0 0 2px #ef4444;
+  border-color: #ef4444;
 }
 
 .login-actions {
@@ -192,4 +182,29 @@
 .login-footer-link-secondary:hover {
   color: #dc2626;
   text-decoration: underline;
+}
+
+.spinner-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.spinner {
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top: 3px solid #fff;
+  width: 1.25rem;
+  height: 1.25rem;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }

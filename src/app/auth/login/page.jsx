@@ -4,18 +4,18 @@ import "./login.css";
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { setStoredUser } from "../../../utils/user";
 import Logo from "../../../components/ui/Logo/Logo";
 import Input from "../../../components/ui/Input/Input";
 import Button from "../../../components/ui/Button/Button";
 import { useNotification } from "../../../context/NotificationContext";
 import { useRouter } from "next/navigation";
+import { authService } from "../../../services/auth.service";
+import { userService } from "../../../services/user.service";
+import { googleAuthService } from "../../../services/googleAuth.service";
 
-const API_BASE_URL = "http://localhost:8000/api";
-const API_ENDPOINTS = {
-  login: `${API_BASE_URL}/login`,
-  profile: `${API_BASE_URL}/profile`,
-  googleAuth: `${API_BASE_URL}/auth/google`,
+const initialState = {
+  email: "",
+  password: ""
 };
 
 const validateForm = (form) => {
@@ -28,7 +28,7 @@ const validateForm = (form) => {
 };
 
 export default function LoginPage() {
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState(initialState);
   const [loading, setLoading] = useState(false);
 
   const { showSuccess, showError } = useNotification();
@@ -39,68 +39,73 @@ export default function LoginPage() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
-    const validationErrors = validateForm(form);
-    if (Object.keys(validationErrors).length > 0) {
-      if (typeof validationErrors === "string") {
-        showError(validationErrors);
-      } else {
-        const errorMessages = Object.values(validationErrors).join(", ");
-        showError(errorMessages);
-      }
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const res = await fetch(API_ENDPOINTS.login, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        if (typeof data.messages === "object") {
-          const errorMessages = Object.values(data.messages).flat().join(", ");
-          showError(errorMessages);
-        } else {
-          showError(data.messages || data.message || "Error al iniciar sesión");
-        }
-      } else {
-        showSuccess("Login exitoso");
-        if (data.access_token) {
-          localStorage.setItem("access_token", data.access_token);
-          const profileRes = await fetch(API_ENDPOINTS.profile, {
-            headers: { Authorization: `Bearer ${data.access_token}` },
-          });
-          const profileData = await profileRes.json();
-          if (profileData?.data) setStoredUser(profileData.data);
-        }
-        setTimeout(() => {
-          router.push("/");
-        }, 1000);
-      }
-    } catch (err) {
-      showError("Error de red o del servidor");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleGoogleAuth = async () => {
     try {
-      const res = await fetch(API_ENDPOINTS.googleAuth);
-      const data = await res.json();
-      if (data.url) {
-        router.push(data.url);
+      setLoading(true);
+      const authUrl = await googleAuthService.getAuthUrl();
+      if (authUrl) {
+        router.push(authUrl);
       } else {
         showError("No se pudo iniciar la autenticación con Google");
       }
     } catch (err) {
       showError("Error al conectar con Google");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    const validationErrors = validateForm(form);
+    if (Object.keys(validationErrors).length > 0) {
+      const errorMessages = Object.values(validationErrors).join(", ");
+      showError(errorMessages);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const data = await authService.login(form);
+      showSuccess("Login exitoso");
+      
+      try {
+        // Obtenemos el perfil y lo guardamos en sessionStorage
+        const userData = await userService.getProfile();
+        if (userData.data) {
+          // Explícitamente guardamos en sessionStorage
+          userService.storeUserInfo(userData.data);
+        }
+      } catch (profileError) {
+        console.error("Error al obtener perfil después del login:", profileError);
+      }
+      
+      setForm(initialState);
+      
+      setTimeout(() => {
+        router.push("/");
+      }, 1000);
+    } catch (err) {
+      if (err.errors && err.errors.messages) {
+        const messages = err.errors.messages;
+        if (typeof messages === "object") {
+          const errorMessages = Object.values(messages)
+            .flat()
+            .filter((msg) => msg)
+            .join(", ");
+          showError(errorMessages || "Error en el formulario");
+        } else {
+          showError(messages || "Error en el inicio de sesión");
+        }
+      } else if (err.message) {
+        showError(err.message);
+      } else {
+        showError("Ha ocurrido un error durante el inicio de sesión");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -142,42 +147,10 @@ export default function LoginPage() {
         <div className="login-actions">
           <Button type="submit" className="login-btn-main" disabled={loading}>
             {loading ? (
-              <span
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <svg
-                  className="animate-spin"
-                  style={{
-                    marginLeft: "-0.25rem",
-                    marginRight: "0.75rem",
-                    height: "1.25rem",
-                    width: "1.25rem",
-                    color: "white",
-                  }}
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                Entrando...
-              </span>
+              <div className="spinner-container">
+                <div className="spinner"></div>
+                <span>Entrando...</span>
+              </div>
             ) : (
               "Iniciar sesión"
             )}
@@ -194,13 +167,13 @@ export default function LoginPage() {
             disabled={loading}
           >
             <Image
-              src="/googleIcon.png"
+              src="/icons/googleIcon.png"
               alt="Google"
               width={24}
               height={24}
               style={{ borderRadius: "50%" }}
             />
-            <span>Continuar con Google</span>
+            <span>Google</span>
           </Button>
         </div>
       </form>

@@ -1,14 +1,17 @@
 .profile-navbar {
   width: 280px;
-  min-height: 100vh;
+  height: 100vh;
   background: #ffffff;
   border-right: 1px solid rgba(239, 68, 68, 0.12);
   display: flex;
   flex-direction: column;
   padding: 0;
   box-shadow: 0 4px 20px rgba(239, 68, 68, 0.04);
-  position: relative;
-  z-index: 10;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  overflow-y: auto;
 }
 
 .profile-navbar-mobile-header {
@@ -258,6 +261,21 @@
 .logout-button .profile-navbar-svg {
   stroke: white;
 }
+
+.profile-navbar-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 0;
+  width: 100%;
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+.profile-layout-container {
+  padding-left: 280px;
+}
+
 @media (max-width: 1280px) {
   .profile-navbar {
     width: 260px;
@@ -276,10 +294,16 @@
   .profile-navbar {
     width: 100%;
     min-height: unset;
+    height: auto;
     position: sticky;
     top: 0;
+    left: initial;
     background: white;
     z-index: 100;
+  }
+
+  .profile-layout-container {
+    padding-left: 0;
   }
 
   .profile-navbar-mobile-header {
@@ -289,7 +313,7 @@
   .profile-navbar-content {
     display: none;
     position: fixed;
-    top: 73px; /* Ajustado a la altura del encabezado móvil */
+    top: 73px;
     left: 0;
     width: 100%;
     height: calc(100vh - 73px);
@@ -317,12 +341,16 @@
     margin: 0;
     width: 100%;
   }
+
+  .profile-navbar-loading {
+    padding: 1.5rem 0;
+  }
 }
 
 @media (max-width: 640px) {
   .profile-navbar-content {
     padding: 1.25rem;
-    top: 69px; /* Ajustado para pantallas más pequeñas */
+    top: 69px;
     height: calc(100vh - 69px);
   }
 
@@ -360,7 +388,7 @@
   }
 
   .profile-navbar-content {
-    top: 65px; /* Ajustado para móviles pequeños */
+    top: 65px;
     height: calc(100vh - 65px);
   }
 

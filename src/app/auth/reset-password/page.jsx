@@ -8,10 +8,11 @@ import Input from "../../../components/ui/Input/Input";
 import Button from "../../../components/ui/Button/Button";
 import { useNotification } from "../../../context/NotificationContext";
 import { useRouter } from "next/navigation";
+import { authService } from "../../../services/auth.service";
 
-const API_BASE_URL = "http://localhost:8000/api";
-const API_ENDPOINTS = {
-  resetPassword: `${API_BASE_URL}/reset-password`,
+const initialState = {
+  email: "",
+  identificador: ""
 };
 
 const validateForm = (form) => {
@@ -25,10 +26,9 @@ const validateForm = (form) => {
 };
 
 export default function ResetPasswordPage() {
-  const [form, setForm] = useState({ email: "", identificador: "" });
+  const [form, setForm] = useState(initialState);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-
   const { showSuccess, showError } = useNotification();
 
   const handleChange = (e) => {
@@ -38,49 +38,37 @@ export default function ResetPasswordPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-
+    
     const validationErrors = validateForm(form);
     if (Object.keys(validationErrors).length > 0) {
-      if (typeof validationErrors === "string") {
-        showError(validationErrors);
-      } else {
-        const errorMessages = Object.values(validationErrors).join(", ");
-        showError(errorMessages);
-      }
-      setLoading(false);
+      const errorMessages = Object.values(validationErrors).join(", ");
+      showError(errorMessages);
       return;
     }
 
+    setLoading(true);
+
     try {
-      const res = await fetch(API_ENDPOINTS.resetPassword, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        if (typeof data.messages === "object") {
-          const errorMessages = Object.values(data.messages).flat().join(", ");
-          showError(errorMessages);
-        } else {
-          showError(
-            data.messages ||
-              data.message ||
-              "Error al restablecer la contraseña"
-          );
-        }
-      } else {
-        showSuccess(
-          "Si los datos son correctos, recibirás un email con la nueva contraseña."
-        );
-        setForm({ email: "", identificador: "" });
-        setTimeout(() => {
-          router.push("/auth/login");
-        }, 1500);
-      }
+      await authService.resetPassword(form.email, form.identificador);
+      
+      showSuccess(
+        "Si los datos son correctos, recibirás un email con la nueva contraseña."
+      );
+      
+      setForm(initialState);
+      
+      setTimeout(() => {
+        router.push("/auth/login");
+      }, 1500);
     } catch (err) {
-      showError("Error de red o del servidor");
+      if (err.messages && typeof err.messages === "object") {
+        const errorMessages = Object.values(err.messages).flat().join(", ");
+        showError(errorMessages);
+      } else {
+        showError(
+          err.message || "Error al restablecer la contraseña"
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -121,46 +109,17 @@ export default function ResetPasswordPage() {
             required
             className="reset-input"
           />
+          <small style={{ display: 'block', marginTop: '0.5rem', color: '#6b7280' }}>
+            Introduce tu DNI si eres participante o tu teléfono de contacto si eres organizador
+          </small>
         </div>
         <div className="reset-actions">
           <Button type="submit" className="reset-btn-main" disabled={loading}>
             {loading ? (
-              <span
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <svg
-                  className="animate-spin"
-                  style={{
-                    marginLeft: "-0.25rem",
-                    marginRight: "0.75rem",
-                    height: "1.25rem",
-                    width: "1.25rem",
-                    color: "white",
-                  }}
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                Enviando...
-              </span>
+              <div className="spinner-container">
+                <div className="spinner"></div>
+                <span>Enviando...</span>
+              </div>
             ) : (
               "Restablecer contraseña"
             )}

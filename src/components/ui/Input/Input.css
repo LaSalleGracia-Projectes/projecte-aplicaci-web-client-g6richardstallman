@@ -6,9 +6,11 @@
   background: #fff;
   transition: border 0.2s, box-shadow 0.2s;
 }
+
 .input-base:focus {
   outline: none;
 }
+
 .input-base[aria-disabled="true"] {
   background: #f3f4f6;
   color: #9ca3af;
