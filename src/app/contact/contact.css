@@ -210,6 +210,10 @@
   transition: border-color 0.3s ease;
 }
 
+.form-group textarea {
+  resize: none;
+}
+
 .form-group input:focus,
 .form-group textarea:focus {
   outline: none;
