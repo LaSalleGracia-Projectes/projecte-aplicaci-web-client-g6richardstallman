@@ -27,6 +27,7 @@ const Header = () => {
     { label: "Inicio", path: "/" },
     { label: "Eventos", path: "/events" },
     { label: "Categorías", path: "/events/categories" },
+    { label: "Organizadores", path: "/organizers" },
     { label: "Sobre Nosotros", path: "/about" },
     { label: "Contacto", path: "/contact" },
   ];
@@ -40,7 +41,8 @@ const Header = () => {
       const storedUser = userService.getStoredUserInfo();
       setUser(storedUser);
 
-      const hasToken = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const hasToken =
+        localStorage.getItem("token") || sessionStorage.getItem("token");
       if (hasToken && storedUser) {
         try {
           const response = await userService.getProfile();
