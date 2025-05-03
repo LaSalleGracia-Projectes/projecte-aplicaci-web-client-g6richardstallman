@@ -1,7 +1,6 @@
 .about-container {
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden;
 }
 
 .hero-section {
@@ -23,17 +22,28 @@
 }
 
 .hero-content {
-  padding: 2rem;
+  padding: 2.5rem;
   max-width: 800px;
-  background-color: rgba(0, 0, 0, 0.4);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 16px;
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  will-change: transform;
 }
 
-@supports not (backdrop-filter: blur(5px)) {
+.hero-content:hover {
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  transform: translateY(-5px);
+}
+
+@supports not (backdrop-filter: blur(20px)) {
   .hero-content {
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(0, 0, 0, 0.75);
   }
 }
 
@@ -54,13 +64,17 @@
   font-size: 3.5rem;
   font-weight: 700;
   margin-bottom: 1rem;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .subtitle {
   font-size: 1.5rem;
   font-weight: 300;
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.5px;
 }
 
 .content-wrapper {
@@ -254,8 +268,8 @@
 }
 
 .history-image img {
-  max-width: 100%;
-  width: 100%;
+  max-width: 90%;
+  width: auto;
   height: auto;
   max-height: 250px;
   border-radius: 24px;
