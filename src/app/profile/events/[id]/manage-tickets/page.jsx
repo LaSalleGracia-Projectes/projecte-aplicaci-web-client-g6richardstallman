@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getEventById, getEventTicketTypes } from "../../../../services/events.service";
+import { getEventById, getEventTicketTypes } from "../../../../../services/events.service";
 import { FiTrash2, FiEdit, FiPlusCircle, FiAlertCircle, FiCheck, FiArrowLeft } from "react-icons/fi";
 
 export default function ManageTicketsPage() {

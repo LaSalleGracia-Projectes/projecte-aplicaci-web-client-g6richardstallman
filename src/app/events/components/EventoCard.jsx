@@ -1,12 +1,13 @@
-// Componente para mostrar un evento en el listado
+// Componente para mostrar un evento en el listado - Estandarizado y optimizado
 import React, { memo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import PropTypes from 'prop-types';
-import { FaMapMarkerAlt, FaCalendarAlt, FaClock } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaCalendarAlt, FaClock, FaTag } from 'react-icons/fa';
 import { FiCalendar } from 'react-icons/fi';
+import './EventoCard.css';
 
-// Formateadores de fecha/hora extraídos como funciones puras
+// Formateadores de fecha/hora optimizados
 const formatearFecha = (fechaString) => {
   if (!fechaString) return '';
   
@@ -34,87 +35,130 @@ const formatearHora = (horaString) => {
   }
 };
 
-const EventoCard = ({ evento }) => {
-  // Formateos calculados solo una vez
-  const fechaFormateada = formatearFecha(evento.fechaEvento);
-  const horaFormateada = formatearHora(evento.hora);
-  
-  // Definimos una URL de imagen por defecto
-  const imagenUrl = evento.imagen_url || '/img/default-event.jpg';
+// Base64 pequeño para placeholder (1x1 pixel transparente)
+const IMAGE_PLACEHOLDER = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
 
-  // Manejo de errores de imagen
+// Componente de tarjeta de evento estandarizado
+const EventoCard = ({ evento }) => {
+  const { 
+    id, 
+    nombreEvento, 
+    imagen_url, 
+    fechaEvento, 
+    hora, 
+    ubicacion, 
+    categoria, 
+    precio_desde,
+    total_entradas_disponibles,
+    es_online
+  } = evento;
+  
+  // Datos procesados
+  const fechaFormateada = formatearFecha(fechaEvento);
+  const horaFormateada = formatearHora(hora);
+  const imagenUrl = imagen_url || '/img/default-event.jpg';
+  
+  // Estado de error de imagen
   const [imageError, setImageError] = useState(false);
 
+  // Determinar si hay disponibilidad limitada
+  const isLimitedAvailability = total_entradas_disponibles !== undefined && 
+                               total_entradas_disponibles > 0 && 
+                               total_entradas_disponibles < 10;
+
   return (
-    <Link href={`/eventos/${evento.id}`} className="block h-full" aria-label={`Ver detalles de ${evento.nombreEvento}`}>  
-      <article className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden flex flex-col h-full">
-        {/* Imagen con altura fija - Optimizada */}
-        <div className="relative w-full aspect-[4/3]">
+    <Link 
+      href={`/events/${id}`} 
+      className="evento-card-container" 
+      aria-label={`Ver detalles de ${nombreEvento}`}
+    >  
+      <article className="evento-card">
+        {/* Contenedor de imagen con ratio de aspecto fijo */}
+        <div className="evento-card-image-container">
           {!imageError ? (
             <Image
               src={imagenUrl}
-              alt={evento.nombreEvento}
+              alt={nombreEvento}
               fill
               sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              className="object-cover"
-              priority={false}
+              className="evento-card-image"
               loading="lazy"
               placeholder="blur"
-              blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN88P//fwAJtAPdcCRGlQAAAABJRU5ErkJggg=="
+              blurDataURL={IMAGE_PLACEHOLDER}
               onError={() => setImageError(true)}
             />
           ) : (
-            <div className="evento-card-image-placeholder flex items-center justify-center bg-gray-200 h-full">
-              <FiCalendar size={40} className="text-gray-500" />
-              <p className="text-gray-500 text-sm mt-2">Imagen no disponible</p>
+            <div className="evento-card-image-placeholder">
+              <FiCalendar className="evento-card-image-placeholder-icon" aria-hidden="true" />
+              <p className="evento-card-image-placeholder-text">Imagen no disponible</p>
             </div>
           )}
-          {evento.categoria && (
-            <span className="absolute top-3 left-3 bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded-md">
-              {evento.categoria}
+          
+          {/* Badges para categoría y tipo */}
+          <div className="evento-card-badge-container">
+            {categoria && (
+              <span className="evento-card-badge">
+                <FaTag className="evento-card-badge-icon" aria-hidden="true" /> 
+                {categoria}
+              </span>
+            )}
+            {es_online && (
+              <span className="evento-card-badge evento-card-badge-online">
+                Online
+              </span>
+            )}
+          </div>
+          
+          {/* Badge de disponibilidad */}
+          {isLimitedAvailability && (
+            <span className="evento-card-badge evento-card-badge-limited">
+              ¡Últimas {total_entradas_disponibles} entradas!
             </span>
           )}
-          {/* Banner de precio si hay entradas */}
-          {evento.precio_desde && (
-            <div className="absolute bottom-0 right-0 bg-red-600 text-white px-3 py-1 font-semibold text-sm">
-              Desde {evento.precio_desde}€
+          
+          {/* Banner de precio */}
+          {precio_desde !== undefined && precio_desde !== null && (
+            <div className="evento-card-price">
+              Desde {precio_desde}€
             </div>
           )}
         </div>
         
-        {/* Contenido con altura flexible */}
-        <div className="p-4 flex-1 flex flex-col">
-          {/* Título con altura fija para evitar desalineación */}
-          <div className="h-14 mb-2">
-            <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">{evento.nombreEvento}</h3>
+        {/* Contenido del evento con alturas controladas */}
+        <div className="evento-card-content">
+          {/* Título con altura fija */}
+          <div className="evento-card-title-container">
+            <h3 className="evento-card-title">
+              {nombreEvento}
+            </h3>
           </div>
           
-          {/* Ubicación con altura fija */}
-          <div className="h-6 mb-2">
-            {evento.ubicacion && (
-              <p className="text-sm text-gray-500 line-clamp-1">
-                <span className="inline-flex items-center">
-                  <FaMapMarkerAlt className="h-4 w-4 mr-1 flex-shrink-0" />
-                  <span className="truncate">{evento.ubicacion}</span>
+          {/* Ubicación con altura fija y truncamiento */}
+          {ubicacion && (
+            <div className="evento-card-location">
+              <p className="evento-card-location-text">
+                <FaMapMarkerAlt className="evento-card-location-icon" aria-hidden="true" />
+                <span className="evento-card-location-text-value" title={ubicacion}>
+                  {ubicacion}
                 </span>
               </p>
-            )}
-          </div>
+            </div>
+          )}
           
-          {/* Espacio flexible */}
-          <div className="flex-grow"></div>
+          {/* Espacio flexible para alinear el footer al fondo */}
+          <div className="evento-card-spacer"></div>
           
           {/* Fecha y hora siempre al fondo */}
-          <div className="mt-2 pt-2 border-t border-gray-100 text-sm text-gray-600 flex justify-between items-center">
+          <div className="evento-card-footer">
             {fechaFormateada && (
-              <time dateTime={evento.fechaEvento} className="flex items-center">
-                <FaCalendarAlt className="h-4 w-4 mr-1 flex-shrink-0" />
+              <time dateTime={fechaEvento} className="evento-card-date">
+                <FaCalendarAlt className="evento-card-date-icon" aria-hidden="true" />
                 <span>{fechaFormateada}</span>
               </time>
             )}
             {horaFormateada && (
-              <span className="flex items-center">
-                <FaClock className="h-4 w-4 mr-1 flex-shrink-0" />
+              <span className="evento-card-time">
+                <FaClock className="evento-card-time-icon" aria-hidden="true" />
                 <span>{horaFormateada}</span>
               </span>
             )}
@@ -134,9 +178,11 @@ EventoCard.propTypes = {
     hora: PropTypes.string,
     ubicacion: PropTypes.string,
     categoria: PropTypes.string,
-    precio_desde: PropTypes.number, // Precio mínimo de las entradas
+    precio_desde: PropTypes.number,
+    total_entradas_disponibles: PropTypes.number,
+    es_online: PropTypes.bool,
   }).isRequired,
 };
 
-// Usar memo para evitar renderizados innecesarios
+// Optimización con memo para evitar re-renders innecesarios
 export default memo(EventoCard);
