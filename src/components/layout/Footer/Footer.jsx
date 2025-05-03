@@ -84,13 +84,13 @@ export default function Footer() {
           <h3 className="footer-title">Legal</h3>
           <ul className="footer-links">
             <li>
-              <Link href="/privacy">Política de privacidad</Link>
+              <Link href="#">Política de privacidad</Link>
             </li>
             <li>
-              <Link href="/terms">Términos y condiciones</Link>
+              <Link href="#">Términos y condiciones</Link>
             </li>
             <li>
-              <Link href="/cookies">Política de cookies</Link>
+              <Link href="#">Política de cookies</Link>
             </li>
           </ul>
         </div>
@@ -114,7 +114,7 @@ export default function Footer() {
       <div className="footer-bottom">
         <div className="footer-container">
           <p className="copyright">
-            &copy; {currentYear} EventFlix. Todos los derechos reservados.
+            &copy; {currentYear} Eventflix. Todos los derechos reservados.
           </p>
         </div>
       </div>
