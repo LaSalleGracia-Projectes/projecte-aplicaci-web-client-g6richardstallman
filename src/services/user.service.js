@@ -20,7 +20,7 @@ export const userService = {
   },
 
   async getProfile() {
-    const token = storage.getToken(false);
+    const token = storage.getToken(false) || storage.getToken(true);
     if (!token) {
       throw new Error("No authorization token found");
     }
@@ -33,7 +33,8 @@ export const userService = {
     });
 
     const data = await this._handleResponse(response);
-    storage.set("user_info", data.data || data, false);
+    const isPersistent = storage.getToken(true) ? true : false;
+    storage.set("user_info", data.data || data, isPersistent);
     return data;
   },
 
@@ -97,15 +98,16 @@ export const userService = {
   },
 
   getStoredUserInfo() {
-    return storage.get("user_info", null, false);
+    return storage.get("user_info", null, false) || storage.get("user_info", null, true);
   },
 
-  storeUserInfo(user) {
-    storage.set("user_info", user, false);
+  storeUserInfo(user, persistent = false) {
+    storage.set("user_info", user, persistent);
   },
 
   clearUserInfo() {
     storage.remove("user_info", false);
+    storage.remove("user_info", true);
   },
 
   async _handleResponse(response) {

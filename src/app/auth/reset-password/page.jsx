@@ -12,7 +12,7 @@ import { authService } from "../../../services/auth.service";
 
 const initialState = {
   email: "",
-  identificador: ""
+  identificador: "",
 };
 
 const validateForm = (form) => {
@@ -38,7 +38,7 @@ export default function ResetPasswordPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     const validationErrors = validateForm(form);
     if (Object.keys(validationErrors).length > 0) {
       const errorMessages = Object.values(validationErrors).join(", ");
@@ -50,24 +50,26 @@ export default function ResetPasswordPage() {
 
     try {
       await authService.resetPassword(form.email, form.identificador);
-      
+
       showSuccess(
         "Si los datos son correctos, recibirás un email con la nueva contraseña."
       );
-      
+
       setForm(initialState);
-      
+
       setTimeout(() => {
         router.push("/auth/login");
       }, 1500);
     } catch (err) {
-      if (err.messages && typeof err.messages === "object") {
+      if (err.errors && typeof err.errors === "object") {
+        const errorMsg =
+          err.errors.message || Object.values(err.errors).flat().join(", ");
+        showError(errorMsg);
+      } else if (err.messages && typeof err.messages === "object") {
         const errorMessages = Object.values(err.messages).flat().join(", ");
         showError(errorMessages);
       } else {
-        showError(
-          err.message || "Error al restablecer la contraseña"
-        );
+        showError(err.message || "Error al restablecer la contraseña");
       }
     } finally {
       setLoading(false);
@@ -85,7 +87,11 @@ export default function ResetPasswordPage() {
           Introduce tus datos para recuperar el acceso
         </p>
       </div>
-      <form onSubmit={handleSubmit} className="reset-form">
+      <form
+        onSubmit={handleSubmit}
+        className="reset-form"
+        aria-label="Formulario para restablecer contraseña"
+      >
         <div className="reset-input-group">
           <div className="reset-input-gradient"></div>
           <Input
@@ -97,6 +103,7 @@ export default function ResetPasswordPage() {
             required
             autoFocus
             className="reset-input"
+            aria-label="Email de la cuenta"
           />
         </div>
         <div className="reset-input-group">
@@ -108,9 +115,13 @@ export default function ResetPasswordPage() {
             placeholder="DNI (participante) o Teléfono de contacto (organizador)"
             required
             className="reset-input"
+            aria-label="Identificador para verificación"
           />
-          <small style={{ display: 'block', marginTop: '0.5rem', color: '#6b7280' }}>
-            Introduce tu DNI si eres participante o tu teléfono de contacto si eres organizador
+          <small
+            style={{ display: "block", marginTop: "0.5rem", color: "#6b7280" }}
+          >
+            Introduce tu DNI si eres participante o tu teléfono de contacto si
+            eres organizador
           </small>
         </div>
         <div className="reset-actions">

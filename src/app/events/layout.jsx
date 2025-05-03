@@ -1,52 +1,73 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Header from "../../components/layout/Header/Header";
 import { FaArrowUp } from 'react-icons/fa';
+import './layout.css';
 
 export default function EventosLayout({ children }) {
   const [showScrollButton, setShowScrollButton] = useState(false);
   
-  // Mostrar el botón solo cuando se ha desplazado hacia abajo
-  useEffect(() => {
-    const handleScroll = () => {
+  // Handler optimizado con useCallback para evitar recreaciones en cada render
+  const handleScroll = useCallback(() => {
+    if (typeof window !== 'undefined') {
       setShowScrollButton(window.scrollY > 300);
-    };
+    }
+  }, []);
+  
+  // Implementar throttling para el scroll con requestAnimationFrame
+  useEffect(() => {
+    let isScrolling = false;
+    let rafId = null;
     
-    // Añadir listener con throttling para mejor rendimiento
-    let timeout;
-    const throttledScroll = () => {
-      if (!timeout) {
-        timeout = setTimeout(() => {
+    const onScroll = () => {
+      if (!isScrolling) {
+        rafId = window.requestAnimationFrame(() => {
           handleScroll();
-          timeout = null;
-        }, 100);
+          isScrolling = false;
+        });
+        isScrolling = true;
       }
     };
     
-    window.addEventListener('scroll', throttledScroll);
-    return () => window.removeEventListener('scroll', throttledScroll);
-  }, []);
+    // Comprobar posición inicial
+    handleScroll();
+    
+    // Añadir listener con opción passive para mejor rendimiento
+    window.addEventListener('scroll', onScroll, { passive: true });
+    
+    // Limpiar listener y cancelar animationFrame pendiente al desmontar
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (rafId) {
+        window.cancelAnimationFrame(rafId);
+      }
+    };
+  }, [handleScroll]);
   
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  // Scroll suave hacia arriba memoizado
+  const scrollToTop = useCallback(() => {
+    window.scrollTo({ 
+      top: 0, 
+      behavior: 'smooth' 
+    });
+  }, []);
 
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gray-50">{children}</div>
+      <div className="events-layout-container">
+        {children}
+      </div>
       
-      {/* Botón de scroll to top - solo visible al desplazar */}
-      {showScrollButton && (
-        <button 
-          onClick={scrollToTop} 
-          className="fixed bottom-6 right-6 bg-red-600 text-white p-3 rounded-full shadow-lg hover:bg-red-700 transition-colors z-50"
-          aria-label="Volver arriba"
-        >
-          <FaArrowUp />
-        </button>
-      )}
+      {/* Botón de volver arriba con transición suave y mejor accesibilidad */}
+      <button 
+        onClick={scrollToTop} 
+        className={`scroll-top-button ${showScrollButton ? 'scroll-top-button-visible' : 'scroll-top-button-hidden'}`}
+        aria-label="Volver arriba"
+      >
+        <FaArrowUp aria-hidden="true" />
+      </button>
     </>
   );
 }

@@ -120,7 +120,7 @@ export default function RegisterPage() {
       } else {
         showError("No se pudo iniciar la autenticación con Google");
       }
-    } catch (err) {
+    } catch (error) {
       showError("Error al conectar con Google");
     } finally {
       setLoading(false);
@@ -131,7 +131,6 @@ export default function RegisterPage() {
     e.preventDefault();
 
     const validationErrors = validateForm(form);
-
     if (Object.keys(validationErrors).length > 0) {
       const errorMessages = Object.values(validationErrors).join(", ");
       showError(errorMessages);
@@ -143,36 +142,31 @@ export default function RegisterPage() {
     try {
       const payload = preparePayload(form);
       await authService.register(payload);
-
       showSuccess(
         "¡Registro exitoso! Se ha enviado un correo de confirmación."
       );
-
       setForm(initialState);
 
       setTimeout(() => {
         router.push("/auth/login");
       }, 2000);
-    } catch (err) {
-      if (err.errors && err.errors.messages) {
-        const messages = err.errors.messages;
-        if (typeof messages === "object") {
-          const errorMessages = Object.values(messages)
-            .flat()
-            .filter((msg) => msg)
-            .join(", ");
-          showError(errorMessages || "Error en el formulario");
-        } else {
-          showError(messages || "Error en el registro");
-        }
-      } else if (err.message) {
-        showError(err.message);
-      } else {
-        showError("Ha ocurrido un error durante el registro");
-      }
+    } catch (error) {
+      const errorMessage = extractErrorMessage(error);
+      showError(errorMessage);
     } finally {
       setLoading(false);
     }
+  };
+
+  const extractErrorMessage = (error) => {
+    if (error.errors && error.errors.messages) {
+      const messages = error.errors.messages;
+      if (typeof messages === "object") {
+        return Object.values(messages).flat().filter(Boolean).join(", ");
+      }
+      return messages;
+    }
+    return error.message || "Ha ocurrido un error durante el registro";
   };
 
   return (

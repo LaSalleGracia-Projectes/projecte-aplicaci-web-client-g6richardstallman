@@ -223,6 +223,12 @@
   background-color: rgba(239, 68, 68, 0.05);
 }
 
+.image-placeholder:focus {
+  outline: none;
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
 .image-placeholder p {
   margin: 0.75rem 0 0.5rem;
   color: #6b7280;
@@ -388,6 +394,13 @@
   transform: scale(0.98);
 }
 
+.add-ticket-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+}
+
 /* Botones de acción */
 .form-actions {
   display: flex;
@@ -534,4 +547,13 @@
     transform: none;
     box-shadow: none;
   }
+}
+
+/* Nuevos estilos para mejoras */
+.char-counter {
+  display: block;
+  text-align: right;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: #6b7280;
 }

@@ -12,8 +12,7 @@
 .register-header {
   width: 100%;
   text-align: center;
-  margin-top: 1rem;
-  margin-bottom: 2.5rem;
+  margin: 1rem 0 2.5rem;
 }
 
 .register-title {
@@ -34,8 +33,7 @@
   flex-direction: column;
   gap: 1.5rem;
   max-width: 40rem;
-  margin-left: auto;
-  margin-right: auto;
+  margin: 0 auto;
 }
 
 .register-input-group {
@@ -61,6 +59,7 @@
   border: 1px solid #e5e7eb;
   outline: none;
   z-index: 1;
+  transition: border-color 0.2s ease;
 }
 
 .register-input:focus {
@@ -78,12 +77,6 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 1.5rem;
-}
-
-@media (min-width: 768px) {
-  .register-grid {
-    grid-template-columns: 1fr 1fr;
-  }
 }
 
 .register-label {
@@ -206,7 +199,6 @@
 }
 
 .register-divider-text {
-  position: relative;
   padding: 0 1rem;
   background: #fff;
   color: #6b7280;
@@ -245,23 +237,7 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
-.loading-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.loading-button svg {
-  margin-right: 0.75rem;
-  height: 1.25rem;
-  width: 1.25rem;
-  color: white;
-}
-
 .register-footer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   width: 100%;
   text-align: center;
   margin-top: 2rem;
@@ -279,6 +255,12 @@
 .register-footer-link:hover {
   color: #dc2626;
   text-decoration: underline;
+}
+
+@media (min-width: 768px) {
+  .register-grid {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @media (max-width: 640px) {

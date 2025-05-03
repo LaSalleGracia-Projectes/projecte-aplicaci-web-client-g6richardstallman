@@ -1,0 +1,76 @@
+/* Estilos optimizados para el layout de eventos */
+
+/* Estilos para el contenedor principal */
+.events-layout-container {
+  min-height: 100vh;
+  background-color: #f9fafb;
+  padding-bottom: 3rem;
+}
+
+/* Animación para el skeleton de carga */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.evento-card-skeleton {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Botón de volver arriba */
+.scroll-top-button {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  background-color: #dc2626;
+  color: white;
+  padding: 0.75rem;
+  border-radius: 9999px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+  z-index: 50;
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+.scroll-top-button:hover {
+  background-color: #b91c1c;
+}
+
+.scroll-top-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.5);
+}
+
+.scroll-top-button-hidden {
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+}
+
+.scroll-top-button-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Optimizaciones para dispositivos con preferencia de movimiento reducido */
+@media (prefers-reduced-motion: reduce) {
+  .evento-card-skeleton {
+    animation: none;
+  }
+  
+  .scroll-top-button {
+    transition: none !important;
+  }
+}
+
+/* Estilos para mejorar accesibilidad de enfoque */
+:focus-visible {
+  outline: 2px solid #dc2626;
+  outline-offset: 2px;
+}
