@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo, Suspense } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  Suspense,
+} from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Logo from "../../ui/Logo/Logo";
@@ -21,16 +27,19 @@ const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showAuthButtons, setShowAuthButtons] = useState(false);
-  
-  const navItems = useMemo(() => [
-    { label: "Inicio", path: "/" },
-    { label: "Eventos", path: "/events" },
-    { label: "Categorías", path: "/events/categories" },
-    { label: "Organizadores", path: "/organizers" },
-    { label: "Sobre Nosotros", path: "/about" },
-    { label: "Contacto", path: "/contact" },
-  ], []);
-  
+
+  const navItems = useMemo(
+    () => [
+      { label: "Inicio", path: "/" },
+      { label: "Eventos", path: "/events" },
+      { label: "Categorías", path: "/events/categories" },
+      { label: "Organizadores", path: "/organizers" },
+      { label: "Sobre Nosotros", path: "/about" },
+      { label: "Contacto", path: "/contact" },
+    ],
+    []
+  );
+
   const logoSize = 150;
 
   const preloadUserData = useCallback(() => {
@@ -43,7 +52,7 @@ const Header = () => {
 
   const loadUserProfile = useCallback(async () => {
     setLoading(true);
-    
+
     try {
       const token = storage.getToken(false) || storage.getToken(true);
       if (!token) {
@@ -52,27 +61,27 @@ const Header = () => {
         setLoading(false);
         return;
       }
-      
+
       const [profileResponse, avatarResponse] = await Promise.allSettled([
         userService.getProfile(),
-        userService.getAvatar()
+        userService.getAvatar(),
       ]);
-      
-      if (profileResponse.status === 'fulfilled') {
+
+      if (profileResponse.status === "fulfilled") {
         let userData = profileResponse.value.data || profileResponse.value;
-        
-        if (avatarResponse.status === 'fulfilled') {
+
+        if (avatarResponse.status === "fulfilled") {
           const avatarData = avatarResponse.value;
           if (avatarData && (avatarData.avatar_url || avatarData.avatar)) {
             userData = {
               ...userData,
               avatar: avatarData.avatar || userData.avatar,
-              avatar_url: avatarData.avatar_url || userData.avatar_url
+              avatar_url: avatarData.avatar_url || userData.avatar_url,
             };
             userService.storeUserInfo(userData);
           }
         }
-        
+
         setUser(userData);
       } else {
         const storedUser = userService.getStoredUserInfo();
@@ -96,16 +105,16 @@ const Header = () => {
       setLoading(false);
     }
   }, []);
-  
+
   useEffect(() => {
     preloadUserData();
     loadUserProfile();
   }, [preloadUserData, loadUserProfile]);
-  
+
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
-  
+
   const handleLogout = useCallback(async () => {
     try {
       setLoading(true);
@@ -122,9 +131,9 @@ const Header = () => {
       setLoading(false);
     }
   }, [router]);
-  
+
   const toggleMobileMenu = useCallback(() => {
-    setMobileMenuOpen(prev => !prev);
+    setMobileMenuOpen((prev) => !prev);
   }, []);
 
   useEffect(() => {

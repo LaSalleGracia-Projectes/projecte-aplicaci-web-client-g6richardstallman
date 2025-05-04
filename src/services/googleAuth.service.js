@@ -3,7 +3,6 @@ import { storage } from "../utils/storage";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export const googleAuthService = {
-  // Obtener la URL de autenticación de Google
   async getAuthUrl() {
     const response = await fetch(`${API_URL}/auth/google`, {
       method: "GET",
@@ -13,7 +12,6 @@ export const googleAuthService = {
     return data.url;
   },
 
-  // Completar el registro web con Google
   async completeWebRegistration(userData) {
     const response = await fetch(`${API_URL}/auth/google/web`, {
       method: "POST",
@@ -27,7 +25,6 @@ export const googleAuthService = {
     return data;
   },
 
-  // Guardar token y datos de usuario después del login exitoso con Google
   saveUserSession(data, persistent = true) {
     if (data.token) {
       storage.setToken(data.token, persistent);
@@ -39,7 +36,6 @@ export const googleAuthService = {
     return false;
   },
 
-  // Obtener los datos de usuario guardados
   getUserData() {
     return storage.get("user_info", null, true);
   },

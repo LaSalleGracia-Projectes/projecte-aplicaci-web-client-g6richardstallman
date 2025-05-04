@@ -5,7 +5,6 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 export const favoritesService = {
   async getFavoriteEvents() {
     try {
-      // Buscar token en ambos storages
       const token = storage.getToken(true) || storage.getToken(false);
       if (!token) {
         throw new Error("No authorization token found");

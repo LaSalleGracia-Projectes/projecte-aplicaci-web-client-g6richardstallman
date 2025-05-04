@@ -16,17 +16,14 @@ export default function TicketsPage() {
   const router = useRouter();
   const { showSuccess, showError } = useNotification ? useNotification() : { showSuccess: () => {}, showError: () => {} };
 
-  // Event and ticket data
   const [event, setEvent] = useState(null);
   const [ticketTypes, setTicketTypes] = useState([]);
 
-  // UI states
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [purchasing, setPurchasing] = useState(false);
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
 
-  // Selected tickets tracking
   const [selectedTickets, setSelectedTickets] = useState({});
   const [totalAmount, setTotalAmount] = useState(0);
 
@@ -35,14 +32,12 @@ export default function TicketsPage() {
       try {
         setLoading(true);
 
-        // Check authentication
         const token = storage.getToken(false) || storage.getToken(true);
         if (!token) {
           router.push(`/auth/login?redirect=${encodeURIComponent(`/events/${id}/tickets`)}`);
           return;
         }
 
-        // Check if user is a participant (robust check)
         const userInfo = storage.get("user_info", null, false) || storage.get("user_info", null, true);
         let userRole = null;
         if (userInfo) {
@@ -54,7 +49,6 @@ export default function TicketsPage() {
           return;
         }
 
-        // Load event data
         const eventResponse = await eventsService.getEventById(id);
         if (!eventResponse || !eventResponse.evento) {
           setError("No se encontró información del evento");
@@ -64,13 +58,11 @@ export default function TicketsPage() {
         setEvent(eventResponse.evento);
         document.title = `Entradas: ${eventResponse.evento.nombreEvento} | Eventflix`;
 
-        // Load ticket types
         const ticketTypesResponse = await ticketsService.getEventTicketTypes(id);
         const ticketsData = ticketTypesResponse.data ||
           ticketTypesResponse.tiposEntrada ||
           ticketTypesResponse || [];
 
-        // Initialize ticket selection state for each ticket type
         const initialTicketSelection = {};
         ticketsData.forEach(ticket => {
           initialTicketSelection[ticket.id || ticket.idTipoEntrada] = 0;
@@ -89,11 +81,9 @@ export default function TicketsPage() {
     return () => { document.title = "Eventflix"; };
   }, [id, router]);
 
-  // Calculate total whenever selected tickets change
   useEffect(() => {
     let total = 0;
 
-    // Calculate total from selected tickets
     Object.keys(selectedTickets).forEach(ticketId => {
       const ticketType = ticketTypes.find(t =>
         (t.id && String(t.id) === String(ticketId)) ||
@@ -111,7 +101,7 @@ export default function TicketsPage() {
   const getTicketId = (ticket) => ticket.id || ticket.idTipoEntrada;
 
   const getAvailableTickets = (ticketType) => {
-    if (ticketType.es_ilimitado) return 10; // Limitar a 10 por compra
+    if (ticketType.es_ilimitado) return 10;
     return ticketType.cantidad_disponible - (ticketType.entradas_vendidas || 0);
   };
 
@@ -178,7 +168,6 @@ export default function TicketsPage() {
       }
       setPurchasing(true);
 
-      // Prepare purchase data
       const purchaseData = {
         idEvento: id,
         entradas: []
@@ -205,16 +194,13 @@ export default function TicketsPage() {
         setPurchaseSuccess(true);
         showSuccess("¡Compra realizada con éxito!");
 
-        // Reset selection
         const resetTickets = {};
         Object.keys(selectedTickets).forEach(id => { resetTickets[id] = 0; });
         setSelectedTickets(resetTickets);
 
-        // Refresh ticket data after successful purchase
         const refreshResponse = await ticketsService.getEventTicketTypes(id);
         setTicketTypes(refreshResponse.data || refreshResponse.tiposEntrada || refreshResponse || []);
       } catch (err) {
-        // Muestra el error real del backend, no simules nada
         showError(
           (err.errors && (err.errors.message || err.errors.error)) ||
           err.message ||
@@ -257,7 +243,6 @@ export default function TicketsPage() {
 
   return (
     <div className="tickets-container">
-      {/* Event Header */}
       <div className="ticket-event-header">
         <Link href={`/events/${id}`} className="btn-back">
           <FiChevronLeft />
@@ -266,7 +251,6 @@ export default function TicketsPage() {
         <h1 className="event-title">Entradas: {event.nombreEvento}</h1>
       </div>
 
-      {/* Event Info Card */}
       <div className="event-info-card">
         <div className="event-image-container">
           <img
@@ -298,7 +282,6 @@ export default function TicketsPage() {
         </div>
       </div>
 
-      {/* Purchase Success Message */}
       {purchaseSuccess && (
         <div className="purchase-success">
           <div className="success-icon">
@@ -315,7 +298,6 @@ export default function TicketsPage() {
         </div>
       )}
 
-      {/* Main Tickets Section */}
       <div className="tickets-purchase-container">
         <div className="tickets-list-section">
           <h2 className="section-title">
@@ -393,7 +375,6 @@ export default function TicketsPage() {
           )}
         </div>
 
-        {/* Order Summary */}
         <div className="order-summary-section">
           <div className="order-summary-card">
             <h2 className="summary-title">Resumen de compra</h2>

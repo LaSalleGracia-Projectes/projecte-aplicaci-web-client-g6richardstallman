@@ -37,7 +37,6 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    // Verificar si hay un mensaje de error o éxito en los parámetros de URL
     const googleError = searchParams.get("google_error");
     if (googleError) {
       showError(decodeURIComponent(googleError));
@@ -57,7 +56,6 @@ export default function LoginPage() {
       setGoogleLoading(true);
       const authUrl = await googleAuthService.getAuthUrl();
       if (authUrl) {
-        // Redirigir a Google OAuth
         window.location.href = authUrl;
       } else {
         showError("No se pudo iniciar la autenticación con Google");

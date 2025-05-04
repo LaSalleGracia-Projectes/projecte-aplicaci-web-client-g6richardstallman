@@ -2,7 +2,6 @@ import { storage } from "../utils/storage";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
-// Helper para construir query string
 function buildQueryString(params) {
   if (!params) return "";
   const esc = encodeURIComponent;
@@ -152,11 +151,9 @@ export const eventsService = {
 
     const formData = this._prepareEventFormData(eventData);
 
-    // Use _method for Laravel method spoofing
     formData.append("_method", "PUT");
 
     try {
-      // Debug log the form data entries to see what's being sent
       const formDataEntries = {};
       for (let [key, value] of formData.entries()) {
         if (value instanceof File) {
@@ -168,11 +165,10 @@ export const eventsService = {
       console.log("Enviando datos al servidor:", formDataEntries);
 
       const response = await fetch(`${API_URL}/eventos/${eventId}`, {
-        method: "POST", // Using POST with _method=PUT for Laravel compatibility
+        method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
           "Accept": "application/json",
-          // Don't set Content-Type when sending FormData
         },
         body: formData,
       });
@@ -236,12 +232,9 @@ export const eventsService = {
   _prepareEventFormData(eventData) {
     const formData = new FormData();
 
-    // Basic event info
     if (eventData.titulo) formData.append("titulo", eventData.titulo);
     if (eventData.descripcion) formData.append("descripcion", eventData.descripcion);
 
-    // Handle date validation
-    // Laravel backend requires dates to be 'after:today'
     if (eventData.fecha) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -249,8 +242,6 @@ export const eventsService = {
       const eventDate = new Date(eventData.fecha);
       eventDate.setHours(0, 0, 0, 0);
 
-      // If we're keeping a past date (for an existing event), don't send the date
-      // as the backend would reject it
       if (eventDate > today) {
         formData.append("fecha", eventData.fecha);
       } else {
@@ -258,38 +249,30 @@ export const eventsService = {
       }
     }
 
-    // Format hora properly to ensure it's in correct format HH:MM
     if (eventData.hora) {
-      // Ensure hora is in correct format HH:MM
       const horaPattern = /^\d{1,2}:\d{2}(:\d{2})?$/;
       if (horaPattern.test(eventData.hora)) {
-        // Format to ensure HH:MM (remove seconds if present)
         const formattedHora = eventData.hora.split(':').slice(0, 2).join(':');
         formData.append("hora", formattedHora);
       } else {
         console.warn("Invalid hora format:", eventData.hora);
-        formData.append("hora", eventData.hora); // Send anyway, let backend validate
+        formData.append("hora", eventData.hora);
       }
     }
 
     if (eventData.ubicacion) formData.append("ubicacion", eventData.ubicacion);
     if (eventData.categoria) formData.append("categoria", eventData.categoria);
 
-    // Always include es_online
     formData.append("es_online", eventData.es_online ? "1" : "0");
 
-    // Handle enlace_streaming for online events
     if (eventData.es_online) {
-      // For online events, we need a valid streaming URL
       const streamingUrl = eventData.enlace_streaming || eventData.ubicacion || "";
 
-      // Check if the URL is valid
       const isValidUrl = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w.-]*)*\/?$/.test(streamingUrl);
 
-      // If it's not a valid URL format, try to make it one
       const urlToUse = isValidUrl ? streamingUrl :
-                       streamingUrl.startsWith('http') ? streamingUrl :
-                       `https://${streamingUrl}`;
+        streamingUrl.startsWith('http') ? streamingUrl :
+          `https://${streamingUrl}`;
 
       formData.append("enlace_streaming", urlToUse);
     }
@@ -312,7 +295,6 @@ export const eventsService = {
           formData.append(`tipos_entrada[${index}][descripcion]`, tipo.descripcion);
         }
 
-        // Always include activo status
         formData.append(`tipos_entrada[${index}][activo]`, tipo.activo ? "1" : "0");
 
         if (!tipo.es_ilimitado && tipo.cantidad_disponible) {
@@ -349,7 +331,6 @@ export const eventsService = {
         return jsonResponse;
       }
 
-      // Try to get text response if not JSON
       const textResponse = await response.text();
       console.log("API non-JSON error response:", textResponse);
 
@@ -368,22 +349,20 @@ export const eventsService = {
   },
 
   _formatErrorResponse(response, errorData) {
-    // Extract Laravel validation errors if available
     let errors = {};
 
     if (errorData.errors && typeof errorData.errors === 'object') {
       errors = errorData.errors;
     } else if (errorData.messages && typeof errorData.messages === 'object') {
-      errors = errorData.messages; 
+      errors = errorData.messages;
     } else if (errorData.message && errorData.status === 422) {
       errors = { validation: errorData.message };
     }
 
-    // Map common Laravel validation error messages to more user-friendly versions
     const mappedErrors = {};
 
     if (errors.fecha && Array.isArray(errors.fecha)) {
-      mappedErrors.fecha = errors.fecha.map(msg => 
+      mappedErrors.fecha = errors.fecha.map(msg =>
         msg.includes('after') ? 'La fecha debe ser posterior al día de hoy' : msg
       );
     }
@@ -396,8 +375,8 @@ export const eventsService = {
 
     if (errors.enlace_streaming && Array.isArray(errors.enlace_streaming)) {
       mappedErrors.enlace_streaming = errors.enlace_streaming.map(msg =>
-        msg.includes('required') ? 'Para eventos online se requiere un enlace de streaming válido' : 
-        msg.includes('url') ? 'El enlace de streaming debe ser una URL válida' : msg
+        msg.includes('required') ? 'Para eventos online se requiere un enlace de streaming válido' :
+          msg.includes('url') ? 'El enlace de streaming debe ser una URL válida' : msg
       );
     }
 
@@ -406,8 +385,8 @@ export const eventsService = {
       statusText: response.statusText,
       message: errorData.message || errorData.error || `Error HTTP: ${response.status}`,
       errors: Object.keys(mappedErrors).length > 0 ? { ...errors, ...mappedErrors } : errors,
-      rawErrors: errorData, // Keep the original error data for debugging
-      mappedErrors: mappedErrors // Add our user-friendly errors
+      rawErrors: errorData,
+      mappedErrors: mappedErrors
     };
 
     console.log("Formatted API error:", formattedError);
@@ -430,7 +409,7 @@ export const eventsService = {
     return events.map(event => {
       if (!event) return {};
 
-      const processed = {...event};
+      const processed = { ...event };
 
       if (processed.imagen) {
         processed.imagen_url = this._buildImageUrl(processed.imagen);

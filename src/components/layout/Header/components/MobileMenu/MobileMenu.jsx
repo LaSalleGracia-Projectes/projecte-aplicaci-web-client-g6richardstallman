@@ -33,12 +33,12 @@ const MobileMenu = ({
     };
 
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
       document.addEventListener("mousedown", handleClickOutside);
     }
-    
+
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isOpen, onClose]);
@@ -49,7 +49,7 @@ const MobileMenu = ({
   }, [user]);
 
   useEffect(() => {
-    if (avatarUrl && typeof window !== 'undefined') {
+    if (avatarUrl && typeof window !== "undefined") {
       const img = new window.Image();
       img.src = avatarUrl;
       img.onload = () => setImageLoaded(true);
@@ -57,7 +57,7 @@ const MobileMenu = ({
     } else {
       setImageError(true);
     }
-    
+
     return () => {
       setImageLoaded(false);
       setImageError(false);
@@ -92,7 +92,7 @@ const MobileMenu = ({
                 alt={user?.nombre || "Usuario"}
                 width={60}
                 height={60}
-                className={`avatar-image ${!imageLoaded ? 'loading' : ''}`}
+                className={`avatar-image ${!imageLoaded ? "loading" : ""}`}
                 priority
                 onLoad={() => setImageLoaded(true)}
                 onError={() => setImageError(true)}
@@ -103,7 +103,9 @@ const MobileMenu = ({
           </div>
           <div className="mobile-user-info">
             <p className="mobile-username">{user?.nombre || "Usuario"}</p>
-            <p className="mobile-user-role">{user?.role === "organizador" ? "Organizador" : "Participante"}</p>
+            <p className="mobile-user-role">
+              {user?.role === "organizador" ? "Organizador" : "Participante"}
+            </p>
           </div>
         </div>
       )}

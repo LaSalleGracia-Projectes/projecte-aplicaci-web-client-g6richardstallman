@@ -1,13 +1,9 @@
-/* Estilos optimizados para el layout de eventos */
-
-/* Estilos para el contenedor principal */
 .events-layout-container {
   min-height: 100vh;
   background-color: #f9fafb;
   padding-bottom: 3rem;
 }
 
-/* Animación para el skeleton de carga */
 @keyframes pulse {
   0%, 100% {
     opacity: 0.5;
@@ -21,7 +17,6 @@
   animation: pulse 1.5s ease-in-out infinite;
 }
 
-/* Botón de volver arriba */
 .scroll-top-button {
   position: fixed;
   bottom: 1.5rem;
@@ -58,7 +53,6 @@
   transform: translateY(0);
 }
 
-/* Optimizaciones para dispositivos con preferencia de movimiento reducido */
 @media (prefers-reduced-motion: reduce) {
   .evento-card-skeleton {
     animation: none;
@@ -69,7 +63,6 @@
   }
 }
 
-/* Estilos para mejorar accesibilidad de enfoque */
 :focus-visible {
   outline: 2px solid #dc2626;
   outline-offset: 2px;

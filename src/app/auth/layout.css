@@ -73,7 +73,6 @@
   }
 }
 
-/* Shared spinner styles for all auth pages */
 .spinner-container {
   display: flex;
   align-items: center;

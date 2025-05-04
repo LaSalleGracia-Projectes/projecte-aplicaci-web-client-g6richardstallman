@@ -12,7 +12,6 @@ import { useNotification } from "../../../context/NotificationContext";
 import { FiCalendar, FiMapPin, FiClock, FiTag, FiHeart, FiUser, FiAlertTriangle, FiChevronLeft, FiDollarSign, FiUsers } from "react-icons/fi";
 import "./events-details.css";
 
-// Obtén la API Key en tiempo de construcción
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
 export default function EventDetailPage() {
@@ -170,7 +169,6 @@ export default function EventDetailPage() {
     router.push(`/events/${id}/tickets`);
   };
 
-  // Mostrar mapa solo si la ubicación no es online ni URL
   const isOnlineEvent = event?.es_online || (event?.ubicacion && /^https?:\/\//i.test(event.ubicacion));
 
   useEffect(() => {
@@ -178,7 +176,6 @@ export default function EventDetailPage() {
     if (window.google && window.google.maps) {
       setMapLoaded(true);
     }
-    // El Script se carga con el componente <Script> abajo
   }, [event, isOnlineEvent]);
 
   useEffect(() => {
@@ -211,7 +208,6 @@ export default function EventDetailPage() {
       marker.setMap(null);
       mapDiv.dataset.mapInitialized = "";
     };
-    // eslint-disable-next-line
   }, [mapLoaded, event, isOnlineEvent]);
 
   if (loading || fetching) {
@@ -262,7 +258,6 @@ export default function EventDetailPage() {
 
   return (
     <>
-      {/* Google Maps Script solo si la ubicación es física */}
       {!isOnlineEvent && GOOGLE_MAPS_API_KEY && (
         <Script
           src={`https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}`}
@@ -371,7 +366,6 @@ export default function EventDetailPage() {
               </section>
             )}
             
-            {/* Mapa solo si la ubicación es física */}
             {!isOnlineEvent && event.ubicacion && (
               <section className="event-map-section" style={{ margin: "2rem 0" }}>
                 <h2 style={{ fontSize: "1.1rem", fontWeight: 600, marginBottom: "0.75rem" }}>
@@ -387,7 +381,6 @@ export default function EventDetailPage() {
                     minHeight: "200px"
                   }}
                 >
-                  {/* El mapa se renderiza aquí */}
                 </div>
               </section>
             )}

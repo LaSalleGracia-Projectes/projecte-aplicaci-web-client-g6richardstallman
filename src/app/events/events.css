@@ -1,13 +1,9 @@
-/* Estilos básicos y optimizados para producción */
-
-/* Estilos del contenedor principal */
 .events-page-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem 1rem;
 }
 
-/* Estilos de la cabecera */
 .events-header {
   margin-bottom: 1.5rem;
 }
@@ -49,7 +45,6 @@
   margin-right: 0.5rem;
 }
 
-/* Estilos para la barra de filtros */
 .events-filters-bar {
   display: flex;
   flex-wrap: wrap;
@@ -105,7 +100,6 @@
   margin-right: 0.25rem;
 }
 
-/* Estilos para alertas de error */
 .events-error {
   background-color: #fee2e2;
   border-left: 4px solid #dc2626;
@@ -158,7 +152,6 @@
   cursor: pointer;
 }
 
-/* Estilos para la cuadrícula de eventos */
 .events-grid {
   display: grid;
   grid-template-columns: repeat(1, minmax(0, 1fr));
@@ -183,7 +176,6 @@
   }
 }
 
-/* Skeleton */
 .evento-card-skeleton-container {
   height: 350px;
   width: 100%;
@@ -199,7 +191,6 @@
   overflow: hidden;
 }
 
-/* Mensaje cuando no hay eventos */
 .events-empty {
   grid-column: 1 / -1;
   text-align: center;
@@ -248,7 +239,6 @@
   cursor: pointer;
 }
 
-/* Botón de cargar más */
 .events-load-more {
   text-align: center;
   margin-top: 2.5rem;
@@ -275,7 +265,6 @@
   margin-right: 0.5rem;
 }
 
-/* Contador de resultados */
 .events-result-count {
   font-size: 0.875rem;
   color: #6b7280;
@@ -284,7 +273,6 @@
   padding-bottom: 1.5rem;
 }
 
-/* Animaciones */
 @keyframes shimmer {
   0% {
     background-position: -200px 0;

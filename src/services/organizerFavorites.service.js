@@ -16,7 +16,6 @@ export const organizerFavoritesService = {
           Authorization: `Bearer ${token}`,
           Accept: "application/json",
         },
-        // Prevent caching for fresh data
         cache: 'no-store'
       });
 
@@ -109,7 +108,6 @@ export const organizerFavoritesService = {
 
     try {
       const data = await response.json();
-      // Standardize response format
       if (data.favoritos) {
         return {
           data: {

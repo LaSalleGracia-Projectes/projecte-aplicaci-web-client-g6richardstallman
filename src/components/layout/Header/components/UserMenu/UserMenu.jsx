@@ -10,36 +10,39 @@ const UserMenu = ({ user, onLogout }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  const userOptions = useMemo(() => [
-    {
-      label: (
-        <div className="dropdown-item">
-          <FaUser className="dropdown-icon" />
-          <span>Mi Perfil</span>
-        </div>
-      ),
-      value: "profile",
-      onClick: () => router.push("/profile"),
-    },
-    {
-      label: (
-        <div className="dropdown-item">
-          <FaSignOutAlt className="dropdown-icon" />
-          <span>Cerrar Sesión</span>
-        </div>
-      ),
-      value: "logout",
-      onClick: onLogout,
-    },
-  ], [router, onLogout]);
+  const userOptions = useMemo(
+    () => [
+      {
+        label: (
+          <div className="dropdown-item">
+            <FaUser className="dropdown-icon" />
+            <span>Mi Perfil</span>
+          </div>
+        ),
+        value: "profile",
+        onClick: () => router.push("/profile"),
+      },
+      {
+        label: (
+          <div className="dropdown-item">
+            <FaSignOutAlt className="dropdown-icon" />
+            <span>Cerrar Sesión</span>
+          </div>
+        ),
+        value: "logout",
+        onClick: onLogout,
+      },
+    ],
+    [router, onLogout]
+  );
 
   const avatarUrl = useMemo(() => {
     if (!user) return "";
     return user.avatar_url || user.avatar || "";
   }, [user]);
-  
+
   useEffect(() => {
-    if (avatarUrl && typeof window !== 'undefined') {
+    if (avatarUrl && typeof window !== "undefined") {
       const img = new window.Image();
       img.src = avatarUrl;
       img.onload = () => setImageLoaded(true);
@@ -47,7 +50,7 @@ const UserMenu = ({ user, onLogout }) => {
     } else {
       setImageError(true);
     }
-    
+
     return () => {
       setImageLoaded(false);
       setImageError(false);
@@ -65,7 +68,7 @@ const UserMenu = ({ user, onLogout }) => {
                 alt={user?.nombre || "Usuario"}
                 width={40}
                 height={40}
-                className={`user-avatar ${!imageLoaded ? 'loading' : ''}`}
+                className={`user-avatar ${!imageLoaded ? "loading" : ""}`}
                 priority
                 onLoad={() => setImageLoaded(true)}
                 onError={() => setImageError(true)}

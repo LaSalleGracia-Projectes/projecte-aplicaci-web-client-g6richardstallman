@@ -1,79 +1,73 @@
-// Componente para mostrar un evento en el listado - Estandarizado y optimizado
-import React, { memo, useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import PropTypes from 'prop-types';
-import { FaMapMarkerAlt, FaCalendarAlt, FaClock, FaTag } from 'react-icons/fa';
-import { FiCalendar } from 'react-icons/fi';
-import './EventoCard.css';
+import React, { memo, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import PropTypes from "prop-types";
+import { FaMapMarkerAlt, FaCalendarAlt, FaClock, FaTag } from "react-icons/fa";
+import { FiCalendar } from "react-icons/fi";
+import "./EventoCard.css";
 
-// Formateadores de fecha/hora optimizados
 const formatearFecha = (fechaString) => {
-  if (!fechaString) return '';
-  
+  if (!fechaString) return "";
+
   try {
     const fecha = new Date(fechaString);
-    return fecha.toLocaleDateString('es-ES', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
+    return fecha.toLocaleDateString("es-ES", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
     });
   } catch (e) {
     console.error("Error formateando fecha:", e);
-    return '';
+    return "";
   }
 };
 
 const formatearHora = (horaString) => {
-  if (!horaString) return '';
+  if (!horaString) return "";
   try {
-    const [hora, minutos] = horaString.split(':');
+    const [hora, minutos] = horaString.split(":");
     return `${hora}:${minutos}h`;
   } catch (e) {
     console.error("Error formateando hora:", e);
-    return horaString || '';
+    return horaString || "";
   }
 };
 
-// Base64 pequeño para placeholder (1x1 pixel transparente)
-const IMAGE_PLACEHOLDER = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+const IMAGE_PLACEHOLDER =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
 
-// Componente de tarjeta de evento estandarizado
 const EventoCard = ({ evento }) => {
-  const { 
-    id, 
-    nombreEvento, 
-    imagen_url, 
-    fechaEvento, 
-    hora, 
-    ubicacion, 
-    categoria, 
+  const {
+    id,
+    nombreEvento,
+    imagen_url,
+    fechaEvento,
+    hora,
+    ubicacion,
+    categoria,
     precio_desde,
     total_entradas_disponibles,
-    es_online
+    es_online,
   } = evento;
-  
-  // Datos procesados
+
   const fechaFormateada = formatearFecha(fechaEvento);
   const horaFormateada = formatearHora(hora);
-  const imagenUrl = imagen_url || '/img/default-event.jpg';
-  
-  // Estado de error de imagen
+  const imagenUrl = imagen_url || "/img/default-event.jpg";
+
   const [imageError, setImageError] = useState(false);
 
-  // Determinar si hay disponibilidad limitada
-  const isLimitedAvailability = total_entradas_disponibles !== undefined && 
-                               total_entradas_disponibles > 0 && 
-                               total_entradas_disponibles < 10;
+  const isLimitedAvailability =
+    total_entradas_disponibles !== undefined &&
+    total_entradas_disponibles > 0 &&
+    total_entradas_disponibles < 10;
 
   return (
-    <Link 
-      href={`/events/${id}`} 
-      className="evento-card-container" 
+    <Link
+      href={`/events/${id}`}
+      className="evento-card-container"
       aria-label={`Ver detalles de ${nombreEvento}`}
-    >  
+    >
       <article className="evento-card">
-        {/* Contenedor de imagen con ratio de aspecto fijo */}
         <div className="evento-card-image-container">
           {!imageError ? (
             <Image
@@ -89,16 +83,20 @@ const EventoCard = ({ evento }) => {
             />
           ) : (
             <div className="evento-card-image-placeholder">
-              <FiCalendar className="evento-card-image-placeholder-icon" aria-hidden="true" />
-              <p className="evento-card-image-placeholder-text">Imagen no disponible</p>
+              <FiCalendar
+                className="evento-card-image-placeholder-icon"
+                aria-hidden="true"
+              />
+              <p className="evento-card-image-placeholder-text">
+                Imagen no disponible
+              </p>
             </div>
           )}
-          
-          {/* Badges para categoría y tipo */}
+
           <div className="evento-card-badge-container">
             {categoria && (
               <span className="evento-card-badge">
-                <FaTag className="evento-card-badge-icon" aria-hidden="true" /> 
+                <FaTag className="evento-card-badge-icon" aria-hidden="true" />
                 {categoria}
               </span>
             )}
@@ -108,51 +106,49 @@ const EventoCard = ({ evento }) => {
               </span>
             )}
           </div>
-          
-          {/* Badge de disponibilidad */}
+
           {isLimitedAvailability && (
             <span className="evento-card-badge evento-card-badge-limited">
               ¡Últimas {total_entradas_disponibles} entradas!
             </span>
           )}
-          
-          {/* Banner de precio */}
+
           {precio_desde !== undefined && precio_desde !== null && (
-            <div className="evento-card-price">
-              Desde {precio_desde}€
-            </div>
+            <div className="evento-card-price">Desde {precio_desde}€</div>
           )}
         </div>
-        
-        {/* Contenido del evento con alturas controladas */}
+
         <div className="evento-card-content">
-          {/* Título con altura fija */}
           <div className="evento-card-title-container">
-            <h3 className="evento-card-title">
-              {nombreEvento}
-            </h3>
+            <h3 className="evento-card-title">{nombreEvento}</h3>
           </div>
-          
-          {/* Ubicación con altura fija y truncamiento */}
+
           {ubicacion && (
             <div className="evento-card-location">
               <p className="evento-card-location-text">
-                <FaMapMarkerAlt className="evento-card-location-icon" aria-hidden="true" />
-                <span className="evento-card-location-text-value" title={ubicacion}>
+                <FaMapMarkerAlt
+                  className="evento-card-location-icon"
+                  aria-hidden="true"
+                />
+                <span
+                  className="evento-card-location-text-value"
+                  title={ubicacion}
+                >
                   {ubicacion}
                 </span>
               </p>
             </div>
           )}
-          
-          {/* Espacio flexible para alinear el footer al fondo */}
+
           <div className="evento-card-spacer"></div>
-          
-          {/* Fecha y hora siempre al fondo */}
+
           <div className="evento-card-footer">
             {fechaFormateada && (
               <time dateTime={fechaEvento} className="evento-card-date">
-                <FaCalendarAlt className="evento-card-date-icon" aria-hidden="true" />
+                <FaCalendarAlt
+                  className="evento-card-date-icon"
+                  aria-hidden="true"
+                />
                 <span>{fechaFormateada}</span>
               </time>
             )}
@@ -184,5 +180,4 @@ EventoCard.propTypes = {
   }).isRequired,
 };
 
-// Optimización con memo para evitar re-renders innecesarios
 export default memo(EventoCard);

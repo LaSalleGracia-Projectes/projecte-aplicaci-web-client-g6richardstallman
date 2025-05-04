@@ -110,7 +110,6 @@ export default function RegisterPage() {
       setGoogleLoading(true);
       const authUrl = await googleAuthService.getAuthUrl();
       if (authUrl) {
-        // Redirigir a Google OAuth
         window.location.href = authUrl;
       } else {
         showError("No se pudo iniciar la autenticación con Google");

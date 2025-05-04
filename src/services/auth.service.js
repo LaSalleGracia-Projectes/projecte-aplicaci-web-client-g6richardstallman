@@ -14,11 +14,11 @@ export const authService = {
       });
 
       const data = await this._handleResponse(response);
-      
+
       if (data.token) {
         storage.setToken(data.token, false);
       }
-      
+
       return data;
     } catch (error) {
       throw error;
@@ -36,11 +36,11 @@ export const authService = {
       });
 
       const data = await this._handleResponse(response);
-      
+
       if (data.access_token) {
         storage.setToken(data.access_token, remember);
       }
-      
+
       return data;
     } catch (error) {
       throw error;
@@ -63,7 +63,7 @@ export const authService = {
             "Authorization": `Bearer ${token}`
           },
         });
-        
+
         const data = await this._handleResponse(response);
         this.cleanupLocalData();
         return data;
@@ -76,7 +76,7 @@ export const authService = {
       return { status: "success", message: "Session closed" };
     }
   },
-  
+
   cleanupLocalData() {
     storage.removeToken(false);
     storage.removeToken(true);
@@ -95,7 +95,7 @@ export const authService = {
 
     return this._handleResponse(response);
   },
-  
+
   isAuthenticated() {
     return !!(storage.getToken(false) || storage.getToken(true));
   },

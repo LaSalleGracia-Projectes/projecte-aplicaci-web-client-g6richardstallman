@@ -37,7 +37,6 @@ export default function OrganizerDetailPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isParticipant, setIsParticipant] = useState(false);
 
-  // Fetch organizer and events in parallel
   const fetchData = useCallback(async () => {
     setLoading(true);
     setEventsLoading(true);
@@ -69,7 +68,6 @@ export default function OrganizerDetailPage() {
     }
   }, [id]);
 
-  // Check favorite status and participant role
   const checkFavoriteAndRole = useCallback(async () => {
     const token = storage.getToken(false) || storage.getToken(true);
     const userInfo = token
@@ -95,7 +93,6 @@ export default function OrganizerDetailPage() {
     };
   }, [fetchData, checkFavoriteAndRole]);
 
-  // Favorite toggle
   const handleFavorite = async () => {
     if (favoriteLoading) return;
     if (!isLoggedIn) {
@@ -122,14 +119,12 @@ export default function OrganizerDetailPage() {
     }
   };
 
-  // Memoized formatted date
   const formattedCreationDate = useMemo(() => {
     if (!organizer?.created_at) return null;
     const d = new Date(organizer.created_at);
     return d.toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" });
   }, [organizer]);
 
-  // Skeletons
   const OrganizerSkeleton = () => (
     <div className="organizer-profile-header">
       <div className="organizer-avatar">

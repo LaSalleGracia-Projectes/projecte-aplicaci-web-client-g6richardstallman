@@ -3,11 +3,10 @@ import { storage } from "../utils/storage";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 let cachedUserPromise = null;
-const CACHE_DURATION = 60000; // 1 minute
+const CACHE_DURATION = 60000;
 let lastFetchTime = 0;
 
 export const userService = {
-  // Obtiene el usuario autenticado (endpoint /user, solo datos básicos)
   async getUser() {
     const token = storage.getToken(true) || storage.getToken(false);
     if (!token) throw new Error("No authorization token found");
@@ -20,7 +19,6 @@ export const userService = {
     return this._handleResponse(response);
   },
 
-  // Obtiene el perfil completo (endpoint /profile)
   async getProfile() {
     const now = Date.now();
     const hasRecentCache = (now - lastFetchTime) < CACHE_DURATION;
@@ -56,7 +54,6 @@ export const userService = {
     return cachedUserPromise;
   },
 
-  // Obtiene solo el avatar del usuario autenticado
   async getAvatar() {
     const token = storage.getToken(true) || storage.getToken(false);
     if (!token) throw new Error("No authorization token found");
@@ -70,7 +67,6 @@ export const userService = {
     return this._handleResponse(response);
   },
 
-  // Actualiza el perfil del usuario
   async updateProfile(userData) {
     cachedUserPromise = null;
 
@@ -92,7 +88,6 @@ export const userService = {
     return data;
   },
 
-  // Cambia la contraseña del usuario
   async changePassword(passwordData) {
     const token = storage.getToken(true) || storage.getToken(false);
     if (!token) throw new Error("No authorization token found");
@@ -109,7 +104,6 @@ export const userService = {
     return this._handleResponse(response);
   },
 
-  // Elimina la cuenta del usuario autenticado
   async deleteAccount(confirmationData) {
     const token = storage.getToken(true) || storage.getToken(false);
     if (!token) throw new Error("No authorization token found");
@@ -129,26 +123,22 @@ export const userService = {
     return this._handleResponse(response);
   },
 
-  // Obtiene el usuario almacenado localmente
   getStoredUserInfo() {
     return storage.get("user_info", null, true) || storage.get("user_info", null, false);
   },
 
-  // Almacena el usuario localmente
   storeUserInfo(user, persistent = false) {
     if (!user) return;
     const isPersistent = !!storage.getToken(true);
     storage.set("user_info", user, isPersistent || persistent);
   },
 
-  // Limpia el usuario almacenado localmente
   clearUserInfo() {
     cachedUserPromise = null;
     storage.remove("user_info", false);
     storage.remove("user_info", true);
   },
 
-  // Fusiona datos nuevos con los almacenados
   mergeUserInfo(newData) {
     const currentData = this.getStoredUserInfo();
     if (!currentData) return newData;
@@ -160,7 +150,6 @@ export const userService = {
     return mergedData;
   },
 
-  // Manejo de respuesta estándar
   async _handleResponse(response) {
     if (!response.ok) {
       const errorData = await this._parseErrorResponse(response);

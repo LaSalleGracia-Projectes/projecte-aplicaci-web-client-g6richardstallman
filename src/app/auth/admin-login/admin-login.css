@@ -1,0 +1,159 @@
+.admin-login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  padding: 20px;
+}
+
+.admin-login-card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.admin-login-card h1 {
+  color: #1a73e8;
+  font-size: 24px;
+  margin-bottom: 5px;
+  text-align: center;
+}
+
+.admin-login-card h2 {
+  color: #5f6368;
+  font-size: 18px;
+  font-weight: 400;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.admin-login-error {
+  background-color: #fdeded;
+  color: #d93025;
+  border: 1px solid #fad2d2;
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.admin-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-form-group label {
+  font-size: 14px;
+  color: #5f6368;
+}
+
+.admin-form-group input {
+  padding: 12px;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  font-size: 16px;
+  transition: border-color 0.2s;
+}
+
+.admin-form-group input:focus {
+  border-color: #1a73e8;
+  outline: none;
+}
+
+.admin-login-button {
+  background-color: #1a73e8;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 10px;
+}
+
+.admin-login-button:hover {
+  background-color: #1565c0;
+}
+
+.admin-login-button:disabled {
+  background-color: #a8c7fa;
+  cursor: not-allowed;
+}
+
+.admin-login-warning {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeeba;
+  border-radius: 4px;
+  padding: 15px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.admin-login-warning h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.admin-login-warning ul {
+  margin-bottom: 15px;
+  padding-left: 20px;
+}
+
+.retry-button {
+  background-color: #ffc107;
+  color: #212529;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.retry-button:hover {
+  background-color: #e0a800;
+}
+
+.retry-button:disabled {
+  background-color: #e9ecef;
+  cursor: not-allowed;
+}
+
+.server-status {
+  margin-top: 20px;
+  font-size: 12px;
+  text-align: center;
+  color: #6c757d;
+}
+
+.status {
+  font-weight: 500;
+}
+
+.status.checking {
+  color: #6c757d;
+}
+
+.status.online {
+  color: #28a745;
+}
+
+.status.offline {
+  color: #dc3545;
+}
