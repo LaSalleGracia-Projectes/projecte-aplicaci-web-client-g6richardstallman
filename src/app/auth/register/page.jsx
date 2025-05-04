@@ -28,7 +28,6 @@ const initialState = {
 
 const validateForm = (form) => {
   const errors = {};
-
   if (!form.nombre.trim()) errors.nombre = "El nombre es obligatorio";
   if (!form.apellido1.trim())
     errors.apellido1 = "El primer apellido es obligatorio";
@@ -38,14 +37,12 @@ const validateForm = (form) => {
   if (!form.password) errors.password = "La contraseña es obligatoria";
   else if (form.password.length < 6)
     errors.password = "La contraseña debe tener al menos 6 caracteres";
-
   if (form.role === "participante") {
     if (!form.dni.trim()) {
       errors.dni = "El DNI es obligatorio";
     } else if (!/^\d{8}[A-Z]$/.test(form.dni)) {
       errors.dni = "Formato inválido. Ej: 12345678A";
     }
-
     if (!form.telefono.trim()) {
       errors.telefono = "El teléfono es obligatorio";
     } else if (!/^\+34\d{9}$|^\d{9}$/.test(form.telefono)) {
@@ -56,7 +53,6 @@ const validateForm = (form) => {
       errors.nombre_organizacion =
         "El nombre de la organización es obligatorio";
     }
-
     if (!form.telefono_contacto.trim()) {
       errors.telefono_contacto = "El teléfono de contacto es obligatorio";
     } else if (!/^\+34\d{9}$|^\d{9}$/.test(form.telefono_contacto)) {
@@ -64,7 +60,6 @@ const validateForm = (form) => {
         "Formato inválido. Ej: 612345678 o +34612345678";
     }
   }
-
   return errors;
 };
 
@@ -77,7 +72,6 @@ const preparePayload = (form) => {
     password: form.password,
     role: form.role,
   };
-
   if (form.role === "participante") {
     payload.dni = form.dni;
     payload.telefono = form.telefono;
@@ -85,13 +79,13 @@ const preparePayload = (form) => {
     payload.nombre_organizacion = form.nombre_organizacion;
     payload.telefono_contacto = form.telefono_contacto;
   }
-
   return payload;
 };
 
 export default function RegisterPage() {
   const [form, setForm] = useState(initialState);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const router = useRouter();
   const { showSuccess, showError } = useNotification();
 
@@ -113,43 +107,37 @@ export default function RegisterPage() {
 
   const handleGoogleAuth = async () => {
     try {
-      setLoading(true);
+      setGoogleLoading(true);
       const authUrl = await googleAuthService.getAuthUrl();
       if (authUrl) {
-        router.push(authUrl);
+        // Redirigir a Google OAuth
+        window.location.href = authUrl;
       } else {
         showError("No se pudo iniciar la autenticación con Google");
       }
     } catch (error) {
-      showError("Error al conectar con Google");
+      console.error("Error al conectar con Google:", error);
+      showError("Error al conectar con Google. Intentalo de nuevo más tarde.");
     } finally {
-      setLoading(false);
+      setGoogleLoading(false);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const validationErrors = validateForm(form);
     if (Object.keys(validationErrors).length > 0) {
       const errorMessages = Object.values(validationErrors).join(", ");
       showError(errorMessages);
       return;
     }
-
     setLoading(true);
-
     try {
       const payload = preparePayload(form);
       await authService.register(payload);
-      showSuccess(
-        "¡Registro exitoso! Se ha enviado un correo de confirmación."
-      );
+      showSuccess("¡Registro exitoso! Se ha enviado un correo de confirmación.");
       setForm(initialState);
-
-      setTimeout(() => {
-        router.push("/auth/login");
-      }, 2000);
+      router.replace("/auth/login");
     } catch (error) {
       const errorMessage = extractErrorMessage(error);
       showError(errorMessage);
@@ -309,7 +297,7 @@ export default function RegisterPage() {
           <Button
             type="submit"
             className="register-btn-main"
-            disabled={loading}
+            disabled={loading || googleLoading}
           >
             {loading ? (
               <div className="spinner-container">
@@ -329,16 +317,25 @@ export default function RegisterPage() {
             type="button"
             onClick={handleGoogleAuth}
             className="register-btn-google"
-            disabled={loading}
+            disabled={loading || googleLoading}
           >
-            <Image
-              src="/icons/googleIcon.png"
-              alt="Google"
-              width={24}
-              height={24}
-              style={{ borderRadius: "50%" }}
-            />
-            <span>Google</span>
+            {googleLoading ? (
+              <div className="spinner-container">
+                <div className="spinner"></div>
+                <span>Conectando...</span>
+              </div>
+            ) : (
+              <>
+                <Image
+                  src="/icons/google-icon.png"
+                  alt="Google"
+                  width={24}
+                  height={24}
+                  style={{ borderRadius: "50%" }}
+                />
+                <span>Google</span>
+              </>
+            )}
           </Button>
         </div>
       </form>

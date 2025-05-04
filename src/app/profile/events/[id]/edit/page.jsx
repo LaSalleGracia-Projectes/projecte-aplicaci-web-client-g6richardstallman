@@ -8,10 +8,9 @@ import { useNotification } from "../../../../../context/NotificationContext";
 import { 
   FiCalendar, FiClock, FiMapPin, FiTag, FiEdit, 
   FiImage, FiAlertTriangle, FiCheck, FiArrowLeft, 
-  FiInfo, FiGlobe, FiLoader 
+  FiInfo, FiGlobe
 } from "react-icons/fi";
 import "./edit-event.css";
-import EventImage from "../../../../../components/EventImage";
 
 export default function EditEventPage() {
   const params = useParams();
@@ -29,13 +28,13 @@ export default function EditEventPage() {
   const [originalEvent, setOriginalEvent] = useState(null);
   const [imageUploadDisabled, setImageUploadDisabled] = useState(false);
 
-  // Categorías predefinidas
+  // Categorías hardcodeadas (enum)
   const categories = [
     'Música', 'Deportes', 'Arte', 'Teatro', 'Cine', 
     'Tecnología', 'Gastronomía', 'Moda', 'Literatura', 'Educación',
     'Networking', 'Conferencias', 'Festivales', 'Exposiciones', 'Turismo'
   ];
-  
+
   const [formData, setFormData] = useState({
     titulo: "",
     descripcion: "",
@@ -44,78 +43,62 @@ export default function EditEventPage() {
     ubicacion: "",
     categoria: "",
     imagen: null,
-    es_online: false
+    es_online: false,
+    enlace_streaming: ""
   });
 
   // Cargar datos del evento y verificar permisos
   useEffect(() => {
     const checkPermissionAndLoadEvent = async () => {
       if (!id) return;
-      
       try {
         setLoading(true);
         setError(null);
-        
-        // Verificar si el usuario está autenticado
         const user = userService.getStoredUserInfo();
         if (!user) {
           showError("Debes iniciar sesión para editar un evento");
           router.replace('/auth/login');
           return;
         }
-
-        // Obtener detalles del evento
         const result = await eventsService.getEventById(id);
-        
         if (!result.evento) {
           setError('Evento no encontrado');
           return;
         }
-
         setOriginalEvent(result.evento);
-        
         // Verificar si el usuario es el organizador de este evento
         try {
           const myEvents = await eventsService.getMyEvents();
-          
           const events = Array.isArray(myEvents) ? myEvents : 
                         Array.isArray(myEvents.eventos) ? myEvents.eventos : 
                         Array.isArray(myEvents.data) ? myEvents.data : [];
-          
           const isUserEvent = events.some(
-            (evento) => evento.idEvento?.toString() === id.toString()
+            (evento) => (evento.idEvento || evento.id)?.toString() === id.toString()
           );
-          
           if (!isUserEvent) {
             setError('No tienes permiso para editar este evento');
             return;
           }
         } catch (err) {
-          console.error("Error verificando permisos:", err);
           setError('Error al verificar permisos. Intente nuevamente más tarde.');
           return;
         }
-
-        // Configurar datos del formulario
         const event = result.evento;
         const eventDate = new Date(event.fechaEvento || event.fecha);
-        
         setFormData({
-          titulo: event.nombreEvento || event.titulo,
+          titulo: event.nombreEvento || event.titulo || "",
           descripcion: event.descripcion || "",
           fecha: eventDate.toISOString().split('T')[0],
-          hora: event.hora || "12:00",
-          ubicacion: event.ubicacion || "",
+          hora: event.horaEvento || event.hora || "12:00",
+          ubicacion: event.ubicacion || event.lugar || "",
           categoria: event.categoria || "",
           es_online: event.es_online === true || event.es_online === "1" || event.es_online === 1,
+          enlace_streaming: event.enlace_streaming || ""
         });
-        
-        // Configurar imagen de vista previa si existe
         if (event.imagen_url) {
           setCurrentImageUrl(event.imagen_url);
         }
       } catch (err) {
-        console.error("Error cargando evento:", err);
         if (err.status === 401) {
           showError("Sesión expirada. Por favor inicia sesión nuevamente.");
           router.replace('/auth/login');
@@ -126,7 +109,6 @@ export default function EditEventPage() {
         setLoading(false);
       }
     };
-
     checkPermissionAndLoadEvent();
   }, [id, router, showError]);
 
@@ -137,8 +119,6 @@ export default function EditEventPage() {
       ...prev,
       [name]: type === "checkbox" ? checked : value
     }));
-    
-    // Limpiar error cuando el usuario corrige
     if (formErrors[name]) {
       setFormErrors(prev => ({
         ...prev,
@@ -153,36 +133,26 @@ export default function EditEventPage() {
       showInfo("La subida de imágenes está temporalmente deshabilitada");
       return;
     }
-    
     const file = e.target.files[0];
     if (!file) return;
-    
-    // Validar tipo de archivo
     if (!file.type.startsWith('image/')) {
       showError("Por favor, selecciona un archivo de imagen válido");
       return;
     }
-    
-    // Validar tamaño (máximo 5MB)
     if (file.size > 5 * 1024 * 1024) {
       showError("La imagen no debe superar los 5MB");
       return;
     }
-    
     setFormData(prev => ({
       ...prev,
       imagen: file
     }));
-    
-    // Crear preview
     const reader = new FileReader();
     reader.onload = (e) => {
       setImagePreview(e.target.result);
       setCurrentImageUrl(null);
     };
     reader.readAsDataURL(file);
-    
-    // Limpiar error de imagen
     if (formErrors.imagen) {
       setFormErrors(prev => ({
         ...prev,
@@ -196,8 +166,6 @@ export default function EditEventPage() {
     const errors = {};
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
-    // Validar campos principales
     if (!formData.titulo?.trim()) errors.titulo = "El título es obligatorio";
     if (!formData.descripcion?.trim()) errors.descripcion = "La descripción es obligatoria";
     if (!formData.fecha) {
@@ -205,26 +173,36 @@ export default function EditEventPage() {
     } else {
       const eventDate = new Date(formData.fecha);
       eventDate.setHours(0, 0, 0, 0);
-      
       if (originalEvent) {
         const originalDate = new Date(originalEvent.fechaEvento || originalEvent.fecha);
         originalDate.setHours(0, 0, 0, 0);
-        
-        // Si la fecha original es anterior a hoy, permitir mantenerla
-        if (originalDate < today && eventDate < today && eventDate.getTime() === originalDate.getTime()) {
+        if (originalDate < today && eventDate.getTime() === originalDate.getTime()) {
           // Permitir mantener la fecha original
-        } else if (eventDate < today) {
-          errors.fecha = "La fecha no puede ser anterior a hoy";
+        } else if (eventDate <= today) {
+          errors.fecha = "La fecha debe ser posterior al día de hoy (mínimo mañana)";
         }
-      } else if (eventDate < today) {
-        errors.fecha = "La fecha no puede ser anterior a hoy";
+      } else if (eventDate <= today) {
+        errors.fecha = "La fecha debe ser posterior al día de hoy (mínimo mañana)";
       }
     }
-    
-    if (!formData.hora) errors.hora = "La hora es obligatoria";
+    if (!formData.hora) {
+      errors.hora = "La hora es obligatoria";
+    } else {
+      const horaPattern = /^\d{1,2}:\d{2}(:\d{2})?$/;
+      if (!horaPattern.test(formData.hora)) {
+        errors.hora = "El formato de hora debe ser HH:MM";
+      }
+    }
     if (!formData.ubicacion?.trim()) errors.ubicacion = "La ubicación es obligatoria";
     if (!formData.categoria) errors.categoria = "La categoría es obligatoria";
-    
+    if (formData.es_online) {
+      const urlToCheck = formData.enlace_streaming || formData.ubicacion;
+      const urlPattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w.-]*)*\/?$/;
+      if (!urlPattern.test(urlToCheck)) {
+        errors.enlace_streaming = "Para eventos online, se requiere una URL válida de streaming";
+        errors.ubicacion = "Para eventos online, incluye una URL válida en la ubicación o en el enlace de streaming";
+      }
+    }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   }, [formData, originalEvent]);
@@ -232,90 +210,65 @@ export default function EditEventPage() {
   // Enviar formulario
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
-    
     if (!validateForm()) {
       showError("Por favor, corrige los errores en el formulario");
       return;
     }
-    
     setSaving(true);
     setError(null);
-    
     try {
-      // Preparar los datos para enviar
       const dataToSend = { ...formData };
-      
       if (imageUploadDisabled) {
         dataToSend.imagen = null;
       }
-
-      // Log para depuración
-      console.log("Datos a enviar:", dataToSend);
-      
-      // Asegurarnos que los valores booleanos se envíen correctamente
-      dataToSend.es_online = dataToSend.es_online ? true : false;
-
-      const result = await eventsService.updateEvent(id, dataToSend);
-      
+      if (dataToSend.es_online && !dataToSend.enlace_streaming) {
+        dataToSend.enlace_streaming = dataToSend.ubicacion;
+      }
+      await eventsService.updateEvent(id, dataToSend);
       showSuccess("Evento actualizado correctamente");
       setTimeout(() => {
         router.push(`/profile/events`);
       }, 1500);
     } catch (err) {
-      console.error("Error al actualizar evento:", err);
-      
       if (err.status === 422) {
-        // Error de validación
-        showError("El servidor rechazó algunos datos. Comprueba los campos del formulario.");
-        console.log("Errores de validación:", err.errors);
-      } else if (err.errors?.message?.includes("imagecreatetruecolor")) {
-        setImageUploadDisabled(true);
-        showInfo("El servidor no puede procesar imágenes en este momento. Intenta guardar sin cambiar la imagen.");
-        
-        // Limpiar la imagen para que el usuario pueda intentar guardar sin ella
-        setFormData(prev => ({
-          ...prev,
-          imagen: null
-        }));
-        setImagePreview(null);
-        // Restaurar la imagen original si estaba disponible
-        if (originalEvent && originalEvent.imagen_url) {
-          setCurrentImageUrl(originalEvent.imagen_url);
+        const errorMessages = [];
+        if (err.errors && typeof err.errors === 'object') {
+          Object.entries(err.errors).forEach(([field, messages]) => {
+            if (Array.isArray(messages)) {
+              messages.forEach(msg => errorMessages.push(`${field}: ${msg}`));
+            } else if (typeof messages === 'string') {
+              errorMessages.push(`${field}: ${messages}`);
+            }
+          });
         }
-      } else if (err.status === 401) {
-        showError("Sesión expirada. Por favor inicia sesión nuevamente.");
-        setTimeout(() => router.replace('/auth/login'), 2000);
-      } else if (err.status === 403) {
-        showError("No tienes permiso para editar este evento");
-      } else if (err.status === 405) {
-        showError("El servidor no permite este método de actualización. Contacta al administrador.");
-        console.error("Error detallado:", err);
+        if (errorMessages.length > 0) {
+          showError(`Error de validación: ${errorMessages.join('; ')}`);
+        } else {
+          showError("Hay errores de validación. Revisa todos los campos y asegúrate que los datos sean correctos.");
+        }
       } else {
-        showError("Error al actualizar el evento. Por favor, inténtalo nuevamente más tarde");
+        const errorMsg = err.message || err.rawErrors?.message || "Error desconocido";
+        showError(`Error al actualizar el evento: ${errorMsg}. Por favor, inténtalo de nuevo más tarde.`);
       }
     } finally {
       setSaving(false);
     }
   }, [formData, id, imageUploadDisabled, originalEvent, router, showError, showSuccess, validateForm]);
 
-  // Mejorada la accesibilidad para subir imágenes desde el div
   const triggerFileInput = useCallback(() => {
     if (!imageUploadDisabled && fileInputRef.current) {
       fileInputRef.current.click();
     }
   }, [imageUploadDisabled]);
 
-  // Gestionar la navegación de regreso
   const goBack = useCallback(() => {
     router.back();
   }, [router]);
 
-  // Navegar a la gestión de entradas
   const goToManageTickets = useCallback(() => {
-    router.push(`/events/${id}/manage-tickets`);
+    router.push(`/profile/events/${id}/manage-tickets`);
   }, [id, router]);
 
-  // Mostrar estado de carga inicial
   if (loading) {
     return (
       <div className="edit-event-loading">
@@ -325,7 +278,6 @@ export default function EditEventPage() {
     );
   }
 
-  // Mostrar mensaje de error si no se puede editar
   if (error) {
     return (
       <div className="edit-event-error">
@@ -355,19 +307,16 @@ export default function EditEventPage() {
         </button>
         <h1><FiEdit /> Editar evento</h1>
       </div>
-      
       <div className="edit-event-tip">
         <FiInfo />
         <p>Los campos marcados con <span className="required-mark">*</span> son obligatorios. Si deseas modificar los tipos de entradas, ve a la sección "Gestionar Entradas".</p>
       </div>
-
       <form onSubmit={handleSubmit} className="edit-event-form">
         <div className="form-grid">
           {/* Columna izquierda */}
           <div className="form-column">
             <div className="form-section">
               <h2>Información básica</h2>
-              
               <div className="form-group">
                 <label htmlFor="titulo">
                   <FiEdit /> Título del evento <span className="required-mark">*</span>
@@ -384,7 +333,6 @@ export default function EditEventPage() {
                 />
                 {formErrors.titulo && <div className="error-message">{formErrors.titulo}</div>}
               </div>
-              
               <div className="form-group">
                 <label htmlFor="descripcion">
                   <FiInfo /> Descripción <span className="required-mark">*</span>
@@ -402,7 +350,6 @@ export default function EditEventPage() {
                 {formErrors.descripcion && <div className="error-message">{formErrors.descripcion}</div>}
                 <small className="char-counter">{formData.descripcion.length}/1000</small>
               </div>
-              
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="fecha">
@@ -418,7 +365,6 @@ export default function EditEventPage() {
                   />
                   {formErrors.fecha && <div className="error-message">{formErrors.fecha}</div>}
                 </div>
-                
                 <div className="form-group">
                   <label htmlFor="hora">
                     <FiClock /> Hora <span className="required-mark">*</span>
@@ -434,7 +380,6 @@ export default function EditEventPage() {
                   {formErrors.hora && <div className="error-message">{formErrors.hora}</div>}
                 </div>
               </div>
-              
               <div className="form-group">
                 <label htmlFor="categoria">
                   <FiTag /> Categoría <span className="required-mark">*</span>
@@ -453,7 +398,6 @@ export default function EditEventPage() {
                 </select>
                 {formErrors.categoria && <div className="error-message">{formErrors.categoria}</div>}
               </div>
-              
               <div className="form-group">
                 <div className="checkbox-container">
                   <input
@@ -468,10 +412,28 @@ export default function EditEventPage() {
                   </label>
                 </div>
               </div>
-              
+              {formData.es_online && (
+                <div className="form-group">
+                  <label htmlFor="enlace_streaming">
+                    <FiGlobe /> Enlace de streaming <span className="required-mark">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="enlace_streaming"
+                    name="enlace_streaming"
+                    value={formData.enlace_streaming}
+                    onChange={handleInputChange}
+                    className={formErrors.enlace_streaming ? "error" : ""}
+                    placeholder="https://zoom.us/j/123456789"
+                    maxLength={255}
+                  />
+                  {formErrors.enlace_streaming && <div className="error-message">{formErrors.enlace_streaming}</div>}
+                  <small className="form-hint">Ejemplo: https://zoom.us/j/123456789</small>
+                </div>
+              )}
               <div className="form-group">
                 <label htmlFor="ubicacion">
-                  <FiMapPin /> Ubicación <span className="required-mark">*</span>
+                  <FiMapPin /> {formData.es_online ? "Plataforma o descripción" : "Ubicación"} <span className="required-mark">*</span>
                 </label>
                 <input
                   type="text"
@@ -480,14 +442,13 @@ export default function EditEventPage() {
                   value={formData.ubicacion}
                   onChange={handleInputChange}
                   className={formErrors.ubicacion ? "error" : ""}
-                  placeholder={formData.es_online ? "URL o plataforma (Zoom, Teams, etc.)" : "Dirección física"}
+                  placeholder={formData.es_online ? "Zoom, Google Meet, etc." : "Dirección física"}
                   maxLength={255}
                 />
                 {formErrors.ubicacion && <div className="error-message">{formErrors.ubicacion}</div>}
               </div>
             </div>
           </div>
-          
           {/* Columna derecha */}
           <div className="form-column">
             <div className="form-section">
@@ -519,14 +480,12 @@ export default function EditEventPage() {
                   </div>
                 ) : currentImageUrl ? (
                   <div className="image-preview current-image">
-                    <EventImage 
-                      src={currentImageUrl} 
-                      alt="Imagen actual del evento" 
+                    <img
+                      src={currentImageUrl}
+                      alt="Imagen actual del evento"
                       width={400}
                       height={240}
                       className="event-image"
-                      fallbackIcon={<FiImage size={60} />}
-                      fallbackText="Imagen no disponible"
                     />
                     <button 
                       type="button" 
@@ -570,14 +529,12 @@ export default function EditEventPage() {
                 {formErrors.imagen && <div className="error-message">{formErrors.imagen}</div>}
               </div>
             </div>
-            
             <div className="form-section ticket-info-section">
               <h2>Entradas</h2>
               <p className="tickets-info-message">
                 Para gestionar los tipos de entradas, añadir nuevos tipos o modificar los existentes,
                 usa la sección de "Gestionar Entradas" después de guardar los cambios básicos.
               </p>
-              
               <button 
                 type="button"
                 className="go-to-tickets-button"
@@ -588,7 +545,6 @@ export default function EditEventPage() {
             </div>
           </div>
         </div>
-        
         <div className="form-actions">
           <button 
             type="button" 

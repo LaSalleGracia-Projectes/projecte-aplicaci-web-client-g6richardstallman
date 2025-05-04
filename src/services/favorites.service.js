@@ -5,7 +5,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 export const favoritesService = {
   async getFavoriteEvents() {
     try {
-      const token = storage.getToken();
+      // Buscar token en ambos storages
+      const token = storage.getToken(true) || storage.getToken(false);
       if (!token) {
         throw new Error("No authorization token found");
       }
@@ -27,7 +28,7 @@ export const favoritesService = {
 
   async addToFavorites(eventId) {
     try {
-      const token = storage.getToken();
+      const token = storage.getToken(true) || storage.getToken(false);
       if (!token) {
         throw new Error("No authorization token found");
       }
@@ -51,7 +52,7 @@ export const favoritesService = {
 
   async removeFromFavorites(eventId) {
     try {
-      const token = storage.getToken();
+      const token = storage.getToken(true) || storage.getToken(false);
       if (!token) {
         throw new Error("No authorization token found");
       }
@@ -73,7 +74,7 @@ export const favoritesService = {
 
   async checkIsFavorite(eventId) {
     try {
-      const token = storage.getToken();
+      const token = storage.getToken(true) || storage.getToken(false);
       if (!token) {
         return { isFavorito: false };
       }

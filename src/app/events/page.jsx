@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import EventoCard from './components/EventoCard';
@@ -7,7 +8,7 @@ import { FaCalendarAlt, FaMapMarkerAlt, FaTimes, FaSpinner, FaSearch, FaExclamat
 import { eventsService } from '../../services/events.service';
 import './events.css';
 
-// Componente de esqueleto mejorado para mantener proporción exacta de tarjetas
+// Skeleton para carga
 const EventoCardSkeleton = () => (
   <div className="evento-card-skeleton">
     <div style={{ height: '75%' }}></div>
@@ -22,9 +23,10 @@ const EventoCardSkeleton = () => (
   </div>
 );
 
-// Componente principal optimizado para eventos
+const ITEMS_PER_PAGE = 10;
+
 const EventosPage = () => {
-  // Estados para gestionar eventos y UI
+  // Estados principales
   const [eventos, setEventos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -32,65 +34,52 @@ const EventosPage = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [totalEvents, setTotalEvents] = useState(0);
-  
-  // Parámetros de búsqueda de la URL
+
+  // Filtros desde la URL
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search');
   const categoryFilter = searchParams.get('category');
   const priceMinFilter = searchParams.get('price_min');
   const priceMaxFilter = searchParams.get('price_max');
-  
-  // Referencia para controlar peticiones en curso
+
   const abortControllerRef = useRef(null);
-  
-  // Constantes de configuración
-  const ITEMS_PER_PAGE = 10;
-  
-  // Función para construir los parámetros de API
+
+  // Construye los parámetros para la API
   const buildApiParams = useCallback((pageNum) => {
     const params = {
       page: pageNum,
       limit: ITEMS_PER_PAGE,
       with_prices: true
     };
-    
     if (searchQuery) params.search = searchQuery;
     if (priceMinFilter) params.price_min = priceMinFilter;
     if (priceMaxFilter) params.price_max = priceMaxFilter;
-    
     return params;
   }, [searchQuery, priceMinFilter, priceMaxFilter]);
 
-  // Función para obtener eventos
+  // Obtiene eventos del backend (paginados y filtrados)
   const fetchEventos = useCallback(async (pageNumber = 1, isLoadingMore = false) => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
-    
     abortControllerRef.current = new AbortController();
-    
-    if (!isLoadingMore) {
-      setLoading(true);
-    } else {
-      setLoadingMore(true);
-    }
-    
+
+    if (!isLoadingMore) setLoading(true);
+    else setLoadingMore(true);
+
     setError(null);
-    
+
     try {
       const params = buildApiParams(pageNumber);
-      
       let result;
       if (categoryFilter) {
         result = await eventsService.getEventsByCategory(categoryFilter, params);
       } else {
         result = await eventsService.getAllEvents(params);
       }
-      
+
       let fetchedEvents = [];
       let totalCount = 0;
-      
-      // Manejar diferentes formatos de respuesta
       if (result?.eventos && Array.isArray(result.eventos)) {
         fetchedEvents = result.eventos;
         totalCount = result.total || fetchedEvents.length;
@@ -98,67 +87,57 @@ const EventosPage = () => {
         fetchedEvents = result;
         totalCount = fetchedEvents.length;
       }
-      
-      if (pageNumber === 1 || !isLoadingMore) {
-        setTotalEvents(totalCount);
-      }
-      
+
+      if (pageNumber === 1 || !isLoadingMore) setTotalEvents(totalCount);
+
       setEventos(prev => isLoadingMore ? [...prev, ...fetchedEvents] : fetchedEvents);
       setHasMore(fetchedEvents.length === ITEMS_PER_PAGE);
-      
     } catch (err) {
       if (err.name === 'AbortError') return;
-      
-      setError('Error al cargar los eventos. Por favor, inténtelo de nuevo más tarde.');
+      setError('Error al cargar los eventos. Por favor, inténtalo de nuevo más tarde.');
       console.error("Error:", err);
     } finally {
       if (!isLoadingMore) setLoading(false);
       else setLoadingMore(false);
-      
       abortControllerRef.current = null;
     }
-  }, [categoryFilter, buildApiParams, ITEMS_PER_PAGE]);
+  }, [categoryFilter, buildApiParams]);
 
-  // Cargar eventos cuando cambian los filtros
+  // Efecto para cargar eventos al montar/cambiar filtros
   useEffect(() => {
     setPage(1);
     setEventos([]);
-    
     fetchEventos(1);
-    
     return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
+      if (abortControllerRef.current) abortControllerRef.current.abort();
     };
   }, [fetchEventos, searchQuery, categoryFilter, priceMinFilter, priceMaxFilter]);
 
-  // Función para cargar más eventos
+  // Cargar más eventos (paginación)
   const loadMore = useCallback(() => {
     if (loadingMore || !hasMore) return;
-    
     const nextPage = page + 1;
     setPage(nextPage);
     fetchEventos(nextPage, true);
   }, [fetchEventos, loadingMore, hasMore, page]);
 
-  // Función para limpiar filtros
+  // Limpiar filtros (volver a la vista principal)
   const clearFilters = useCallback(() => {
     window.location.href = '/events';
   }, []);
 
-  // Memorizar título de página
+  // Título dinámico de la página
   const pageTitle = useMemo(() => {
     if (categoryFilter) {
       const categoryName = categoryFilter.charAt(0).toUpperCase() + categoryFilter.slice(1).toLowerCase();
-      return searchQuery ? 
-        `Resultados para "${searchQuery}" en ${categoryName}` : 
+      return searchQuery ?
+        `Resultados para "${searchQuery}" en ${categoryName}` :
         `Eventos de ${categoryName}`;
     }
     return searchQuery ? `Resultados para "${searchQuery}"` : 'Todos los eventos';
   }, [searchQuery, categoryFilter]);
 
-  // Renderizar skeletons durante la carga
+  // Renderiza skeletons de carga
   const renderSkeletons = useCallback(() => {
     return Array.from({ length: 4 }).map((_, i) => (
       <div key={`skeleton-${i}`} className="evento-card-skeleton-container">
@@ -167,18 +146,18 @@ const EventosPage = () => {
     ));
   }, []);
 
+  // Render principal
   return (
     <main className="events-page-container">
-      {/* Encabezado */}
+      {/* Cabecera */}
       <div className="events-header">
         <h1 className="events-header-title">{pageTitle}</h1>
-        
         <Link href="/events/categories" className="events-header-link">
           <FaCalendarAlt className="events-header-link-icon" aria-hidden="true" />
           Ver todas las categorías
         </Link>
       </div>
-      
+
       {/* Barra de filtros activos */}
       {(searchQuery || categoryFilter || priceMinFilter || priceMaxFilter) && (
         <div className="events-filters-bar">
@@ -186,43 +165,38 @@ const EventosPage = () => {
             <FaSearch className="events-filters-icon" aria-hidden="true" />
             Filtros activos:
           </span>
-          
           {searchQuery && (
             <span className="events-filter-tag">
               Búsqueda: {searchQuery}
             </span>
           )}
-          
           {categoryFilter && (
             <span className="events-filter-tag">
               Categoría: {categoryFilter}
             </span>
           )}
-          
           {priceMinFilter && (
             <span className="events-filter-tag">
               Precio mínimo: {priceMinFilter}€
             </span>
           )}
-          
           {priceMaxFilter && (
             <span className="events-filter-tag">
               Precio máximo: {priceMaxFilter}€
             </span>
           )}
-          
-          <button 
+          <button
             onClick={clearFilters}
             className="events-filters-clear"
             aria-label="Limpiar filtros de búsqueda"
           >
-            <FaTimes className="events-filters-clear-icon" aria-hidden="true" /> 
+            <FaTimes className="events-filters-clear-icon" aria-hidden="true" />
             Limpiar
           </button>
         </div>
       )}
-      
-      {/* Estado de error */}
+
+      {/* Mensaje de error */}
       {error && (
         <div className="events-error">
           <div className="events-error-content">
@@ -245,8 +219,8 @@ const EventosPage = () => {
           </div>
         </div>
       )}
-      
-      {/* Contenido principal */}
+
+      {/* Grid de eventos */}
       <div className="events-grid">
         {loading && eventos.length === 0 ? (
           renderSkeletons()
@@ -256,8 +230,8 @@ const EventosPage = () => {
               <FaCalendarAlt className="events-empty-icon" aria-hidden="true" />
               <h3 className="events-empty-title">No hay eventos disponibles</h3>
               <p className="events-empty-text">
-                {searchQuery || categoryFilter || priceMinFilter || priceMaxFilter ? 
-                  'No se encontraron eventos que coincidan con los filtros aplicados.' : 
+                {searchQuery || categoryFilter || priceMinFilter || priceMaxFilter ?
+                  'No se encontraron eventos que coincidan con los filtros aplicados.' :
                   'No hay eventos disponibles en este momento.'}
               </p>
               {(searchQuery || categoryFilter || priceMinFilter || priceMaxFilter) && (
@@ -276,13 +250,12 @@ const EventosPage = () => {
             {eventos.map(evento => (
               <EventoCard key={`event-${evento.id}`} evento={evento} />
             ))}
-            
             {loadingMore && renderSkeletons()}
           </>
         )}
       </div>
-      
-      {/* Botón de "Cargar más" */}
+
+      {/* Botón de cargar más */}
       {hasMore && eventos.length > 0 && !loading && (
         <div className="events-load-more">
           <button
@@ -300,6 +273,13 @@ const EventosPage = () => {
               'Cargar más eventos'
             )}
           </button>
+        </div>
+      )}
+
+      {/* Contador de resultados */}
+      {!loading && eventos.length > 0 && (
+        <div className="events-result-count">
+          Mostrando {eventos.length} de {totalEvents} eventos encontrados
         </div>
       )}
     </main>

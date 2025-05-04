@@ -19,7 +19,6 @@ import {
   FiHeart, 
   FiTag, 
   FiCalendar,
-  FiDollarSign,
   FiCreditCard,
   FiUsers
 } from "react-icons/fi";
@@ -149,12 +148,6 @@ const ProfileNavbar = () => {
       href: "/profile/events",
       icon: <FiCalendar className="profile-navbar-svg" aria-hidden="true" />,
       ariaLabel: "Gestionar mis eventos",
-    },
-    {
-      label: "Ventas",
-      href: "/profile/sales",
-      icon: <FiDollarSign className="profile-navbar-svg" aria-hidden="true" />,
-      ariaLabel: "Ver mis ventas",
     }
   ];
 

@@ -10,4 +10,16 @@
 
 body {
   font-family: var(--font-family);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main,
+div#__next,
+div#__next > div {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 100vh;
 }

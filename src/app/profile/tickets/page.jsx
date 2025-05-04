@@ -4,17 +4,18 @@ import { useRouter } from "next/navigation";
 import { purchasesService } from "../../../services/purchases.service";
 import { documentsService } from "../../../services/documents.service";
 import { useNotification } from "../../../context/NotificationContext";
-import { 
-  FiTag, 
-  FiCalendar, 
-  FiClock, 
-  FiMapPin, 
-  FiDollarSign, 
-  FiFileText, 
+import {
+  FiTag,
+  FiCalendar,
+  FiClock,
+  FiMapPin,
+  FiDollarSign,
+  FiFileText,
   FiInfo,
-  FiRefreshCw, 
+  FiRefreshCw,
   FiDownload,
-  FiEye
+  FiEye,
+  FiUsers
 } from "react-icons/fi";
 import "./tickets.css";
 
@@ -27,12 +28,39 @@ export default function TicketsPage() {
   const { showSuccess, showError } = useNotification();
   const isLoaded = useRef(false);
 
+  // Agrupa las compras por evento y fecha de compra
+  const groupTickets = useCallback((compras) => {
+    if (!Array.isArray(compras)) return [];
+    // Agrupar por clave compuesta evento-fecha
+    const grouped = {};
+    compras.forEach(compra => {
+      const evento = compra.evento || {};
+      const fechaCompra = compra.fecha_compra || "";
+      const clave = `${evento.id || evento.idEvento || "evento"}_${fechaCompra}`;
+      if (!grouped[clave]) {
+        grouped[clave] = {
+          evento,
+          fechaCompra,
+          entradas: [],
+          total: 0,
+          idCompra: compra.id_compra || compra.idVentaEntrada || compra.id || ""
+        };
+      }
+      grouped[clave].entradas.push(compra);
+      grouped[clave].total += Number(compra.precio || 0);
+    });
+    // Ordenar por fecha de compra descendente
+    return Object.values(grouped).sort(
+      (a, b) => new Date(b.fechaCompra) - new Date(a.fechaCompra)
+    );
+  }, []);
+
   const loadTickets = useCallback(async () => {
     try {
       setLoading(true);
       const response = await purchasesService.getMyPurchases();
       if (response && (response.data || response.compras)) {
-        setTickets(response.data || response.compras || []);
+        setTickets(groupTickets(response.data || response.compras || []));
       } else {
         setTickets([]);
       }
@@ -45,19 +73,17 @@ export default function TicketsPage() {
       setRefreshing(false);
       isLoaded.current = true;
     }
-  }, [showError]);
+  }, [showError, groupTickets]);
 
   useEffect(() => {
     if (isLoaded.current) return;
-    
     let mounted = true;
-    
     const fetchData = async () => {
       try {
         const response = await purchasesService.getMyPurchases();
         if (mounted) {
           if (response && (response.data || response.compras)) {
-            setTickets(response.data || response.compras || []);
+            setTickets(groupTickets(response.data || response.compras || []));
           } else {
             setTickets([]);
           }
@@ -74,13 +100,11 @@ export default function TicketsPage() {
         }
       }
     };
-    
     fetchData();
-    
     return () => {
       mounted = false;
     };
-  }, [showError]);
+  }, [showError, groupTickets]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -89,13 +113,12 @@ export default function TicketsPage() {
 
   const handleViewEvent = useCallback((eventId) => {
     if (eventId) {
-      router.push(`/eventos/${eventId}`);
+      router.push(`/events/${eventId}`);
     }
   }, [router]);
 
   const handleDownloadTicket = async (ticketId) => {
     if (!ticketId) return;
-    
     try {
       setGenerating(ticketId);
       await documentsService.getTicketPdf(ticketId);
@@ -110,7 +133,6 @@ export default function TicketsPage() {
 
   const handleDownloadInvoice = async (purchaseId) => {
     if (!purchaseId) return;
-    
     try {
       setGenerating(purchaseId + "-invoice");
       await documentsService.getInvoicePdf(purchaseId);
@@ -140,71 +162,126 @@ export default function TicketsPage() {
     return timeString.substring(0, 5);
   }, []);
 
-  // Memoizar las tarjetas de tickets para evitar renderizados innecesarios
-  const ticketCards = useMemo(() => {
+  // Memoizar las tarjetas agrupadas
+  const ticketGroups = useMemo(() => {
     if (!tickets || tickets.length === 0) return null;
-    
-    return tickets.map(ticket => {
-      const evento = ticket.evento || (ticket.entrada && ticket.entrada.evento) || {};
-      const tipoEntrada = ticket.tipo_entrada || 
-                          (ticket.entrada && ticket.entrada.tipoEntrada) || {};
-      const precio = ticket.precio || '0.00';
-      const estado = ticket.estado_pago || 'pendiente';
-      const id = ticket.id || ticket.idVentaEntrada || '';
-      const fechaCompra = ticket.fecha_compra || '';
+    return tickets.map(group => {
+      const evento = group.evento || {};
+      const entradas = group.entradas || [];
+      const fechaCompra = group.fechaCompra;
+      const total = group.total;
+      const idCompra = group.idCompra;
       const eventId = evento.id || evento.idEvento;
-      
-      const key = id || `ticket-${Math.random().toString(36).substring(2, 9)}`;
-      
+      const imagenUrl = evento.imagen_url || evento.imagen || "";
+
       return (
-        <div className="ticket-card" key={key}>
+        <div className="ticket-card" key={idCompra}>
           <div className="ticket-card-header">
-            <h3 className="ticket-card-title">
-              {evento.titulo || evento.nombreEvento || "Evento sin título"}
-            </h3>
-            <div className={`ticket-status ${estado.toLowerCase() === 'pagado' ? 
-                            "ticket-status-paid" : "ticket-status-pending"}`}>
-              {estado.charAt(0).toUpperCase() + estado.slice(1)}
+            <div className="ticket-card-header-main">
+              {imagenUrl && (
+                <img
+                  src={imagenUrl}
+                  alt={evento.titulo || evento.nombreEvento || "Evento"}
+                  className="ticket-event-image"
+                  loading="lazy"
+                />
+              )}
+              <div>
+                <h3 className="ticket-card-title">
+                  {evento.titulo || evento.nombreEvento || "Evento sin título"}
+                </h3>
+                <div className="ticket-card-header-date">
+                  <FiCalendar className="ticket-card-header-date-icon" aria-hidden="true" />
+                  {formatDate(evento.fecha || evento.fechaEvento)}
+                  {" · "}
+                  <FiClock className="ticket-card-header-date-icon" aria-hidden="true" />
+                  {formatTime(evento.hora)}
+                </div>
+              </div>
+            </div>
+            <div className="ticket-card-header-status">
+              <span className="ticket-status ticket-status-paid">
+                {entradas.length} <FiUsers style={{ verticalAlign: "middle" }} /> {entradas.length === 1 ? "entrada" : "entradas"}
+              </span>
+              <span className="ticket-status ticket-status-total">
+                Total: {total.toFixed(2)}€
+              </span>
             </div>
           </div>
-          
           <div className="ticket-card-content">
-            <div className="ticket-card-details">
-              <div className="ticket-card-detail">
-                <FiCalendar className="detail-icon" aria-hidden="true" />
-                <span><strong>Fecha:</strong> {formatDate(evento.fecha || evento.fechaEvento)}</span>
-              </div>
-              
-              <div className="ticket-card-detail">
-                <FiClock className="detail-icon" aria-hidden="true" />
-                <span><strong>Hora:</strong> {formatTime(evento.hora)}</span>
-              </div>
-              
+            <div className="ticket-card-details ticket-card-details-3col">
               <div className="ticket-card-detail">
                 <FiMapPin className="detail-icon" aria-hidden="true" />
-                <span><strong>Ubicación:</strong> {evento.ubicacion || "Online"}</span>
+                <span>
+                  <strong>Ubicación:</strong> {evento.ubicacion || evento.direccion || "Online"}
+                </span>
               </div>
-              
-              <div className="ticket-card-detail">
-                <FiTag className="detail-icon" aria-hidden="true" />
-                <span><strong>Tipo:</strong> {tipoEntrada.nombre || "Entrada general"}</span>
-              </div>
-
-              <div className="ticket-card-detail">
-                <FiDollarSign className="detail-icon" aria-hidden="true" />
-                <span><strong>Precio:</strong> {precio}€</span>
-              </div>
-
               <div className="ticket-card-detail">
                 <FiFileText className="detail-icon" aria-hidden="true" />
-                <span><strong>Fecha compra:</strong> {formatDate(fechaCompra)}</span>
+                <span>
+                  <strong>Fecha compra:</strong> {formatDate(fechaCompra)}
+                </span>
+              </div>
+              <div className="ticket-card-detail">
+                <FiTag className="detail-icon" aria-hidden="true" />
+                <span>
+                  <strong>Categoría:</strong> {evento.categoria || "Sin categoría"}
+                </span>
               </div>
             </div>
+            <div className="ticket-card-table-wrapper">
+              <table className="ticket-card-table">
+                <thead>
+                  <tr>
+                    <th>Tipo</th>
+                    <th>Nombre</th>
+                    <th>Precio</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {entradas.map((entrada, idx) => {
+                    const tipoEntrada = entrada.tipo_entrada ||
+                      (entrada.entrada && entrada.entrada.tipoEntrada) || {};
+                    const nombrePersona = entrada.nombre_persona ||
+                      (entrada.entrada && entrada.entrada.nombre_persona) || "";
+                    const precio = entrada.precio || (entrada.entrada && entrada.entrada.precio) || "0.00";
+                    const estado = entrada.estado_pago || entrada.estado || "pendiente";
+                    const idEntrada = entrada.idEntrada || entrada.id || (entrada.entrada && entrada.entrada.idEntrada);
+                    return (
+                      <tr key={idEntrada || idx}>
+                        <td>{tipoEntrada.nombre || "General"}</td>
+                        <td>{nombrePersona}</td>
+                        <td style={{ textAlign: "right" }}>{Number(precio).toFixed(2)}€</td>
+                        <td style={{ textAlign: "center" }}>
+                          <span className={`ticket-status ${estado.toLowerCase() === 'pagado'
+                            ? "ticket-status-paid"
+                            : "ticket-status-pending"}`}>
+                            {estado.charAt(0).toUpperCase() + estado.slice(1)}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: "center" }}>
+                          <button
+                            className="download-ticket-button"
+                            onClick={() => handleDownloadTicket(idEntrada)}
+                            disabled={generating === idEntrada}
+                            aria-label="Descargar entrada en PDF"
+                          >
+                            <FiDownload aria-hidden="true" />
+                            {generating === idEntrada ? '...' : ''}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
-          
           <div className="ticket-card-actions">
             {eventId && (
-              <button 
+              <button
                 className="view-ticket-button"
                 onClick={() => handleViewEvent(eventId)}
                 aria-label={`Ver detalles del evento: ${evento.titulo || 'Evento'}`}
@@ -213,28 +290,19 @@ export default function TicketsPage() {
               </button>
             )}
             <button
-              className="download-ticket-button"
-              onClick={() => handleDownloadTicket(id)}
-              disabled={generating === id}
-              aria-label="Descargar entrada en PDF"
-            >
-              <FiDownload aria-hidden="true" />
-              {generating === id ? 'Descargando...' : 'Descargar entrada'}
-            </button>
-            <button
               className="download-invoice-button"
-              onClick={() => handleDownloadInvoice(id)}
-              disabled={generating === id + "-invoice"}
+              onClick={() => handleDownloadInvoice(idCompra)}
+              disabled={generating === idCompra + "-invoice"}
               aria-label="Descargar factura en PDF"
             >
               <FiFileText aria-hidden="true" />
-              {generating === id + "-invoice" ? 'Descargando...' : 'Descargar factura'}
+              {generating === idCompra + "-invoice" ? 'Descargando...' : 'Descargar factura'}
             </button>
           </div>
         </div>
       );
     });
-  }, [tickets, generating, handleViewEvent, formatDate, formatTime]);
+  }, [tickets, generating, handleViewEvent, formatDate, formatTime, handleDownloadTicket, handleDownloadInvoice]);
 
   if (loading) {
     return (
@@ -252,8 +320,8 @@ export default function TicketsPage() {
           <FiTag className="tickets-icon" aria-hidden="true" />
           <h1>Mis entradas</h1>
         </div>
-        <button 
-          className="refresh-button" 
+        <button
+          className="refresh-button"
           onClick={handleRefresh}
           disabled={refreshing}
           aria-label="Actualizar lista de entradas"
@@ -262,7 +330,6 @@ export default function TicketsPage() {
           {refreshing ? "Actualizando..." : "Actualizar"}
         </button>
       </div>
-
       {!tickets || tickets.length === 0 ? (
         <div className="tickets-empty">
           <div className="tickets-empty-icon pulse-animation">
@@ -273,8 +340,8 @@ export default function TicketsPage() {
             Explora eventos disponibles y adquiere entradas para tus eventos favoritos.
           </p>
           <div className="tickets-empty-actions">
-            <button 
-              onClick={() => router.push('/eventos')}
+            <button
+              onClick={() => router.push('/events')}
               className="explore-button"
               aria-label="Ver listado de eventos"
             >
@@ -284,7 +351,7 @@ export default function TicketsPage() {
         </div>
       ) : (
         <div className="tickets-list">
-          {ticketCards}
+          {ticketGroups}
         </div>
       )}
     </div>

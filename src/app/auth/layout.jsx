@@ -44,7 +44,7 @@ export default function AuthLayout({ children }) {
     <div className="auth-layout-container">
       <div className="auth-layout-image-panel">
         <Image
-          src="/images/authPageImage.jpg"
+          src="/images/auth-page-image.jpg"
           alt="Imagen de un evento"
           fill
           className="next-image"

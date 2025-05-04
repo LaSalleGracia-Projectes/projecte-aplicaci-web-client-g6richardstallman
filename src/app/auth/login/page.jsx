@@ -1,14 +1,14 @@
 "use client";
 
 import "./login.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Logo from "../../../components/ui/Logo/Logo";
 import Input from "../../../components/ui/Input/Input";
 import Button from "../../../components/ui/Button/Button";
 import { useNotification } from "../../../context/NotificationContext";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { authService } from "../../../services/auth.service";
 import { userService } from "../../../services/user.service";
 import { googleAuthService } from "../../../services/googleAuth.service";
@@ -17,7 +17,6 @@ import { storage } from "../../../utils/storage";
 const initialState = {
   email: "",
   password: "",
-  rememberMe: false,
 };
 
 const validateForm = (form) => {
@@ -32,101 +31,75 @@ const validateForm = (form) => {
 export default function LoginPage() {
   const [form, setForm] = useState(initialState);
   const [loading, setLoading] = useState(false);
-
+  const [googleLoading, setGoogleLoading] = useState(false);
   const { showSuccess, showError } = useNotification();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    // Verificar si hay un mensaje de error o éxito en los parámetros de URL
+    const googleError = searchParams.get("google_error");
+    if (googleError) {
+      showError(decodeURIComponent(googleError));
+    }
+  }, [searchParams, showError]);
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setForm((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
     }));
   };
 
   const handleGoogleAuth = async () => {
     try {
-      setLoading(true);
+      setGoogleLoading(true);
       const authUrl = await googleAuthService.getAuthUrl();
       if (authUrl) {
-        router.push(authUrl);
+        // Redirigir a Google OAuth
+        window.location.href = authUrl;
       } else {
         showError("No se pudo iniciar la autenticación con Google");
       }
     } catch (err) {
-      showError("Error al conectar con Google");
+      console.error("Error al conectar con Google:", err);
+      showError("Error al conectar con Google. Intentalo de nuevo más tarde.");
     } finally {
-      setLoading(false);
+      setGoogleLoading(false);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const validationErrors = validateForm(form);
     if (Object.keys(validationErrors).length > 0) {
-      const errorMessages = Object.values(validationErrors).join(", ");
-      showError(errorMessages);
+      showError(Object.values(validationErrors).join(", "));
       return;
     }
-
     setLoading(true);
-
     try {
       const data = await authService.login({
         email: form.email,
         password: form.password,
       });
-
       if (data.access_token) {
-        if (form.rememberMe) {
-          localStorage.setItem("auth_token", JSON.stringify(data.access_token));
-          sessionStorage.removeItem("auth_token");
-        } else {
-          localStorage.removeItem("auth_token");
-        }
+        storage.setToken(data.access_token);
+        await userService.getProfile();
       }
-
       showSuccess("Login exitoso");
-
-      try {
-        const userData = await userService.getProfile();
-        if (userData.data) {
-          if (form.rememberMe) {
-            localStorage.setItem("user_info", JSON.stringify(userData.data));
-            sessionStorage.removeItem("user_info");
-          } else {
-            localStorage.removeItem("user_info");
-          }
-        }
-      } catch (profileError) {
-        console.error(
-          "Error al obtener perfil después del login:",
-          profileError
-        );
-      }
-
       setForm(initialState);
-
-      setTimeout(() => {
-        router.push("/");
-      }, 1000);
+      router.replace("/");
     } catch (err) {
-      if (err.errors && err.errors.messages) {
-        const messages = err.errors.messages;
-        if (typeof messages === "object") {
-          const errorMessages = Object.values(messages)
-            .flat()
-            .filter((msg) => msg)
-            .join(", ");
-          showError(errorMessages || "Error en el formulario");
-        } else {
-          showError(messages || "Error en el inicio de sesión");
-        }
-      } else if (err.message) {
-        showError(err.message);
+      if (err.errors?.messages) {
+        const msgs = err.errors.messages;
+        const text =
+          typeof msgs === "object"
+            ? Object.values(msgs).flat().filter(Boolean).join(", ")
+            : msgs;
+        showError(text || "Error en el inicio de sesión");
       } else {
-        showError("Ha ocurrido un error durante el inicio de sesión");
+        showError(err.message || "Ha ocurrido un error durante el inicio de sesión");
       }
     } finally {
       setLoading(false);
@@ -170,23 +143,11 @@ export default function LoginPage() {
             aria-label="Contraseña"
           />
         </div>
-        <div className="login-remember-me">
-          <label className="login-checkbox-container">
-            <input
-              type="checkbox"
-              name="rememberMe"
-              checked={form.rememberMe}
-              onChange={handleChange}
-              className="login-checkbox"
-            />
-            <span className="login-checkbox-label">Recordarme</span>
-          </label>
-        </div>
         <div className="login-actions">
           <Button
             type="submit"
             className="login-btn-main"
-            disabled={loading}
+            disabled={loading || googleLoading}
             aria-busy={loading}
           >
             {loading ? (
@@ -211,17 +172,26 @@ export default function LoginPage() {
             type="button"
             onClick={handleGoogleAuth}
             className="login-btn-google"
-            disabled={loading}
+            disabled={loading || googleLoading}
             aria-label="Iniciar sesión con Google"
           >
-            <Image
-              src="/icons/googleIcon.png"
-              alt="Google"
-              width={24}
-              height={24}
-              style={{ borderRadius: "50%" }}
-            />
-            <span>Google</span>
+            {googleLoading ? (
+              <div className="spinner-container">
+                <div className="spinner"></div>
+                <span>Conectando...</span>
+              </div>
+            ) : (
+              <>
+                <Image
+                  src="/icons/google-icon.png"
+                  alt="Google"
+                  width={24}
+                  height={24}
+                  style={{ borderRadius: "50%" }}
+                />
+                <span>Google</span>
+              </>
+            )}
           </Button>
         </div>
       </form>

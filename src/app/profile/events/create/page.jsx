@@ -12,27 +12,30 @@ import {
   FiCheck, FiArrowLeft, FiGlobe, FiHash,
   FiAlertTriangle
 } from "react-icons/fi";
+import Script from "next/script";
 import "./create-event.css";
+
+// Obtén la API Key en tiempo de construcción
+const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
 export default function CreateEventPage() {
   const router = useRouter();
   const { showSuccess, showError, showInfo, showWarning } = useNotification();
   const fileInputRef = useRef(null);
-  
+  const autocompleteRef = useRef(null);
+
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [formErrors, setFormErrors] = useState({});
   const [imagePreview, setImagePreview] = useState(null);
   const [imageUploadDisabled, setImageUploadDisabled] = useState(false);
   const [technicalError, setTechnicalError] = useState('');
-  const [categoriesLoading, setCategoriesLoading] = useState(false);
-  
-  const [categories, setCategories] = useState([
-    'Música', 'Deportes', 'Arte', 'Teatro', 'Cine', 
-    'Tecnología', 'Gastronomía', 'Moda', 'Literatura', 'Educación',
-    'Networking', 'Conferencias', 'Festivales', 'Exposiciones', 'Turismo'
-  ]);
-  
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapInstance, setMapInstance] = useState(null);
+  const [markerInstance, setMarkerInstance] = useState(null);
+
   const [formData, setFormData] = useState({
     titulo: "",
     descripcion: "",
@@ -53,51 +56,195 @@ export default function CreateEventPage() {
     ],
   });
 
+  // Solo organizadores pueden acceder
   useEffect(() => {
     const checkUserType = async () => {
       try {
         const user = userService.getStoredUserInfo();
-        
         if (!user) {
-          try {
-            const profileData = await userService.getProfile();
-            const data = profileData.data || profileData;
-            
-            if (data?.tipo_usuario?.toLowerCase() !== "organizador") {
-              showError("Solo los organizadores pueden crear eventos");
-              router.replace("/profile");
-              return;
-            }
-          } catch (err) {
-            console.error("Error al verificar tipo de usuario:", err);
-            showError("Error al verificar permisos");
+          const profileData = await userService.getProfile();
+          const data = profileData.data || profileData;
+          if (data?.tipo_usuario?.toLowerCase() !== "organizador") {
+            showError("Solo los organizadores pueden crear eventos");
             router.replace("/profile");
             return;
           }
-        } else if (user.tipo_usuario?.toLowerCase() !== "organizador") {
+        } else if (user.tipo_usuario?.toLowerCase() !== "organizador" && user.role !== "organizador") {
           showError("Solo los organizadores pueden crear eventos");
           router.replace("/profile");
           return;
         }
-      } catch (err) {
-        console.error("Error al verificar tipo de usuario:", err);
+      } catch {
         showError("Error al verificar permisos");
         router.replace("/profile");
       } finally {
         setInitialLoading(false);
       }
     };
-
     checkUserType();
   }, [router, showError]);
 
+  // Obtener categorías dinámicamente desde el backend
+  useEffect(() => {
+    async function fetchCategories() {
+      setCategoriesLoading(true);
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"}/eventos/categorias`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.categorias)) {
+            setCategories(data.categorias);
+          } else if (Array.isArray(data)) {
+            setCategories(data);
+          }
+        } else {
+          setCategories([
+            'Música', 'Deportes', 'Arte', 'Teatro', 'Cine', 
+            'Tecnología', 'Gastronomía', 'Moda', 'Literatura', 'Educación',
+            'Networking', 'Conferencias', 'Festivales', 'Exposiciones', 'Turismo'
+          ]);
+        }
+      } catch {
+        setCategories([
+          'Música', 'Deportes', 'Arte', 'Teatro', 'Cine', 
+          'Tecnología', 'Gastronomía', 'Moda', 'Literatura', 'Educación',
+          'Networking', 'Conferencias', 'Festivales', 'Exposiciones', 'Turismo'
+        ]);
+      }
+      setCategoriesLoading(false);
+    }
+    fetchCategories();
+  }, []);
+
+  // Cargar Google Maps Script solo si no es online
+  useEffect(() => {
+    if (typeof window === "undefined" || formData.es_online) return;
+    if (window.google && window.google.maps && window.google.maps.places) {
+      setMapLoaded(true);
+      return;
+    }
+    // El Script se carga con el componente <Script> abajo
+  }, [formData.es_online]);
+
+  // Inicializar el mapa y Autocomplete cuando el script esté listo y no sea online
+  useEffect(() => {
+    if (!mapLoaded || formData.es_online) return;
+    if (!window.google || !window.google.maps || !window.google.maps.places) return;
+    const mapDiv = document.getElementById("event-map");
+    if (!mapDiv || mapDiv.dataset.mapInitialized) return;
+    mapDiv.dataset.mapInitialized = "true";
+
+    let map, marker;
+    const defaultLatLng = { lat: 41.3874, lng: 2.1686 }; // Barcelona centro
+
+    // Geocodificar la ubicación si existe
+    const geocodeUbicacion = (ubicacion) => {
+      if (!ubicacion) return;
+      const geocoder = new window.google.maps.Geocoder();
+      geocoder.geocode({ address: ubicacion }, (results, status) => {
+        if (status === "OK" && results[0]) {
+          const loc = results[0].geometry.location;
+          map.setCenter(loc);
+          marker.setPosition(loc);
+        }
+      });
+    };
+
+    map = new window.google.maps.Map(mapDiv, {
+      center: defaultLatLng,
+      zoom: 13,
+    });
+    marker = new window.google.maps.Marker({
+      position: defaultLatLng,
+      map,
+      draggable: true,
+    });
+
+    setMapInstance(map);
+    setMarkerInstance(marker);
+
+    // Si ya hay ubicación, geocodificar
+    if (formData.ubicacion) {
+      geocodeUbicacion(formData.ubicacion);
+    }
+
+    // Al mover el marcador, actualizar ubicación
+    marker.addListener("dragend", () => {
+      const pos = marker.getPosition();
+      if (!pos) return;
+      const geocoder = new window.google.maps.Geocoder();
+      geocoder.geocode({ location: pos }, (results, status) => {
+        if (status === "OK" && results[0]) {
+          setFormData(prev => ({
+            ...prev,
+            ubicacion: results[0].formatted_address
+          }));
+        }
+      });
+    });
+
+    // Al hacer click en el mapa, mover el marcador y actualizar ubicación
+    map.addListener("click", (e) => {
+      marker.setPosition(e.latLng);
+      const geocoder = new window.google.maps.Geocoder();
+      geocoder.geocode({ location: e.latLng }, (results, status) => {
+        if (status === "OK" && results[0]) {
+          setFormData(prev => ({
+            ...prev,
+            ubicacion: results[0].formatted_address
+          }));
+        }
+      });
+    });
+
+    // Autocomplete para el input de ubicación
+    if (autocompleteRef.current) {
+      const autocomplete = new window.google.maps.places.Autocomplete(autocompleteRef.current, {
+        types: ["geocode"],
+        componentRestrictions: { country: "es" },
+      });
+      autocomplete.addListener("place_changed", () => {
+        const place = autocomplete.getPlace();
+        if (place && place.formatted_address) {
+          setFormData(prev => ({ ...prev, ubicacion: place.formatted_address }));
+          if (place.geometry && place.geometry.location) {
+            map.setCenter(place.geometry.location);
+            marker.setPosition(place.geometry.location);
+          }
+        }
+      });
+    }
+
+    return () => {
+      marker.setMap(null);
+      mapDiv.dataset.mapInitialized = "";
+    };
+    // eslint-disable-next-line
+  }, [mapLoaded, formData.es_online]);
+
+  // Si cambia la ubicación manualmente, centrar el mapa
+  useEffect(() => {
+    if (!mapInstance || !markerInstance || !formData.ubicacion || formData.es_online) return;
+    const geocoder = new window.google.maps.Geocoder();
+    geocoder.geocode({ address: formData.ubicacion }, (results, status) => {
+      if (status === "OK" && results[0]) {
+        const loc = results[0].geometry.location;
+        mapInstance.setCenter(loc);
+        markerInstance.setPosition(loc);
+      }
+    });
+    // eslint-disable-next-line
+  }, [formData.ubicacion, mapInstance, markerInstance, formData.es_online]);
+
+  // Manejo de cambios en inputs
   const handleInputChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value
     }));
-    
     if (formErrors[name]) {
       setFormErrors(prev => ({
         ...prev,
@@ -106,36 +253,29 @@ export default function CreateEventPage() {
     }
   }, [formErrors]);
 
+  // Manejo de imagen
   const handleImageChange = useCallback((e) => {
     if (imageUploadDisabled) {
       showInfo("La subida de imágenes está temporalmente deshabilitada");
       return;
     }
-    
     const file = e.target.files[0];
     if (!file) return;
-    
     if (!file.type.startsWith('image/')) {
       showError("Por favor, selecciona un archivo de imagen válido");
       return;
     }
-    
     if (file.size > 5 * 1024 * 1024) {
       showError("La imagen no debe superar los 5MB");
       return;
     }
-    
     setFormData(prev => ({
       ...prev,
       imagen: file
     }));
-    
     const reader = new FileReader();
-    reader.onload = (e) => {
-      setImagePreview(e.target.result);
-    };
+    reader.onload = (e) => setImagePreview(e.target.result);
     reader.readAsDataURL(file);
-    
     if (formErrors.imagen) {
       setFormErrors(prev => ({
         ...prev,
@@ -144,9 +284,9 @@ export default function CreateEventPage() {
     }
   }, [formErrors, imageUploadDisabled, showError, showInfo]);
 
+  // Cambios en tipos de entrada
   const handleTicketTypeChange = useCallback((index, e) => {
     const { name, value, type, checked } = e.target;
-    
     setFormData(prev => {
       const updatedTickets = [...prev.tipos_entrada];
       updatedTickets[index] = {
@@ -158,7 +298,6 @@ export default function CreateEventPage() {
         tipos_entrada: updatedTickets
       };
     });
-    
     setFormErrors(prev => {
       const key = `tipos_entrada.${index}.${name}`;
       if (prev[key]) {
@@ -170,6 +309,7 @@ export default function CreateEventPage() {
     });
   }, []);
 
+  // Añadir tipo de entrada
   const addTicketType = useCallback(() => {
     setFormData(prev => ({
       ...prev,
@@ -186,17 +326,16 @@ export default function CreateEventPage() {
     }));
   }, []);
 
+  // Eliminar tipo de entrada
   const removeTicketType = useCallback((index) => {
     if (formData.tipos_entrada.length <= 1) {
       showInfo("Debe existir al menos un tipo de entrada");
       return;
     }
-    
     setFormData(prev => ({
       ...prev,
       tipos_entrada: prev.tipos_entrada.filter((_, i) => i !== index)
     }));
-    
     setFormErrors(prev => {
       const newErrors = {...prev};
       Object.keys(newErrors).forEach(key => {
@@ -208,11 +347,11 @@ export default function CreateEventPage() {
     });
   }, [formData.tipos_entrada.length, showInfo]);
 
+  // Validación de formulario
   const validateForm = useCallback(() => {
     const errors = {};
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
     if (!formData.titulo.trim()) errors.titulo = "El título es obligatorio";
     if (!formData.descripcion.trim()) errors.descripcion = "La descripción es obligatoria";
     if (!formData.fecha) {
@@ -222,45 +361,37 @@ export default function CreateEventPage() {
       eventDate.setHours(0, 0, 0, 0);
       if (eventDate < today) errors.fecha = "La fecha no puede ser anterior a hoy";
     }
-    
     if (!formData.hora) errors.hora = "La hora es obligatoria";
     if (!formData.ubicacion.trim()) errors.ubicacion = "La ubicación es obligatoria";
     if (!formData.categoria) errors.categoria = "La categoría es obligatoria";
-    
     formData.tipos_entrada.forEach((ticket, index) => {
       if (!ticket.nombre.trim()) errors[`tipos_entrada.${index}.nombre`] = "El nombre es obligatorio";
-      
       if (!ticket.precio || isNaN(ticket.precio) || parseFloat(ticket.precio) < 0) {
         errors[`tipos_entrada.${index}.precio`] = "El precio debe ser un número positivo";
       }
-      
       if (!ticket.es_ilimitado && (!ticket.cantidad_disponible || 
           parseInt(ticket.cantidad_disponible) <= 0 || 
           isNaN(parseInt(ticket.cantidad_disponible)))) {
         errors[`tipos_entrada.${index}.cantidad_disponible`] = "Cantidad inválida";
       }
     });
-    
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   }, [formData]);
 
+  // Enviar formulario
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
-    
     if (!validateForm()) {
       showError("Por favor, corrige los errores en el formulario");
       return;
     }
-    
     setLoading(true);
     setTechnicalError('');
-    
     try {
       const dataToSend = imageUploadDisabled ? 
         { ...formData, imagen: null } : 
         formData;
-
       const preparedData = {
         ...dataToSend,
         tipos_entrada: dataToSend.tipos_entrada.map(tipo => ({
@@ -269,24 +400,17 @@ export default function CreateEventPage() {
           cantidad_disponible: tipo.es_ilimitado ? null : parseInt(tipo.cantidad_disponible, 10)
         }))
       };
-
-      const result = await eventsService.createEvent(preparedData);
-      
+      await eventsService.createEvent(preparedData);
       showSuccess("¡Evento creado correctamente!");
-      
       setTimeout(() => {
         router.push("/profile/events");
       }, 1500);
     } catch (err) {
-      console.error("Error al crear evento:", err);
-      
       if (err.errors?.message?.includes("imagecreatetruecolor")) {
         setImageUploadDisabled(true);
         setTechnicalError('Error en el servidor: La función de procesamiento de imágenes no está disponible');
-        
         if (formData.imagen) {
           showWarning("El servidor no puede procesar imágenes en este momento. Intenta crear el evento sin imagen.");
-          
           setFormData(prev => ({
             ...prev,
             imagen: null
@@ -315,6 +439,7 @@ export default function CreateEventPage() {
     }
   }, [formData, imageUploadDisabled, router, showError, showSuccess, showWarning, validateForm]);
 
+  // Trigger input file
   const triggerFileInput = useCallback(() => {
     if (!imageUploadDisabled && fileInputRef.current) {
       fileInputRef.current.click();
@@ -331,372 +456,385 @@ export default function CreateEventPage() {
   }
 
   return (
-    <div className="create-event-container">
-      <div className="create-event-header">
-        <button 
-          onClick={() => router.push("/profile/events")} 
-          className="create-event-back-button"
-          type="button"
-          aria-label="Volver a mis eventos"
-        >
-          <FiArrowLeft /> <span>Volver</span>
-        </button>
-        <h1><FiCalendar /> Crear nuevo evento</h1>
-      </div>
-      
-      <div className="create-event-tip">
-        <FiInfo />
-        <p>Los campos marcados con <span className="required-mark">*</span> son obligatorios.</p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="create-event-form">
-        <div className="form-grid">
-          <div className="form-column">
-            <div className="form-section">
-              <h2>Información básica</h2>
-              
-              <div className="form-group">
-                <label htmlFor="titulo">
-                  <FiEdit /> Título del evento <span className="required-mark">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="titulo"
-                  name="titulo"
-                  value={formData.titulo}
-                  onChange={handleInputChange}
-                  className={formErrors.titulo ? "error" : ""}
-                  placeholder="Ej. Concierto de Rock en Vivo"
-                  autoComplete="off"
-                  maxLength={100}
-                />
-                {formErrors.titulo && <div className="error-message">{formErrors.titulo}</div>}
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="descripcion">
-                  <FiInfo /> Descripción <span className="required-mark">*</span>
-                </label>
-                <textarea
-                  id="descripcion"
-                  name="descripcion"
-                  value={formData.descripcion}
-                  onChange={handleInputChange}
-                  className={formErrors.descripcion ? "error" : ""}
-                  rows={5}
-                  placeholder="Describe tu evento detalladamente"
-                  maxLength={1000}
-                ></textarea>
-                {formErrors.descripcion && <div className="error-message">{formErrors.descripcion}</div>}
-                <small className="char-counter">{formData.descripcion.length}/1000</small>
-              </div>
-              
-              <div className="form-row">
+    <>
+      {/* Google Maps Script solo si no es online */}
+      {!formData.es_online && GOOGLE_MAPS_API_KEY && (
+        <Script
+          src={`https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`}
+          strategy="afterInteractive"
+          onLoad={() => setMapLoaded(true)}
+          onError={() => setMapLoaded(false)}
+        />
+      )}
+      <div className="create-event-container">
+        <div className="create-event-header">
+          <button 
+            onClick={() => router.push("/profile/events")} 
+            className="create-event-back-button"
+            type="button"
+            aria-label="Volver a mis eventos"
+          >
+            <FiArrowLeft /> <span>Volver</span>
+          </button>
+          <h1><FiCalendar /> Crear nuevo evento</h1>
+        </div>
+        <div className="create-event-tip">
+          <FiInfo />
+          <p>Los campos marcados con <span className="required-mark">*</span> son obligatorios.</p>
+        </div>
+        <form onSubmit={handleSubmit} className="create-event-form">
+          <div className="form-grid">
+            <div className="form-column">
+              <div className="form-section">
+                <h2>Información básica</h2>
                 <div className="form-group">
-                  <label htmlFor="fecha">
-                    <FiCalendar /> Fecha <span className="required-mark">*</span>
+                  <label htmlFor="titulo">
+                    <FiEdit /> Título del evento <span className="required-mark">*</span>
                   </label>
                   <input
-                    type="date"
-                    id="fecha"
-                    name="fecha"
-                    value={formData.fecha}
+                    type="text"
+                    id="titulo"
+                    name="titulo"
+                    value={formData.titulo}
                     onChange={handleInputChange}
-                    className={formErrors.fecha ? "error" : ""}
-                    min={new Date().toISOString().split("T")[0]}
+                    className={formErrors.titulo ? "error" : ""}
+                    placeholder="Ej. Concierto de Rock en Vivo"
+                    autoComplete="off"
+                    maxLength={100}
                   />
-                  {formErrors.fecha && <div className="error-message">{formErrors.fecha}</div>}
+                  {formErrors.titulo && <div className="error-message">{formErrors.titulo}</div>}
                 </div>
-                
                 <div className="form-group">
-                  <label htmlFor="hora">
-                    <FiClock /> Hora <span className="required-mark">*</span>
+                  <label htmlFor="descripcion">
+                    <FiInfo /> Descripción <span className="required-mark">*</span>
                   </label>
-                  <input
-                    type="time"
-                    id="hora"
-                    name="hora"
-                    value={formData.hora}
+                  <textarea
+                    id="descripcion"
+                    name="descripcion"
+                    value={formData.descripcion}
                     onChange={handleInputChange}
-                    className={formErrors.hora ? "error" : ""}
-                  />
-                  {formErrors.hora && <div className="error-message">{formErrors.hora}</div>}
+                    className={formErrors.descripcion ? "error" : ""}
+                    rows={5}
+                    placeholder="Describe tu evento detalladamente"
+                    maxLength={1000}
+                  ></textarea>
+                  {formErrors.descripcion && <div className="error-message">{formErrors.descripcion}</div>}
+                  <small className="char-counter">{formData.descripcion.length}/1000</small>
                 </div>
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="categoria">
-                  <FiTag /> Categoría <span className="required-mark">*</span>
-                </label>
-                <select
-                  id="categoria"
-                  name="categoria"
-                  value={formData.categoria}
-                  onChange={handleInputChange}
-                  className={formErrors.categoria ? "error" : ""}
-                  disabled={categoriesLoading}
-                >
-                  <option value="">Seleccionar categoría</option>
-                  {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-                {formErrors.categoria && <div className="error-message">{formErrors.categoria}</div>}
-              </div>
-              
-              <div className="form-group">
-                <div className="checkbox-container">
-                  <input
-                    type="checkbox"
-                    id="es_online"
-                    name="es_online"
-                    checked={formData.es_online}
-                    onChange={handleInputChange}
-                  />
-                  <label htmlFor="es_online" className="checkbox-label">
-                    <FiGlobe /> Es un evento online
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="fecha">
+                      <FiCalendar /> Fecha <span className="required-mark">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      id="fecha"
+                      name="fecha"
+                      value={formData.fecha}
+                      onChange={handleInputChange}
+                      className={formErrors.fecha ? "error" : ""}
+                      min={new Date().toISOString().split("T")[0]}
+                    />
+                    {formErrors.fecha && <div className="error-message">{formErrors.fecha}</div>}
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="hora">
+                      <FiClock /> Hora <span className="required-mark">*</span>
+                    </label>
+                    <input
+                      type="time"
+                      id="hora"
+                      name="hora"
+                      value={formData.hora}
+                      onChange={handleInputChange}
+                      className={formErrors.hora ? "error" : ""}
+                    />
+                    {formErrors.hora && <div className="error-message">{formErrors.hora}</div>}
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="categoria">
+                    <FiTag /> Categoría <span className="required-mark">*</span>
                   </label>
-                </div>
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="ubicacion">
-                  <FiMapPin /> Ubicación <span className="required-mark">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="ubicacion"
-                  name="ubicacion"
-                  value={formData.ubicacion}
-                  onChange={handleInputChange}
-                  className={formErrors.ubicacion ? "error" : ""}
-                  placeholder={formData.es_online ? "URL o plataforma (Zoom, Teams, etc.)" : "Dirección física"}
-                  maxLength={255}
-                />
-                {formErrors.ubicacion && <div className="error-message">{formErrors.ubicacion}</div>}
-              </div>
-            </div>
-          </div>
-          
-          <div className="form-column">
-            <div className="form-section">
-              <h2>Imagen del evento</h2>
-              <div className="image-upload-container">
-                {imageUploadDisabled ? (
-                  <div className="image-upload-disabled">
-                    <FiAlertTriangle size={40} />
-                    <p>Las imágenes están temporalmente deshabilitadas</p>
-                    <small>El servidor no puede procesar imágenes en este momento. Tu evento se creará con una imagen predeterminada.</small>
-                  </div>
-                ) : imagePreview ? (
-                  <div className="image-preview">
-                    <img src={imagePreview} alt="Vista previa" />
-                    <button 
-                      type="button" 
-                      className="remove-image-button" 
-                      onClick={() => {
-                        setImagePreview(null);
-                        setFormData(prev => ({ ...prev, imagen: null }));
-                      }}
-                      aria-label="Eliminar imagen"
-                    >
-                      <FiX />
-                    </button>
-                  </div>
-                ) : (
-                  <div 
-                    className="image-placeholder"
-                    onClick={triggerFileInput}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        triggerFileInput();
-                      }
-                    }}
-                    tabIndex={0}
-                    role="button"
-                    aria-label="Subir imagen del evento"
+                  <select
+                    id="categoria"
+                    name="categoria"
+                    value={formData.categoria}
+                    onChange={handleInputChange}
+                    className={formErrors.categoria ? "error" : ""}
+                    disabled={categoriesLoading}
                   >
-                    <FiImage size={40} />
-                    <p>Haz clic para subir una imagen</p>
-                    <span className="image-format-info">Formatos: JPG, PNG, GIF (máx. 5MB)</span>
+                    <option value="">Seleccionar categoría</option>
+                    {categories.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                  {formErrors.categoria && <div className="error-message">{formErrors.categoria}</div>}
+                </div>
+                <div className="form-group">
+                  <div className="checkbox-container">
+                    <input
+                      type="checkbox"
+                      id="es_online"
+                      name="es_online"
+                      checked={formData.es_online}
+                      onChange={handleInputChange}
+                    />
+                    <label htmlFor="es_online" className="checkbox-label">
+                      <FiGlobe /> Es un evento online
+                    </label>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="ubicacion">
+                    <FiMapPin /> Ubicación <span className="required-mark">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="ubicacion"
+                    name="ubicacion"
+                    value={formData.ubicacion}
+                    onChange={handleInputChange}
+                    className={formErrors.ubicacion ? "error" : ""}
+                    placeholder={formData.es_online ? "URL o plataforma (Zoom, Teams, etc.)" : "Dirección física"}
+                    maxLength={255}
+                    disabled={formData.es_online}
+                    ref={autocompleteRef}
+                  />
+                  {formErrors.ubicacion && <div className="error-message">{formErrors.ubicacion}</div>}
+                </div>
+                {/* Mapa solo si no es online */}
+                {!formData.es_online && (
+                  <div style={{ margin: "1.5rem 0" }}>
+                    <div
+                      id="event-map"
+                      style={{
+                        width: "100%",
+                        height: "300px",
+                        borderRadius: "8px",
+                        border: "1px solid #e5e7eb",
+                        minHeight: "200px"
+                      }}
+                    >
+                      {/* El mapa se renderiza aquí */}
+                    </div>
+                    <small style={{ color: "#6b7280" }}>
+                      Busca una dirección o selecciona un punto en el mapa.
+                    </small>
                   </div>
                 )}
-                <input
-                  type="file"
-                  id="imagen"
-                  name="imagen"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  style={{ display: "none" }}
-                  ref={fileInputRef}
-                  disabled={imageUploadDisabled}
-                />
-                {formErrors.imagen && <div className="error-message">{formErrors.imagen}</div>}
               </div>
-              
-              {technicalError && (
-                <div className="technical-error">
-                  <FiAlertTriangle size={16} />
-                  <span>{technicalError}</span>
-                </div>
-              )}
             </div>
-            
-            <div className="form-section ticket-types-section">
-              <h2><FiPackage /> Tipos de entradas</h2>
-              
-              <div className="ticket-types-container">
-                {formData.tipos_entrada.map((ticket, index) => (
-                  <div key={index} className="ticket-type-card">
-                    <div className="ticket-type-header">
-                      <h3>Tipo de entrada {index + 1}</h3>
-                      {formData.tipos_entrada.length > 1 && (
-                        <button 
-                          type="button" 
-                          onClick={() => removeTicketType(index)}
-                          className="remove-ticket-button"
-                          aria-label="Eliminar este tipo de entrada"
-                        >
-                          <FiTrash2 />
-                        </button>
-                      )}
+            <div className="form-column">
+              <div className="form-section">
+                <h2>Imagen del evento</h2>
+                <div className="image-upload-container">
+                  {imageUploadDisabled ? (
+                    <div className="image-upload-disabled">
+                      <FiAlertTriangle size={40} />
+                      <p>Las imágenes están temporalmente deshabilitadas</p>
+                      <small>El servidor no puede procesar imágenes en este momento. Tu evento se creará con una imagen predeterminada.</small>
                     </div>
-                    
-                    <div className="form-group">
-                      <label htmlFor={`ticket-name-${index}`}>
-                        <FiHash /> Nombre <span className="required-mark">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        id={`ticket-name-${index}`}
-                        name="nombre"
-                        value={ticket.nombre}
-                        onChange={(e) => handleTicketTypeChange(index, e)}
-                        className={formErrors[`tipos_entrada.${index}.nombre`] ? "error" : ""}
-                        placeholder="Ej. VIP, General, Estudiante"
-                        maxLength={50}
-                      />
-                      {formErrors[`tipos_entrada.${index}.nombre`] && (
-                        <div className="error-message">{formErrors[`tipos_entrada.${index}.nombre`]}</div>
-                      )}
+                  ) : imagePreview ? (
+                    <div className="image-preview">
+                      <img src={imagePreview} alt="Vista previa" />
+                      <button 
+                        type="button" 
+                        className="remove-image-button" 
+                        onClick={() => {
+                          setImagePreview(null);
+                          setFormData(prev => ({ ...prev, imagen: null }));
+                        }}
+                        aria-label="Eliminar imagen"
+                      >
+                        <FiX />
+                      </button>
                     </div>
-                    
-                    <div className="form-group">
-                      <label htmlFor={`ticket-price-${index}`}>
-                        <FiDollarSign /> Precio (€) <span className="required-mark">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        id={`ticket-price-${index}`}
-                        name="precio"
-                        value={ticket.precio}
-                        onChange={(e) => handleTicketTypeChange(index, e)}
-                        className={formErrors[`tipos_entrada.${index}.precio`] ? "error" : ""}
-                        min="0"
-                        step="0.01"
-                        placeholder="0.00"
-                      />
-                      {formErrors[`tipos_entrada.${index}.precio`] && (
-                        <div className="error-message">{formErrors[`tipos_entrada.${index}.precio`]}</div>
-                      )}
+                  ) : (
+                    <div 
+                      className="image-placeholder"
+                      onClick={triggerFileInput}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          triggerFileInput();
+                        }
+                      }}
+                      tabIndex={0}
+                      role="button"
+                      aria-label="Subir imagen del evento"
+                    >
+                      <FiImage size={40} />
+                      <p>Haz clic para subir una imagen</p>
+                      <span className="image-format-info">Formatos: JPG, PNG, GIF (máx. 5MB)</span>
                     </div>
-                    
-                    <div className="form-group">
-                      <label htmlFor={`ticket-desc-${index}`}>Descripción</label>
-                      <textarea
-                        id={`ticket-desc-${index}`}
-                        name="descripcion"
-                        value={ticket.descripcion}
-                        onChange={(e) => handleTicketTypeChange(index, e)}
-                        rows={2}
-                        placeholder="Describe los beneficios de este tipo de entrada"
-                        maxLength={255}
-                      ></textarea>
-                    </div>
-                    
-                    <div className="form-group">
-                      <div className="checkbox-container">
-                        <input
-                          type="checkbox"
-                          id={`ticket-unlimited-${index}`}
-                          name="es_ilimitado"
-                          checked={ticket.es_ilimitado}
-                          onChange={(e) => handleTicketTypeChange(index, e)}
-                        />
-                        <label htmlFor={`ticket-unlimited-${index}`} className="checkbox-label">
-                          <FiCheck /> Entradas ilimitadas
-                        </label>
+                  )}
+                  <input
+                    type="file"
+                    id="imagen"
+                    name="imagen"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    style={{ display: "none" }}
+                    ref={fileInputRef}
+                    disabled={imageUploadDisabled}
+                  />
+                  {formErrors.imagen && <div className="error-message">{formErrors.imagen}</div>}
+                </div>
+                {technicalError && (
+                  <div className="technical-error">
+                    <FiAlertTriangle size={16} />
+                    <span>{technicalError}</span>
+                  </div>
+                )}
+              </div>
+              <div className="form-section ticket-types-section">
+                <h2><FiPackage /> Tipos de entradas</h2>
+                <div className="ticket-types-container">
+                  {formData.tipos_entrada.map((ticket, index) => (
+                    <div key={index} className="ticket-type-card">
+                      <div className="ticket-type-header">
+                        <h3>Tipo de entrada {index + 1}</h3>
+                        {formData.tipos_entrada.length > 1 && (
+                          <button 
+                            type="button" 
+                            onClick={() => removeTicketType(index)}
+                            className="remove-ticket-button"
+                            aria-label="Eliminar este tipo de entrada"
+                          >
+                            <FiTrash2 />
+                          </button>
+                        )}
                       </div>
-                    </div>
-                    
-                    {!ticket.es_ilimitado && (
                       <div className="form-group">
-                        <label htmlFor={`ticket-quantity-${index}`}>
-                          Cantidad disponible <span className="required-mark">*</span>
+                        <label htmlFor={`ticket-name-${index}`}>
+                          <FiHash /> Nombre <span className="required-mark">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          id={`ticket-name-${index}`}
+                          name="nombre"
+                          value={ticket.nombre}
+                          onChange={(e) => handleTicketTypeChange(index, e)}
+                          className={formErrors[`tipos_entrada.${index}.nombre`] ? "error" : ""}
+                          placeholder="Ej. VIP, General, Estudiante"
+                          maxLength={50}
+                        />
+                        {formErrors[`tipos_entrada.${index}.nombre`] && (
+                          <div className="error-message">{formErrors[`tipos_entrada.${index}.nombre`]}</div>
+                        )}
+                      </div>
+                      <div className="form-group">
+                        <label htmlFor={`ticket-price-${index}`}>
+                          <FiDollarSign /> Precio (€) <span className="required-mark">*</span>
                         </label>
                         <input
                           type="number"
-                          id={`ticket-quantity-${index}`}
-                          name="cantidad_disponible"
-                          value={ticket.cantidad_disponible}
+                          id={`ticket-price-${index}`}
+                          name="precio"
+                          value={ticket.precio}
                           onChange={(e) => handleTicketTypeChange(index, e)}
-                          className={formErrors[`tipos_entrada.${index}.cantidad_disponible`] ? "error" : ""}
-                          min="1"
-                          max="100000"
+                          className={formErrors[`tipos_entrada.${index}.precio`] ? "error" : ""}
+                          min="0"
+                          step="0.01"
+                          placeholder="0.00"
                         />
-                        {formErrors[`tipos_entrada.${index}.cantidad_disponible`] && (
-                          <div className="error-message">
-                            {formErrors[`tipos_entrada.${index}.cantidad_disponible`]}
-                          </div>
+                        {formErrors[`tipos_entrada.${index}.precio`] && (
+                          <div className="error-message">{formErrors[`tipos_entrada.${index}.precio`]}</div>
                         )}
                       </div>
-                    )}
-                  </div>
-                ))}
+                      <div className="form-group">
+                        <label htmlFor={`ticket-desc-${index}`}>Descripción</label>
+                        <textarea
+                          id={`ticket-desc-${index}`}
+                          name="descripcion"
+                          value={ticket.descripcion}
+                          onChange={(e) => handleTicketTypeChange(index, e)}
+                          rows={2}
+                          placeholder="Describe los beneficios de este tipo de entrada"
+                          maxLength={255}
+                        ></textarea>
+                      </div>
+                      <div className="form-group">
+                        <div className="checkbox-container">
+                          <input
+                            type="checkbox"
+                            id={`ticket-unlimited-${index}`}
+                            name="es_ilimitado"
+                            checked={ticket.es_ilimitado}
+                            onChange={(e) => handleTicketTypeChange(index, e)}
+                          />
+                          <label htmlFor={`ticket-unlimited-${index}`} className="checkbox-label">
+                            <FiCheck /> Entradas ilimitadas
+                          </label>
+                        </div>
+                      </div>
+                      {!ticket.es_ilimitado && (
+                        <div className="form-group">
+                          <label htmlFor={`ticket-quantity-${index}`}>
+                            Cantidad disponible <span className="required-mark">*</span>
+                          </label>
+                          <input
+                            type="number"
+                            id={`ticket-quantity-${index}`}
+                            name="cantidad_disponible"
+                            value={ticket.cantidad_disponible}
+                            onChange={(e) => handleTicketTypeChange(index, e)}
+                            className={formErrors[`tipos_entrada.${index}.cantidad_disponible`] ? "error" : ""}
+                            min="1"
+                            max="100000"
+                          />
+                          {formErrors[`tipos_entrada.${index}.cantidad_disponible`] && (
+                            <div className="error-message">
+                              {formErrors[`tipos_entrada.${index}.cantidad_disponible`]}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <button 
+                  type="button" 
+                  onClick={addTicketType}
+                  className="add-ticket-button"
+                  disabled={formData.tipos_entrada.length >= 5}
+                  aria-label="Añadir otro tipo de entrada"
+                >
+                  <FiPlus /> Añadir otro tipo de entrada
+                  {formData.tipos_entrada.length >= 5 && <span> (Máximo 5)</span>}
+                </button>
               </div>
-              
-              <button 
-                type="button" 
-                onClick={addTicketType}
-                className="add-ticket-button"
-                disabled={formData.tipos_entrada.length >= 5}
-                aria-label="Añadir otro tipo de entrada"
-              >
-                <FiPlus /> Añadir otro tipo de entrada
-                {formData.tipos_entrada.length >= 5 && <span> (Máximo 5)</span>}
-              </button>
             </div>
           </div>
-        </div>
-        
-        <div className="form-actions">
-          <button 
-            type="button" 
-            onClick={() => router.push("/profile/events")}
-            className="cancel-button"
-            disabled={loading}
-          >
-            Cancelar
-          </button>
-          <button 
-            type="submit" 
-            className="submit-button"
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <div className="button-spinner"></div>
-                Creando evento...
-              </>
-            ) : (
-              <>
-                <FiCalendar /> Crear evento
-              </>
-            )}
-          </button>
-        </div>
-      </form>
-    </div>
+          <div className="form-actions">
+            <button 
+              type="button" 
+              onClick={() => router.push("/profile/events")}
+              className="cancel-button"
+              disabled={loading}
+            >
+              Cancelar
+            </button>
+            <button 
+              type="submit" 
+              className="submit-button"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <div className="button-spinner"></div>
+                  Creando evento...
+                </>
+              ) : (
+                <>
+                  <FiCalendar /> Crear evento
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </>
   );
 }

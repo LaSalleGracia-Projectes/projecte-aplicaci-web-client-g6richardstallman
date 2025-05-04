@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { FaUser, FaSignOutAlt, FaTimes } from "react-icons/fa";
+import { FaUser, FaSignOutAlt, FaTimes, FaUserCircle } from "react-icons/fa";
 import Button from "../../../../ui/Button/Button";
 import "./MobileMenu.css";
 
@@ -17,6 +18,8 @@ const MobileMenu = ({
 }) => {
   const menuRef = useRef(null);
   const router = useRouter();
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -29,16 +32,44 @@ const MobileMenu = ({
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    
+    return () => {
+      document.body.style.overflow = '';
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  const avatarUrl = useMemo(() => {
+    if (!user) return "";
+    return user.avatar_url || user.avatar || "";
+  }, [user]);
+
+  useEffect(() => {
+    if (avatarUrl && typeof window !== 'undefined') {
+      const img = new window.Image();
+      img.src = avatarUrl;
+      img.onload = () => setImageLoaded(true);
+      img.onerror = () => setImageError(true);
+    } else {
+      setImageError(true);
+    }
+    
+    return () => {
+      setImageLoaded(false);
+      setImageError(false);
+    };
+  }, [avatarUrl]);
 
   const handleNavigate = (path) => {
     router.push(path);
     onClose();
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="mobile-menu" ref={menuRef}>
@@ -52,6 +83,31 @@ const MobileMenu = ({
         </button>
       </div>
 
+      {user && (
+        <div className="mobile-user-profile">
+          <div className="mobile-user-avatar">
+            {avatarUrl && !imageError ? (
+              <Image
+                src={avatarUrl}
+                alt={user?.nombre || "Usuario"}
+                width={60}
+                height={60}
+                className={`avatar-image ${!imageLoaded ? 'loading' : ''}`}
+                priority
+                onLoad={() => setImageLoaded(true)}
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <FaUserCircle className="avatar-icon" />
+            )}
+          </div>
+          <div className="mobile-user-info">
+            <p className="mobile-username">{user?.nombre || "Usuario"}</p>
+            <p className="mobile-user-role">{user?.role === "organizador" ? "Organizador" : "Participante"}</p>
+          </div>
+        </div>
+      )}
+
       <nav className="mobile-nav">
         <ul className="mobile-nav-list">
           {navItems.map((item) => (
@@ -64,6 +120,7 @@ const MobileMenu = ({
                     : "mobile-nav-link"
                 }
                 onClick={onClose}
+                prefetch={true}
               >
                 {item.label}
               </Link>
@@ -95,12 +152,12 @@ const MobileMenu = ({
           </div>
         ) : (
           <div className="mobile-auth-buttons">
-            <Link href="/auth/login" onClick={onClose}>
+            <Link href="/auth/login" onClick={onClose} prefetch={true}>
               <Button className="mobile-login-button" block>
                 Iniciar Sesión
               </Button>
             </Link>
-            <Link href="/auth/register" onClick={onClose}>
+            <Link href="/auth/register" onClick={onClose} prefetch={true}>
               <Button className="mobile-register-button" block>
                 Registrarse
               </Button>

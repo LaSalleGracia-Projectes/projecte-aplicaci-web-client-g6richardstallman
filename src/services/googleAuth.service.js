@@ -3,6 +3,7 @@ import { storage } from "../utils/storage";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export const googleAuthService = {
+  // Obtener la URL de autenticación de Google
   async getAuthUrl() {
     const response = await fetch(`${API_URL}/auth/google`, {
       method: "GET",
@@ -12,25 +13,35 @@ export const googleAuthService = {
     return data.url;
   },
 
-  async handleCallback(code) {
-    const response = await fetch(
-      `${API_URL}/auth/google/callback?code=${code}`,
-      {
-        method: "GET",
-      }
-    );
+  // Completar el registro web con Google
+  async completeWebRegistration(userData) {
+    const response = await fetch(`${API_URL}/auth/google/web`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(userData),
+    });
 
     const data = await this._handleResponse(response);
-
-    if (data.token) {
-      storage.setToken(data.token, false);
-
-      if (data.user) {
-        storage.set("user_info", data.user, false);
-      }
-    }
-
     return data;
+  },
+
+  // Guardar token y datos de usuario después del login exitoso con Google
+  saveUserSession(data, persistent = true) {
+    if (data.token) {
+      storage.setToken(data.token, persistent);
+      if (data.user) {
+        storage.set("user_info", data.user, persistent);
+      }
+      return true;
+    }
+    return false;
+  },
+
+  // Obtener los datos de usuario guardados
+  getUserData() {
+    return storage.get("user_info", null, true);
   },
 
   async _handleResponse(response) {
@@ -54,7 +65,7 @@ export const googleAuthService = {
     return {
       status: response.status,
       statusText: response.statusText,
-      message: `HTTP error! status: ${response.status}`,
+      message: errorData.message || `HTTP error! status: ${response.status}`,
       errors: errorData,
     };
   },

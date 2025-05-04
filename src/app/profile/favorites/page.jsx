@@ -25,15 +25,19 @@ export default function FavoritesPage() {
   const { showSuccess, showError } = useNotification();
   const isLoaded = useRef(false);
 
+  // Carga los favoritos desde el backend y los transforma para la UI
   const loadFavorites = useCallback(async () => {
     try {
       setLoading(true);
       const response = await favoritesService.getFavoriteEvents();
-      if (response && response.data) {
-        setFavorites(response.data || []);
-      } else {
-        setFavorites([]);
+      // El backend devuelve { favoritos: [...], ... }
+      let favoritos = [];
+      if (response && Array.isArray(response.favoritos)) {
+        favoritos = response.favoritos;
+      } else if (response && Array.isArray(response.data)) {
+        favoritos = response.data;
       }
+      setFavorites(favoritos);
     } catch (err) {
       console.error("Error al cargar favoritos:", err);
       showError("No se pudieron cargar tus eventos favoritos");
@@ -47,18 +51,18 @@ export default function FavoritesPage() {
 
   useEffect(() => {
     if (isLoaded.current) return;
-    
     let mounted = true;
-    
     const fetchData = async () => {
       try {
         const response = await favoritesService.getFavoriteEvents();
+        let favoritos = [];
+        if (response && Array.isArray(response.favoritos)) {
+          favoritos = response.favoritos;
+        } else if (response && Array.isArray(response.data)) {
+          favoritos = response.data;
+        }
         if (mounted) {
-          if (response && response.data) {
-            setFavorites(response.data || []);
-          } else {
-            setFavorites([]);
-          }
+          setFavorites(favoritos);
           setLoading(false);
           isLoaded.current = true;
         }
@@ -72,12 +76,8 @@ export default function FavoritesPage() {
         }
       }
     };
-    
     fetchData();
-    
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [showError]);
 
   const handleRefresh = () => {
@@ -87,11 +87,10 @@ export default function FavoritesPage() {
 
   const handleRemoveFavorite = async (eventId) => {
     if (!eventId) return;
-    
     try {
       setRemovingId(eventId);
       await favoritesService.removeFromFavorites(eventId);
-      setFavorites(prev => prev.filter(fav => fav.evento?.id !== eventId));
+      setFavorites(prev => prev.filter(fav => fav.evento?.idEvento !== eventId && fav.evento?.id !== eventId));
       showSuccess("Evento eliminado de favoritos");
     } catch (error) {
       showError("Error al eliminar de favoritos");
@@ -103,7 +102,7 @@ export default function FavoritesPage() {
 
   const handleViewEvent = useCallback((eventId) => {
     if (eventId) {
-      router.push(`/eventos/${eventId}`);
+      router.push(`/events/${eventId}`);
     }
   }, [router]);
 
@@ -124,73 +123,91 @@ export default function FavoritesPage() {
     return timeString.substring(0, 5);
   }, []);
 
+  // Mapea los favoritos para mostrar tarjetas bonitas
   const favoriteCards = useMemo(() => {
     if (!favorites || favorites.length === 0) return null;
-    
-    return favorites.map(favorite => (
-      <div 
-        className="favorite-card" 
-        key={favorite.id || `fav-${favorite.evento?.id}`}
-      >
-        <div className="favorite-card-image">
-          {favorite.evento?.imagen_url ? (
-            <Image 
-              src={favorite.evento.imagen_url} 
-              alt={favorite.evento.titulo || "Evento"} 
-              fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              style={{ objectFit: "cover" }}
-              priority={false}
-              loading="lazy"
-            />
-          ) : (
-            <div className="favorite-card-no-image">
-              <span>Sin imagen</span>
-            </div>
-          )}
-        </div>
-        <div className="favorite-card-content">
-          <h3 className="favorite-card-title">{favorite.evento?.titulo || "Evento sin título"}</h3>
-          <div className="favorite-card-details">
-            <div className="favorite-card-detail">
-              <FiCalendar className="detail-icon" />
-              <span>{formatDate(favorite.evento?.fecha)}</span>
-            </div>
-            <div className="favorite-card-detail">
-              <FiClock className="detail-icon" />
-              <span>{formatTime(favorite.evento?.hora)}</span>
-            </div>
-            <div className="favorite-card-detail">
-              <FiMapPin className="detail-icon" />
-              <span>{favorite.evento?.ubicacion || "Online"}</span>
-            </div>
-            <div className="favorite-card-detail">
-              <FiTag className="detail-icon" />
-              <span>{favorite.evento?.categoria || "Sin categoría"}</span>
+    return favorites.map(favorite => {
+      // El objeto favorito puede tener 'evento' o estar plano
+      const evento = favorite.evento || favorite;
+      const eventId = evento.idEvento || evento.id;
+      const titulo = evento.nombreEvento || evento.titulo || "Evento sin título";
+      // --- CORRECCIÓN DE RUTA DE IMAGEN ---
+      let imagenUrl = evento.imagen_url || evento.imagen;
+      if (!imagenUrl || imagenUrl === "eventos/default.jpg" || imagenUrl === "/eventos/default.jpg") {
+        imagenUrl = "/img/default-event.jpg"; // Debe empezar por "/"
+      } else if (typeof imagenUrl === "string" && !imagenUrl.startsWith("/") && !imagenUrl.startsWith("http")) {
+        imagenUrl = "/" + imagenUrl;
+      }
+      // --- FIN CORRECCIÓN ---
+      const fecha = evento.fechaEvento || evento.fecha;
+      const hora = evento.horaEvento || evento.hora;
+      const ubicacion = evento.ubicacion || "Online";
+      const categoria = evento.categoria || "Sin categoría";
+      return (
+        <div 
+          className="favorite-card" 
+          key={favorite.id || `fav-${eventId}`}
+        >
+          <div className="favorite-card-image">
+            {imagenUrl ? (
+              <Image 
+                src={imagenUrl}
+                alt={titulo}
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                style={{ objectFit: "cover" }}
+                priority={false}
+                loading="lazy"
+              />
+            ) : (
+              <div className="favorite-card-no-image">
+                <span>Sin imagen</span>
+              </div>
+            )}
+          </div>
+          <div className="favorite-card-content">
+            <h3 className="favorite-card-title">{titulo}</h3>
+            <div className="favorite-card-details">
+              <div className="favorite-card-detail">
+                <FiCalendar className="detail-icon" />
+                <span>{formatDate(fecha)}</span>
+              </div>
+              <div className="favorite-card-detail">
+                <FiClock className="detail-icon" />
+                <span>{formatTime(hora)}</span>
+              </div>
+              <div className="favorite-card-detail">
+                <FiMapPin className="detail-icon" />
+                <span>{ubicacion}</span>
+              </div>
+              <div className="favorite-card-detail">
+                <FiTag className="detail-icon" />
+                <span>{categoria}</span>
+              </div>
             </div>
           </div>
+          <div className="favorite-card-actions">
+            <button 
+              className="view-event-button"
+              onClick={() => handleViewEvent(eventId)}
+            >
+              Ver evento <FiArrowRight />
+            </button>
+            <button 
+              className="remove-favorite-button"
+              onClick={() => handleRemoveFavorite(eventId)}
+              disabled={removingId === eventId}
+            >
+              {removingId === eventId ? (
+                <span className="removing-text">Eliminando...</span>
+              ) : (
+                <>Quitar de favoritos</>
+              )}
+            </button>
+          </div>
         </div>
-        <div className="favorite-card-actions">
-          <button 
-            className="view-event-button"
-            onClick={() => handleViewEvent(favorite.evento?.id)}
-          >
-            Ver evento <FiArrowRight />
-          </button>
-          <button 
-            className="remove-favorite-button"
-            onClick={() => handleRemoveFavorite(favorite.evento?.id)}
-            disabled={removingId === favorite.evento?.id}
-          >
-            {removingId === favorite.evento?.id ? (
-              <span className="removing-text">Eliminando...</span>
-            ) : (
-              <>Quitar de favoritos</>
-            )}
-          </button>
-        </div>
-      </div>
-    ));
+      );
+    });
   }, [favorites, removingId, formatDate, formatTime, handleViewEvent]);
 
   if (loading) {
@@ -231,7 +248,7 @@ export default function FavoritesPage() {
           </p>
           <div className="favorites-empty-actions">
             <button 
-              onClick={() => router.push('/eventos')}
+              onClick={() => router.push('/events')}
               className="explore-button"
             >
               Explorar eventos

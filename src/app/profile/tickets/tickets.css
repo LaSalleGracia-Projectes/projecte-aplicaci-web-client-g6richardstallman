@@ -228,6 +228,46 @@
   align-items: center;
 }
 
+.ticket-card-header-main {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.ticket-event-image {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #f3f4f6;
+}
+
+.ticket-card-header-date {
+  font-size: 14px;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.ticket-card-header-date-icon {
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.ticket-card-header-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ticket-status-total {
+  background: #f3f4f6;
+  color: #2563eb;
+  font-weight: 600;
+}
+
 .ticket-card-title {
   margin: 0;
   font-size: 1.2rem;
@@ -262,6 +302,10 @@
   gap: 1rem;
 }
 
+.ticket-card-details-3col {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
 .ticket-card-detail {
   display: flex;
   align-items: flex-start;
@@ -276,6 +320,35 @@
   height: 1rem;
   margin-top: 0.2rem;
   flex-shrink: 0;
+}
+
+.ticket-card-table-wrapper {
+  margin-top: 18px;
+  width: 100%;
+}
+
+.ticket-card-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.97rem;
+  background: #f9fafb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ticket-card-table thead tr {
+  background: #e0e7ef;
+}
+
+.ticket-card-table th {
+  padding: 0.5rem;
+  text-align: left;
+  color: #2563eb;
+}
+
+.ticket-card-table td {
+  padding: 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .ticket-card-actions {

@@ -13,13 +13,19 @@ export const authService = {
         body: JSON.stringify(userData),
       });
 
-      return this._handleResponse(response);
+      const data = await this._handleResponse(response);
+      
+      if (data.token) {
+        storage.setToken(data.token, false);
+      }
+      
+      return data;
     } catch (error) {
       throw error;
     }
   },
 
-  async login(credentials) {
+  async login(credentials, remember = false) {
     try {
       const response = await fetch(`${API_URL}/login`, {
         method: "POST",
@@ -30,9 +36,11 @@ export const authService = {
       });
 
       const data = await this._handleResponse(response);
+      
       if (data.access_token) {
-        storage.setToken(data.access_token, false);
+        storage.setToken(data.access_token, remember);
       }
+      
       return data;
     } catch (error) {
       throw error;
@@ -42,31 +50,38 @@ export const authService = {
   async logout() {
     try {
       const token = storage.getToken(false) || storage.getToken(true);
-      if (!token) return { status: "success", message: "Ya cerrado sesión" };
+      if (!token) {
+        this.cleanupLocalData();
+        return { status: "success", message: "No active session" };
+      }
 
-      const response = await fetch(`${API_URL}/logout`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      const data = await this._handleResponse(response);
-      
-      storage.removeToken(false);
-      storage.removeToken(true);
-      storage.remove("user_info", false);
-      storage.remove("user_info", true);
-
-      return data;
+      try {
+        const response = await fetch(`${API_URL}/logout`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+        });
+        
+        const data = await this._handleResponse(response);
+        this.cleanupLocalData();
+        return data;
+      } catch (error) {
+        this.cleanupLocalData();
+        return { status: "success", message: "Session closed" };
+      }
     } catch (error) {
-      storage.removeToken(false);
-      storage.removeToken(true);
-      storage.remove("user_info", false);
-      storage.remove("user_info", true);
-      throw error;
+      this.cleanupLocalData();
+      return { status: "success", message: "Session closed" };
     }
+  },
+  
+  cleanupLocalData() {
+    storage.removeToken(false);
+    storage.removeToken(true);
+    storage.remove("user_info", false);
+    storage.remove("user_info", true);
   },
 
   async resetPassword(email, identificador) {
@@ -79,6 +94,10 @@ export const authService = {
     });
 
     return this._handleResponse(response);
+  },
+  
+  isAuthenticated() {
+    return !!(storage.getToken(false) || storage.getToken(true));
   },
 
   async _handleResponse(response) {

@@ -38,28 +38,20 @@ export default function ResetPasswordPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const validationErrors = validateForm(form);
     if (Object.keys(validationErrors).length > 0) {
       const errorMessages = Object.values(validationErrors).join(", ");
       showError(errorMessages);
       return;
     }
-
     setLoading(true);
-
     try {
       await authService.resetPassword(form.email, form.identificador);
-
       showSuccess(
         "Si los datos son correctos, recibirás un email con la nueva contraseña."
       );
-
       setForm(initialState);
-
-      setTimeout(() => {
-        router.push("/auth/login");
-      }, 1500);
+      router.replace("/auth/login");
     } catch (err) {
       if (err.errors && typeof err.errors === "object") {
         const errorMsg =
