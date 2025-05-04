@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Eventflix Frontend
 
-## Getting Started
+¡Bienvenido al frontend de **Eventflix**! Este proyecto es la interfaz de usuario de la plataforma Eventflix, una web moderna y dinámica para la gestión, descubrimiento y compra de entradas para eventos de todo tipo.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🎬 ¿Qué es Eventflix?
+Eventflix es una plataforma web que conecta a usuarios con eventos de música, cine, teatro, deportes y mucho más. Permite a los organizadores publicar sus eventos y a los usuarios descubrir, guardar como favoritos y comprar entradas de manera sencilla y segura.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## ✨ Características principales
+- **Explora eventos** por categorías, popularidad o ubicación.
+- **Registro e inicio de sesión** con autenticación tradicional y Google.
+- **Panel de usuario** para gestionar eventos, entradas y favoritos.
+- **Panel de organizador** para crear y administrar eventos.
+- **Compra de entradas** fácil y segura.
+- **Sistema de favoritos** para eventos y organizadores.
+- **Notificaciones** y mensajes contextuales.
+- **Diseño responsive** y atractivo, optimizado para cualquier dispositivo.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## 🛠️ Tecnologías utilizadas
+- **Next.js** (React)
+- **Tailwind CSS** para estilos rápidos y modernos
+- **Context API** para gestión de estado global
+- **Autenticación con Google**
+- **Consumo de APIs REST**
+- **ESLint** y **Prettier** para calidad de código
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🚀 Instalación y ejecución local
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. **Clona el repositorio:**
+   ```bash
+   git clone https://github.com/LaSalleGracia-Projectes/projecte-aplicaci-web-client-g6richardstallman.git
+   cd eventflix-frontend
+   ```
+2. **Instala las dependencias:**
+   ```bash
+   npm install
+   ```
+3. **Configura las variables de entorno:**
+   - Crea un archivo `.env.local` en la raíz y añade tus variables necesarias (API endpoints, claves de Google, etc).
+4. **Inicia el servidor de desarrollo:**
+   ```bash
+   npm run dev
+   ```
+5. Accede a `http://localhost:3000` en tu navegador.
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📁 Estructura del proyecto
+- `/src/app` — Páginas principales y rutas de la aplicación
+- `/src/components` — Componentes reutilizables (UI, layout, etc)
+- `/src/services` — Servicios para interactuar con la API
+- `/src/context` — Contextos globales (ej: notificaciones)
+- `/public` — Imágenes y recursos estáticos
+- `/utils` — Utilidades y helpers
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## 🤝 Contribuir
+¡Las contribuciones son bienvenidas! Si quieres mejorar Eventflix, abre un issue o haz un pull request siguiendo las buenas prácticas del repositorio.
+
+---
+
+## 📢 Créditos
+Desarrollado por el Arnau Gil.
+
+---
+
+## 📄 Licencia
+Este proyecto es solo para fines educativos y no debe usarse en producción sin autorización.
+
+---
+
+¡Gracias por visitar Eventflix! Si te gusta el proyecto, no dudes en dejar una estrella ⭐ en el repositorio.

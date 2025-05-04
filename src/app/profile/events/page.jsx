@@ -12,7 +12,6 @@ import {
 } from "react-icons/fi";
 import "./events.css";
 import Image from "next/image";
-import EventImage from "../../../components/EventImage";
 
 export default function EventsPage() {
   const router = useRouter();
@@ -37,32 +36,54 @@ export default function EventsPage() {
   const fetchEvents = useCallback(async () => {
     try {
       const user = userService.getStoredUserInfo();
-      if (!user || user.tipo_usuario?.toLowerCase() !== "organizador") {
+      if (!user || (user.tipo_usuario?.toLowerCase() !== "organizador" && user.role !== "organizador")) {
         router.replace("/profile");
         return;
       }
-
       setLoading(true);
       setError(null);
-      
       const result = await eventsService.getMyEvents();
-      
+      let eventos = [];
       if (result && typeof result === 'object') {
         if (Array.isArray(result)) {
-          setEvents(result);
+          eventos = result;
         } else if (Array.isArray(result.data)) {
-          setEvents(result.data);
+          eventos = result.data;
         } else if (Array.isArray(result.eventos)) {
-          setEvents(result.eventos);
-        } else {
-          console.warn("Unexpected response format from getMyEvents:", result);
-          setEvents([]);
+          eventos = result.eventos;
         }
-      } else {
-        setEvents([]);
       }
+      setEvents(eventos.map(ev => {
+        // Sumar entradas disponibles de todos los tipos de entrada (limitados y activos)
+        let totalDisponibles = 0;
+        const tiposEntrada = ev.tiposEntrada || ev.tipos_entrada || [];
+        if (Array.isArray(tiposEntrada) && tiposEntrada.length > 0) {
+          totalDisponibles = tiposEntrada.reduce((sum, tipo) => {
+            if (tipo.es_ilimitado) return sum;
+            const cantidad = parseInt(tipo.cantidad_disponible, 10);
+            return sum + (isNaN(cantidad) ? 0 : cantidad);
+          }, 0);
+        } else if (typeof ev.aforo === "number") {
+          totalDisponibles = ev.aforo;
+        } else if (ev.entradas_disponibles) {
+          totalDisponibles = ev.entradas_disponibles;
+        }
+
+        return {
+          idEvento: ev.idEvento || ev.id || "",
+          titulo: ev.titulo || ev.nombreEvento || "",
+          descripcion: ev.descripcion || "",
+          fecha: ev.fecha || ev.fechaEvento || "",
+          hora: ev.hora || ev.horaEvento || "",
+          ubicacion: ev.ubicacion || ev.lugar || "",
+          categoria: ev.categoria || "",
+          imagen_url: ev.imagen_url || ev.imagen || "",
+          entradas_vendidas: ev.entradas_vendidas ?? (ev.entradasVendidas ?? 0),
+          entradas_disponibles: totalDisponibles,
+          ...ev
+        };
+      }));
     } catch (err) {
-      console.error("Error al cargar eventos:", err);
       if (err.status === 401) {
         setError("Sesión expirada. Por favor inicia sesión de nuevo");
         setTimeout(() => router.replace("/auth/login"), 3000);
@@ -83,7 +104,6 @@ export default function EventsPage() {
 
   const handleDeleteEvent = useCallback(async (eventId) => {
     if (actionInProgress) return;
-    
     try {
       setDeletingEventId(eventId);
       setActionInProgress(true);
@@ -92,7 +112,6 @@ export default function EventsPage() {
       showSuccess("Evento eliminado correctamente");
       setConfirmDelete(null);
     } catch (err) {
-      console.error("Error al eliminar evento:", err);
       if (err.status === 409) {
         showError("No se puede eliminar el evento porque ya tiene entradas vendidas");
       } else if (err.status === 404) {
@@ -125,23 +144,22 @@ export default function EventsPage() {
 
   const sortedAndFilteredEvents = useMemo(() => {
     let filtered = events.filter(event => 
-      event.titulo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.categoria?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.ubicacion?.toLowerCase().includes(searchTerm.toLowerCase())
+      (event.titulo || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (event.categoria || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (event.ubicacion || "").toLowerCase().includes(searchTerm.toLowerCase())
     );
-
     return filtered.sort((a, b) => {
       switch (sortBy) {
         case "date_desc":
-          return new Date(b.fecha || b.fechaEvento) - new Date(a.fecha || a.fechaEvento);
+          return new Date(b.fecha) - new Date(a.fecha);
         case "date_asc":
-          return new Date(a.fecha || a.fechaEvento) - new Date(b.fecha || b.fechaEvento);
+          return new Date(a.fecha) - new Date(b.fecha);
         case "title_asc":
-          return (a.titulo || a.nombreEvento).localeCompare(b.titulo || b.nombreEvento);
+          return (a.titulo || "").localeCompare(b.titulo || "");
         case "title_desc":
-          return (b.titulo || b.nombreEvento).localeCompare(a.titulo || a.nombreEvento);
+          return (b.titulo || "").localeCompare(a.titulo || "");
         default:
-          return new Date(b.fecha || b.fechaEvento) - new Date(a.fecha || a.fechaEvento);
+          return new Date(b.fecha) - new Date(a.fecha);
       }
     });
   }, [events, searchTerm, sortBy]);
@@ -155,29 +173,26 @@ export default function EventsPage() {
     try {
       const options = { year: 'numeric', month: 'long', day: 'numeric' };
       return new Date(dateString).toLocaleDateString('es-ES', options);
-    } catch (err) {
-      console.warn("Invalid date format:", dateString);
+    } catch {
       return "Fecha no disponible";
     }
   }, []);
 
   const eventStatusBadge = useCallback((event) => {
     try {
-      const eventDate = new Date(event.fecha || event.fechaEvento);
+      const eventDate = new Date(event.fecha);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
       if (eventDate < today) {
         return <span className="event-badge past">Finalizado</span>;
-      } else if ((event.entradas_vendidas >= event.entradas_disponibles) && 
-                event.entradas_disponibles > 0) {
+      } else if ((event.entradas_vendidas >= event.entradas_disponibles) && event.entradas_disponibles > 0) {
         return <span className="event-badge sold-out">Agotado</span>;
       } else if (Math.abs(eventDate - today) / (1000 * 60 * 60 * 24) <= 7) {
         return <span className="event-badge soon">Próximamente</span>;
       } else {
         return <span className="event-badge active">Activo</span>;
       }
-    } catch (err) {
+    } catch {
       return <span className="event-badge">Estado desconocido</span>;
     }
   }, []);
@@ -216,7 +231,6 @@ export default function EventsPage() {
           <FiCalendar className="events-icon" aria-hidden="true" />
           <h1>Mis Eventos</h1>
         </div>
-        
         <button 
           onClick={goToCreateEvent}
           className="create-event-button"
@@ -276,42 +290,40 @@ export default function EventsPage() {
             {currentEvents.length > 0 ? currentEvents.map(event => (
               <div key={event.idEvento} className="event-card">
                 <div className="event-image-container">
-                  <EventImage 
-                    src={event.imagen_url} 
-                    alt={event.titulo || event.nombreEvento} 
-                    width={300}
-                    height={180}
-                    className="event-image"
-                    fallbackIcon={<FiCalendar size={40} />}
-                  />
+                  {imageErrors[event.idEvento] || !event.imagen_url ? (
+                    <FiCalendar size={40} />
+                  ) : (
+                    <Image
+                      src={event.imagen_url}
+                      alt={event.titulo}
+                      width={300}
+                      height={180}
+                      className="event-image"
+                      onError={() => handleImageError(event.idEvento)}
+                    />
+                  )}
                   {eventStatusBadge(event)}
                 </div>
-                
                 <div className="event-content">
-                  <h2 className="event-title">{event.titulo || event.nombreEvento}</h2>
-                  
+                  <h2 className="event-title">{event.titulo}</h2>
                   <div className="event-details">
                     <div className="event-detail">
                       <FiCalendar className="event-detail-icon" />
-                      <span>{formatDate(event.fecha || event.fechaEvento)}</span>
+                      <span>{formatDate(event.fecha)}</span>
                     </div>
-                    
                     <div className="event-detail">
                       <FiClock className="event-detail-icon" />
                       <span>{event.hora || "Hora no especificada"}</span>
                     </div>
-                    
                     <div className="event-detail">
                       <FiMapPin className="event-detail-icon" />
                       <span>{event.ubicacion || "Ubicación no especificada"}</span>
                     </div>
-                    
                     <div className="event-detail">
                       <FiTag className="event-detail-icon" />
                       <span>{event.categoria || "Sin categoría"}</span>
                     </div>
                   </div>
-
                   <div className="event-stats">
                     <div className="event-stat">
                       <span className="event-stat-label">Entradas vendidas:</span>
@@ -323,7 +335,6 @@ export default function EventsPage() {
                     </div>
                   </div>
                 </div>
-                
                 <div className="event-actions">
                   <button 
                     onClick={() => {
@@ -331,46 +342,43 @@ export default function EventsPage() {
                       trackAction("edit", event.idEvento);
                     }}
                     className="event-action-button edit-button"
-                    aria-label={`Editar evento ${event.titulo || event.nombreEvento}`}
+                    aria-label={`Editar evento ${event.titulo}`}
                     disabled={deletingEventId === event.idEvento || actionInProgress}
                   >
                     <FiEdit aria-hidden="true" />
                     <span>Editar</span>
                   </button>
-                  
                   <button 
                     onClick={() => {
                       openDeleteConfirmation(event);
                       trackAction("delete", event.idEvento);
                     }}
                     className="event-action-button delete-button"
-                    aria-label={`Eliminar evento ${event.titulo || event.nombreEvento}`}
+                    aria-label={`Eliminar evento ${event.titulo}`}
                     disabled={deletingEventId === event.idEvento || actionInProgress}
                   >
                     <FiTrash2 aria-hidden="true" />
                     <span>Eliminar</span>
                   </button>
-                  
                   <button 
                     onClick={() => {
                       router.push(`/events/${event.idEvento}`);
                       trackAction("view", event.idEvento);
                     }}
                     className="event-action-button view-button"
-                    aria-label={`Ver evento ${event.titulo || event.nombreEvento}`}
+                    aria-label={`Ver evento ${event.titulo}`}
                     disabled={deletingEventId === event.idEvento || actionInProgress}
                   >
                     <FiEye aria-hidden="true" />
                     <span>Ver</span>
                   </button>
-                  
                   <button 
                     onClick={() => {
                       router.push(`/profile/events/${event.idEvento}/manage-tickets`);
                       trackAction("manage-tickets", event.idEvento);
                     }}
                     className="event-action-button manage-button"
-                    aria-label={`Gestionar entradas para ${event.titulo || event.nombreEvento}`}
+                    aria-label={`Gestionar entradas para ${event.titulo}`}
                     disabled={deletingEventId === event.idEvento || actionInProgress}
                   >
                     <FiPackage aria-hidden="true" />
@@ -386,7 +394,6 @@ export default function EventsPage() {
               </div>
             )}
           </div>
-          
           {sortedAndFilteredEvents.length > eventsPerPage && (
             <div className="pagination-controls">
               <button 
@@ -398,11 +405,9 @@ export default function EventsPage() {
                 <FiChevronLeft />
                 <span>Anterior</span>
               </button>
-              
               <span className="pagination-info">
                 Página {currentPage} de {totalPages}
               </span>
-              
               <button 
                 onClick={goToNextPage}
                 disabled={currentPage === totalPages}
@@ -443,9 +448,8 @@ export default function EventsPage() {
           <div className="delete-confirmation-content">
             <FiAlertTriangle size={48} className="warning-icon" aria-hidden="true" />
             <h3 id="delete-modal-title">¿Eliminar evento?</h3>
-            <p>¿Estás seguro de que deseas eliminar el evento <strong>{confirmDelete.titulo || confirmDelete.nombreEvento}</strong>?</p>
+            <p>¿Estás seguro de que deseas eliminar el evento <strong>{confirmDelete.titulo}</strong>?</p>
             <p className="delete-warning">Esta acción no se puede deshacer.</p>
-            
             <div className="delete-confirmation-actions">
               <button 
                 onClick={() => setConfirmDelete(null)}

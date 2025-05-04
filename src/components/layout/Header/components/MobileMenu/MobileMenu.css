@@ -69,6 +69,51 @@
   background-color: #f3f4f6;
 }
 
+.mobile-user-profile {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background-color: #f9fafb;
+  border-radius: 0.5rem;
+}
+
+.mobile-user-avatar {
+  margin-right: 0.75rem;
+}
+
+.avatar-image {
+  border-radius: 50%;
+  object-fit: cover;
+  transition: opacity 0.2s ease;
+}
+
+.avatar-image.loading {
+  opacity: 0.6;
+}
+
+.avatar-icon {
+  width: 60px;
+  height: 60px;
+  color: #6b7280;
+}
+
+.mobile-user-info {
+  flex: 1;
+}
+
+.mobile-username {
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.25rem 0;
+}
+
+.mobile-user-role {
+  color: #6b7280;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
 .mobile-nav-list {
   list-style: none;
   padding: 0;
@@ -100,6 +145,7 @@
 .mobile-auth {
   padding-top: 1rem;
   border-top: 1px solid #f3f4f6;
+  margin-top: auto;
 }
 
 .mobile-auth-buttons {

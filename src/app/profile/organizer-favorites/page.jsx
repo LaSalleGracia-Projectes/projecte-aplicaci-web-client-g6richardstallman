@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { organizerFavoritesService } from "../../../services/organizerFavorites.service";
@@ -10,7 +10,11 @@ import {
   FiArrowRight, 
   FiBriefcase,
   FiRefreshCw,
-  FiMapPin
+  FiMapPin,
+  FiGlobe,
+  FiMail,
+  FiPhone,
+  FiInfo
 } from "react-icons/fi";
 import "./organizer-favorites.css"; 
 
@@ -21,79 +25,59 @@ export default function OrganizerFavoritesPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [removingId, setRemovingId] = useState(null);
   const { showSuccess, showError } = useNotification();
-  const isLoaded = useRef(false);
 
+  // Improved favorites fetch function with better error handling
   const loadFavorites = useCallback(async () => {
     try {
       setLoading(true);
       const response = await organizerFavoritesService.getFavoriteOrganizers();
-      if (response && response.data) {
-        setFavorites(response.data || []);
+      
+      if (response?.data?.favoritos) {
+        setFavorites(response.data.favoritos);
+      } else if (response?.favoritos) {
+        setFavorites(response.favoritos);
+      } else if (Array.isArray(response)) {
+        setFavorites(response);
       } else {
         setFavorites([]);
       }
     } catch (err) {
-      console.error("Error al cargar organizadores favoritos:", err);
+      console.error("Error loading favorite organizers:", err);
       showError("No se pudieron cargar tus organizadores favoritos");
       setFavorites([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
-      isLoaded.current = true;
     }
   }, [showError]);
 
   useEffect(() => {
-    if (isLoaded.current) return;
-    
-    let mounted = true;
-    
-    const fetchData = async () => {
-      try {
-        const response = await organizerFavoritesService.getFavoriteOrganizers();
-        if (mounted) {
-          if (response && response.data) {
-            setFavorites(response.data || []);
-          } else {
-            setFavorites([]);
-          }
-          setLoading(false);
-          isLoaded.current = true;
-        }
-      } catch (err) {
-        if (mounted) {
-          console.error("Error al cargar organizadores favoritos:", err);
-          showError("No se pudieron cargar tus organizadores favoritos");
-          setFavorites([]);
-          setLoading(false);
-          isLoaded.current = true;
-        }
-      }
-    };
-    
-    fetchData();
-    
-    return () => {
-      mounted = false;
-    };
-  }, [showError]);
+    loadFavorites();
+  }, [loadFavorites]);
 
   const handleRefresh = () => {
     setRefreshing(true);
     loadFavorites();
   };
 
+  // Optimized remove favorite function with cleaner state management
   const handleRemoveFavorite = async (organizerId) => {
-    if (!organizerId) return;
+    if (!organizerId || removingId) return;
     
     try {
       setRemovingId(organizerId);
       await organizerFavoritesService.removeFromFavorites(organizerId);
-      setFavorites(prev => prev.filter(fav => fav.organizador?.id !== organizerId));
+      
+      // Update local state immediately for better UX
+      setFavorites(prev => prev.filter(fav => {
+        const id = fav.id || fav.organizador?.id;
+        return id !== organizerId;
+      }));
+      
       showSuccess("Organizador eliminado de favoritos");
     } catch (error) {
+      console.error("Error removing organizer from favorites:", error);
       showError("Error al eliminar de favoritos");
-      console.error("Error al eliminar organizador de favoritos:", error);
     } finally {
       setRemovingId(null);
     }
@@ -101,49 +85,106 @@ export default function OrganizerFavoritesPage() {
 
   const handleViewOrganizer = useCallback((organizerId) => {
     if (organizerId) {
-      router.push(`/organizadores/${organizerId}`);
+      router.push(`/organizers/${organizerId}`);
     }
   }, [router]);
 
-  // Memoizar tarjetas para evitar renderizados innecesarios
-  const organizerCards = useMemo(() => {
-    if (!favorites || favorites.length === 0) return null;
-    
-    return favorites.map(favorite => (
-      <div 
-        className="favorite-card organizer-card" 
-        key={favorite.id || `org-${favorite.organizador?.id}`}
-      >
+  // Empty state component
+  const EmptyState = () => (
+    <div className="favorites-empty">
+      <div className="favorites-empty-icon organizer-empty-icon">
+        <FiBriefcase aria-hidden="true" />
+      </div>
+      <h2>No tienes organizadores favoritos</h2>
+      <p>
+        Explora los perfiles de organizadores y añádelos a favoritos para acceder rápidamente a ellos.
+      </p>
+      <div className="favorites-empty-actions">
+        <button 
+          onClick={() => router.push('/organizers')}
+          className="explore-button"
+          aria-label="Ver listado de organizadores"
+        >
+          Ver organizadores
+        </button>
+      </div>
+    </div>
+  );
+
+  // Loading state component
+  const LoadingState = () => (
+    <div className="favorites-loading">
+      <div className="favorites-spinner" aria-hidden="true"></div>
+      <p>Cargando tus organizadores favoritos...</p>
+    </div>
+  );
+
+  // Individual organizer card component for cleaner rendering
+  const OrganizerCard = ({ favorite }) => {
+    // Handle potential data structure differences
+    const organizerId = favorite.id || favorite.organizador?.id;
+    const organizerName = favorite.nombre_organizacion || favorite.organizador?.nombre_organizacion || "Organizador";
+    const contactPhone = favorite.telefono_contacto || favorite.organizador?.telefono_contacto;
+    const logoUrl = favorite.avatar_url || favorite.organizador?.avatar_url || favorite.organizador?.logo_url;
+    const city = favorite.ciudad || favorite.organizador?.ciudad;
+    const website = favorite.sitio_web || favorite.organizador?.sitio_web;
+    const email = favorite.user?.email || favorite.organizador?.user?.email;
+
+    return (
+      <div className="favorite-card organizer-card">
         <div className="favorite-card-image">
-          {favorite.organizador?.logo_url ? (
+          {logoUrl ? (
             <Image 
-              src={favorite.organizador.logo_url} 
-              alt={favorite.organizador.nombre_organizacion || "Organizador"} 
+              src={logoUrl} 
+              alt={organizerName} 
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               style={{ objectFit: "cover" }}
-              priority={false}
               loading="lazy"
             />
           ) : (
             <div className="favorite-card-no-image organizer-logo">
-              <span>{favorite.organizador.nombre_organizacion?.charAt(0) || "O"}</span>
+              <span>{organizerName.charAt(0)}</span>
               <FiBriefcase aria-hidden="true" />
             </div>
           )}
         </div>
         <div className="favorite-card-content">
-          <h3 className="favorite-card-title">{favorite.organizador?.nombre_organizacion || "Organizador sin nombre"}</h3>
+          <h3 className="favorite-card-title">{organizerName}</h3>
           
           <div className="favorite-card-details organizer-details">
-            <div className="favorite-card-detail">
-              <FiCalendar className="detail-icon" />
-              <span>{favorite.organizador?.num_eventos || 0} eventos organizados</span>
-            </div>
-            {favorite.organizador?.ciudad && (
+            {contactPhone && (
+              <div className="favorite-card-detail">
+                <FiPhone className="detail-icon" />
+                <span>{contactPhone}</span>
+              </div>
+            )}
+            
+            {email && (
+              <div className="favorite-card-detail">
+                <FiMail className="detail-icon" />
+                <span>{email}</span>
+              </div>
+            )}
+            
+            {website && (
+              <div className="favorite-card-detail">
+                <FiGlobe className="detail-icon" />
+                <span className="truncate-text">{website}</span>
+              </div>
+            )}
+            
+            {city && (
               <div className="favorite-card-detail">
                 <FiMapPin className="detail-icon" />
-                <span>{favorite.organizador.ciudad}</span>
+                <span>{city}</span>
+              </div>
+            )}
+            
+            {(!contactPhone && !email && !website && !city) && (
+              <div className="favorite-card-detail no-details">
+                <FiInfo className="detail-icon" />
+                <span>No hay información adicional disponible</span>
               </div>
             )}
           </div>
@@ -151,18 +192,18 @@ export default function OrganizerFavoritesPage() {
         <div className="favorite-card-actions">
           <button 
             className="view-event-button"
-            onClick={() => handleViewOrganizer(favorite.organizador?.id)}
-            aria-label={`Ver organizador ${favorite.organizador?.nombre_organizacion || ""}`}
+            onClick={() => handleViewOrganizer(organizerId)}
+            aria-label={`Ver organizador ${organizerName}`}
           >
             Ver organizador <FiArrowRight aria-hidden="true" />
           </button>
           <button
             className="remove-favorite-button"
-            onClick={() => handleRemoveFavorite(favorite.organizador?.id)}
-            disabled={removingId === favorite.organizador?.id}
-            aria-label={`Quitar de favoritos a ${favorite.organizador?.nombre_organizacion || ""}`}
+            onClick={() => handleRemoveFavorite(organizerId)}
+            disabled={removingId === organizerId}
+            aria-label={`Quitar de favoritos a ${organizerName}`}
           >
-            {removingId === favorite.organizador?.id ? (
+            {removingId === organizerId ? (
               <span className="removing-text">Eliminando...</span>
             ) : (
               <>Quitar de favoritos</>
@@ -170,17 +211,8 @@ export default function OrganizerFavoritesPage() {
           </button>
         </div>
       </div>
-    ));
-  }, [favorites, removingId, handleViewOrganizer]);
-
-  if (loading) {
-    return (
-      <div className="favorites-loading">
-        <div className="favorites-spinner" aria-hidden="true"></div>
-        <p>Cargando tus organizadores favoritos...</p>
-      </div>
     );
-  }
+  };
 
   return (
     <div className="favorites-page">
@@ -192,7 +224,7 @@ export default function OrganizerFavoritesPage() {
         <button 
           className="refresh-button" 
           onClick={handleRefresh}
-          disabled={refreshing}
+          disabled={refreshing || loading}
           aria-label="Actualizar organizadores favoritos"
         >
           <FiRefreshCw className={refreshing ? "spinning" : ""} aria-hidden="true" />
@@ -200,28 +232,18 @@ export default function OrganizerFavoritesPage() {
         </button>
       </div>
 
-      {!favorites || favorites.length === 0 ? (
-        <div className="favorites-empty">
-          <div className="favorites-empty-icon organizer-empty-icon">
-            <FiBriefcase aria-hidden="true" />
-          </div>
-          <h2>No tienes organizadores favoritos</h2>
-          <p>
-            Explora los perfiles de organizadores y añádelos a favoritos para acceder rápidamente a ellos.
-          </p>
-          <div className="favorites-empty-actions">
-            <button 
-              onClick={() => router.push('/organizadores')}
-              className="explore-button"
-              aria-label="Ver listado de organizadores"
-            >
-              Ver organizadores
-            </button>
-          </div>
-        </div>
+      {loading ? (
+        <LoadingState />
+      ) : !favorites || favorites.length === 0 ? (
+        <EmptyState />
       ) : (
         <div className="favorites-grid">
-          {organizerCards}
+          {favorites.map(favorite => (
+            <OrganizerCard 
+              key={favorite.id || favorite.organizador?.id || Math.random().toString(36)} 
+              favorite={favorite} 
+            />
+          ))}
         </div>
       )}
     </div>

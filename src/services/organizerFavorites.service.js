@@ -5,7 +5,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 export const organizerFavoritesService = {
   async getFavoriteOrganizers() {
     try {
-      const token = storage.getToken();
+      const token = storage.getToken(false) || storage.getToken(true);
       if (!token) {
         throw new Error("No authorization token found");
       }
@@ -16,6 +16,8 @@ export const organizerFavoritesService = {
           Authorization: `Bearer ${token}`,
           Accept: "application/json",
         },
+        // Prevent caching for fresh data
+        cache: 'no-store'
       });
 
       return this._handleResponse(response);
@@ -106,10 +108,21 @@ export const organizerFavoritesService = {
     }
 
     try {
-      return await response.json();
+      const data = await response.json();
+      // Standardize response format
+      if (data.favoritos) {
+        return {
+          data: {
+            favoritos: data.favoritos
+          },
+          message: data.message || "Success",
+          status: data.status || "success"
+        };
+      }
+      return data;
     } catch (e) {
       if (response.status === 204) {
-        return { status: "success" };
+        return { data: { favoritos: [] }, status: "success" };
       }
       throw new Error("Invalid JSON response from server");
     }

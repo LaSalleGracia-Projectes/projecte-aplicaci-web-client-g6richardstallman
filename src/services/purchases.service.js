@@ -20,10 +20,27 @@ export const purchasesService = {
   },
 
   async purchaseTickets(purchaseData) {
-    const token = storage.getToken();
+    // Usar token persistente o de sesión
+    const token = storage.getToken(true) || storage.getToken(false);
     if (!token) {
       throw new Error("No authorization token found");
     }
+
+    // Convertir idTipoEntrada a número (por si acaso)
+    const entradas = (purchaseData.entradas || []).map(e => ({
+      ...e,
+      idTipoEntrada: Number(e.idTipoEntrada),
+      cantidad: Number(e.cantidad),
+      precio: Number(e.precio)
+    }));
+
+    const payload = {
+      idEvento: Number(purchaseData.idEvento),
+      entradas
+    };
+
+    // Log de depuración para ver el payload real
+    // console.log("Payload enviado a /compras:", payload);
 
     const response = await fetch(`${API_URL}/compras`, {
       method: "POST",
@@ -31,7 +48,7 @@ export const purchasesService = {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(purchaseData),
+      body: JSON.stringify(payload),
     });
 
     return this._handleResponse(response);

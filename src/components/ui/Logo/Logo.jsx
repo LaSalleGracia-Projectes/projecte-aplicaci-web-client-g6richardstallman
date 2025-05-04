@@ -1,18 +1,22 @@
-import Image from "next/image";
+import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import "./Logo.css";
 
-const Logo = ({ size = 150 }) => (
-  <Link href="/" className="logo-link" aria-label="Ir a inicio">
-    <Image
-      src="/images/logo.jpg"
-      alt="Eventflix Logo"
-      width={size}
-      height={size}
-      priority
-      className="logo-img"
-    />
-  </Link>
-);
+const Logo = ({ size = 120 }) => {
+  return (
+    <Link href="/" className="logo-link" aria-label="Ir a inicio">
+      <Image
+        src="/images/logo.jpg"
+        alt="Eventflix Logo"
+        width={size}
+        height={size}
+        className="logo-img"
+        style={{ height: "auto" }}
+        priority
+      />
+    </Link>
+  );
+};
 
-export default Logo;
+export default React.memo(Logo);

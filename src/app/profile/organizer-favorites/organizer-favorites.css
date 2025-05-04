@@ -207,6 +207,7 @@
   will-change: transform, box-shadow;
   display: flex;
   flex-direction: column;
+  contain: content;
 }
 
 .organizer-card {
@@ -316,6 +317,7 @@
   gap: 0.5rem;
   font-size: 0.9rem;
   color: #6b7280;
+  margin-bottom: 0.5rem;
 }
 
 .detail-icon {
@@ -415,6 +417,7 @@
 @media (prefers-reduced-motion: no-preference) {
   .favorite-card {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    will-change: transform;
   }
 
   .favorite-card-image img {
@@ -508,4 +511,26 @@
     width: 30px;
     height: 30px;
   }
+}
+
+/* New styles for enhanced organizer favorites */
+.truncate-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.no-details {
+  font-style: italic;
+  color: #9ca3af;
+}
+
+/* Enhance accessibility */
+.view-event-button:focus, 
+.remove-favorite-button:focus,
+.refresh-button:focus,
+.explore-button:focus {
+  outline: 2px solid #8b5cf6;
+  outline-offset: 2px;
 }

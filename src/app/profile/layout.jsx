@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { storage } from "../../utils/storage";
 import ProfileNavbar from "./components/ProfileNavbar";
 import "./layout.css";
 
@@ -10,8 +11,7 @@ export default function ProfileLayout({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = sessionStorage.getItem("access_token");
-
+    const token = storage.getToken(false) || storage.getToken(true);
     if (!token) {
       router.replace("/auth/login");
     } else {

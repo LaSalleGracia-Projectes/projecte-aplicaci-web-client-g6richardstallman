@@ -305,14 +305,6 @@ section.active {
   .history-image {
     height: 100%;
   }
-
-  .hero-content h1 {
-    font-size: 3.5rem;
-  }
-
-  .subtitle {
-    font-size: 1.5rem;
-  }
 }
 
 @media (min-width: 768px) and (max-width: 1200px) {
@@ -342,8 +334,7 @@ section.active {
     font-size: 1.2rem;
   }
 
-  .values-grid,
-  .team-grid {
+  .values-grid {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   }
 
