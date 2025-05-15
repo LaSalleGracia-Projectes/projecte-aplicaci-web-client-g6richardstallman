@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import {
   FiPhone,
   FiCalendar,
@@ -22,6 +21,44 @@ import { storage } from "../../../utils/storage";
 import EventoCard from "../../events/components/EventoCard";
 import "./organizer-details.css";
 
+const getInitials = (name) => {
+  if (!name) return "O";
+  return name
+    .split(" ")
+    .map((part) => part.charAt(0).toUpperCase())
+    .slice(0, 2)
+    .join("");
+};
+
+const OrganizerAvatar = ({ organizer, size = 120 }) => {
+  const [imgError, setImgError] = useState(false);
+  const initial = getInitials(organizer?.nombre_organizacion);
+  if (imgError || !organizer?.avatar_url) {
+    return (
+      <div
+        className="organizer-avatar-placeholder"
+        style={{ width: size, height: size }}
+        aria-label={`Inicial ${initial}`}
+      >
+        {initial}
+      </div>
+    );
+  }
+  return (
+    <div className="organizer-avatar-image-container" style={{ width: size, height: size }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={organizer.avatar_url}
+        alt={organizer.nombre_organizacion || "Organizador"}
+        width={size}
+        height={size}
+        className="organizer-avatar-image"
+        onError={() => setImgError(true)}
+      />
+    </div>
+  );
+};
+
 export default function OrganizerDetailPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -37,61 +74,75 @@ export default function OrganizerDetailPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isParticipant, setIsParticipant] = useState(false);
 
-  const fetchData = useCallback(async () => {
+  const isMounted = useRef(true);
+
+  const LoadingSpinner = () => (
+    <div className="organizer-loading">
+      <div className="loading-spinner" />
+      <div style={{ marginTop: 16, color: "#666" }}>Cargando organizador...</div>
+    </div>
+  );
+
+  useEffect(() => {
+    isMounted.current = true;
     setLoading(true);
     setEventsLoading(true);
     setError(null);
 
-    try {
-      const [orgRes, evRes] = await Promise.all([
-        organizersService.getOrganizerById(id),
-        organizersService.getOrganizerEvents(id),
-      ]);
+    Promise.all([
+      organizersService.getOrganizerById(id),
+      organizersService.getOrganizerEvents(id),
+    ])
+      .then(([orgRes, evRes]) => {
+        if (isMounted.current) {
+          if (orgRes && orgRes.success && orgRes.data) {
+            setOrganizer(orgRes.data);
+            document.title = `${orgRes.data.nombre_organizacion || "Organizador"} | Eventflix`;
+          } else {
+            setError("No se encontró información sobre este organizador");
+          }
+          if (evRes && evRes.success && Array.isArray(evRes.data)) {
+            setEvents(evRes.data);
+          } else {
+            setEvents([]);
+          }
+        }
+      })
+      .catch(() => {
+        if (isMounted.current) setError("Error al cargar los detalles del organizador");
+      })
+      .finally(() => {
+        if (isMounted.current) {
+          setLoading(false);
+          setEventsLoading(false);
+        }
+      });
 
-      if (orgRes && orgRes.success && orgRes.data) {
-        setOrganizer(orgRes.data);
-        document.title = `${orgRes.data.nombre_organizacion || "Organizador"} | Eventflix`;
-      } else {
-        setError("No se encontró información sobre este organizador");
-      }
-
-      if (evRes && evRes.success && Array.isArray(evRes.data)) {
-        setEvents(evRes.data);
-      } else {
-        setEvents([]);
-      }
-    } catch (err) {
-      setError("Error al cargar los detalles del organizador");
-    } finally {
-      setLoading(false);
-      setEventsLoading(false);
-    }
-  }, [id]);
-
-  const checkFavoriteAndRole = useCallback(async () => {
     const token = storage.getToken(false) || storage.getToken(true);
-    const userInfo = token
-      ? storage.get("user_info", null, false) || storage.get("user_info", null, true)
-      : null;
+    const userInfo =
+      token
+        ? storage.get("user_info", null, false) || storage.get("user_info", null, true)
+        : null;
     setIsLoggedIn(!!token);
     setIsParticipant(userInfo?.role === "participante");
     if (token && userInfo?.role === "participante" && id) {
-      try {
-        const favRes = await organizerFavoritesService.checkIsFavorite(id);
-        setIsFavorite(favRes.is_favorite || false);
-      } catch {
-        setIsFavorite(false);
-      }
+      organizerFavoritesService
+        .checkIsFavorite(id)
+        .then((favRes) => {
+          if (isMounted.current) setIsFavorite(favRes.is_favorite || false);
+        })
+        .catch(() => {
+          if (isMounted.current) setIsFavorite(false);
+        });
+    } else {
+      setIsFavorite(false);
     }
-  }, [id]);
 
-  useEffect(() => {
-    fetchData();
-    checkFavoriteAndRole();
     return () => {
+      isMounted.current = false;
       document.title = "Eventflix";
     };
-  }, [fetchData, checkFavoriteAndRole]);
+  }, [id]);
 
   const handleFavorite = async () => {
     if (favoriteLoading) return;
@@ -150,14 +201,7 @@ export default function OrganizerDetailPage() {
   if (loading) {
     return (
       <div className="organizer-detail-container">
-        <div className="organizer-detail-header">
-          <Link href="/organizers" className="organizer-detail-back">
-            <FiArrowLeft /> Volver a organizadores
-          </Link>
-        </div>
-        <section className="organizer-profile">
-          <OrganizerSkeleton />
-        </section>
+        <LoadingSpinner />
       </div>
     );
   }
@@ -190,27 +234,16 @@ export default function OrganizerDetailPage() {
       <section className="organizer-profile">
         <div className="organizer-profile-header">
           <div className="organizer-avatar">
-            {organizer.avatar_url ? (
-              <Image
-                src={organizer.avatar_url}
-                alt={organizer.nombre_organizacion}
-                width={120}
-                height={120}
-                className="organizer-avatar-image"
-                priority
-              />
-            ) : (
-              <div className="organizer-avatar-placeholder">
-                {organizer.nombre_organizacion?.charAt(0) || "O"}
-              </div>
-            )}
+            <OrganizerAvatar organizer={organizer} size={120} />
           </div>
           <div className="organizer-info">
             <h1 className="organizer-name">{organizer.nombre_organizacion || "Organizador"}</h1>
-            {organizer.user && (
+            {(organizer.user || organizer.nombre_usuario) && (
               <p className="organizer-owner">
                 <FiUser className="organizer-info-icon" />
-                {organizer.user.nombre} {organizer.user.apellido1} {organizer.user.apellido2 || ""}
+                {organizer.user
+                  ? `${organizer.user.nombre} ${organizer.user.apellido1} ${organizer.user.apellido2 || ""}`
+                  : organizer.nombre_usuario}
               </p>
             )}
             {isLoggedIn && isParticipant && (
@@ -289,11 +322,14 @@ export default function OrganizerDetailPage() {
                     </a>
                   </li>
                 )}
-                {organizer.user?.email && (
+                {(organizer.user?.email || organizer.email) && (
                   <li className="organizer-contact-item">
                     <FiMail className="organizer-contact-icon" />
-                    <a href={`mailto:${organizer.user.email}`} className="organizer-contact-link">
-                      {organizer.user.email}
+                    <a
+                      href={`mailto:${organizer.user?.email || organizer.email}`}
+                      className="organizer-contact-link"
+                    >
+                      {organizer.user?.email || organizer.email}
                     </a>
                   </li>
                 )}
@@ -314,17 +350,19 @@ export default function OrganizerDetailPage() {
                     </a>
                   </li>
                 )}
-                {organizer.direccion && (
+                {(organizer.direccion || organizer.ubicacion) && (
                   <li className="organizer-contact-item">
                     <FiMapPin className="organizer-contact-icon" />
-                    <span className="organizer-contact-text">{organizer.direccion}</span>
+                    <span className="organizer-contact-text">
+                      {organizer.direccion || organizer.ubicacion}
+                    </span>
                   </li>
                 )}
               </ul>
               {!organizer.telefono_contacto &&
-                !organizer.user?.email &&
+                !(organizer.user?.email || organizer.email) &&
                 !organizer.sitio_web &&
-                !organizer.direccion && (
+                !(organizer.direccion || organizer.ubicacion) && (
                   <div className="organizer-no-contact">
                     <FiInfo className="organizer-no-contact-icon" />
                     <p>No hay información de contacto disponible</p>
