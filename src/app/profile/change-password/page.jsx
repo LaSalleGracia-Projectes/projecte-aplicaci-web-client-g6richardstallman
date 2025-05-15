@@ -162,18 +162,11 @@ export default function ChangePasswordPage() {
         "Contraseña actualizada correctamente. Se cerrará tu sesión por seguridad."
       );
 
-      setTimeout(() => {
-        authService
-          .logout()
-          .then(() => {
-            setTimeout(() => {
-              authService.redirectToLogin(router);
-            }, 1000);
-          })
-          .catch(() => {
-            authService.redirectToLogin(router);
-          });
-      }, 1500);
+      // Limpiar datos locales y cerrar sesión
+      userService.clearUserInfo();
+      await authService.logout();
+      // Redirigir forzando refresh para limpiar el estado de Next.js
+      window.location.href = "/auth/login";
     } catch (err) {
       console.error("Error al cambiar contraseña:", err);
 
