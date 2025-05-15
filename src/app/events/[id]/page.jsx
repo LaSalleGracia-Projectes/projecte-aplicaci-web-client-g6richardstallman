@@ -389,18 +389,19 @@ export default function EventDetailPage() {
           <div className="event-sidebar">
             <div className="event-sidebar-card event-action-card">
               {userRole === "participante" ? (
-                <div className="event-actions">
+                <div className="event-actions" style={{ flexDirection: 'row', gap: '1rem', justifyContent: 'center', alignItems: 'stretch' }}>
                   <button 
                     onClick={handleBuyTickets}
                     className="btn-primary btn-action"
+                    style={{ flex: 1, minWidth: 0 }}
                   >
                     <FiTag className="btn-icon" />
                     Comprar entradas
                   </button>
-                  
                   <button
                     onClick={toggleFavorite}
                     className={`btn-secondary btn-action ${isFavorite ? 'btn-favorite-active' : 'btn-favorite'}`}
+                    style={{ flex: 1, minWidth: 0 }}
                   >
                     <FiHeart className={`btn-icon ${isFavorite ? 'heart-filled' : ''}`} />
                     {isFavorite ? "Guardado en favoritos" : "Añadir a favoritos"}
