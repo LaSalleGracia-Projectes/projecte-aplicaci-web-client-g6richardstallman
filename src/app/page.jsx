@@ -3,10 +3,164 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { FiStar, FiPhone, FiMail, FiMapPin } from "react-icons/fi";
 import Header from "../components/layout/Header/Header";
 import Footer from "../components/layout/Footer/Footer";
 import { storage } from "../utils/storage";
+import { eventsService } from "../services/events.service";
+import { organizersService } from "../services/organizers.service";
 import "../app/home.css";
+
+function EventCard({ event, onClick }) {
+  return (
+    <div className="event-card" onClick={() => onClick(event.id)} tabIndex={0} role="button" aria-label={event.titulo}>
+      <div
+        className="event-image"
+        style={{
+          backgroundImage: `url(${event.imagen_url || "/images/event-placeholder.webp"})`,
+        }}
+      ></div>
+      <div className="event-details">
+        <h3>{event.titulo}</h3>
+        <div className="event-meta">
+          <span>{event.ubicacion}</span>
+          <span>{event.categoria}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const getInitials = (name) => {
+  if (!name) return "O";
+  return name.split(' ').map(part => part.charAt(0).toUpperCase()).slice(0, 2).join('');
+};
+
+const OrganizerAvatar = ({ organizer, size = 90 }) => {
+  const [imgError, setImgError] = useState(false);
+  const initial = getInitials(organizer.nombre_organizacion);
+  if (imgError || !organizer.avatar_url) {
+    return (
+      <div
+        className="organizer-card-initial"
+        style={{
+          width: size,
+          height: size,
+          borderRadius: "50%",
+          background: "#f3f3f3",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: size * 0.45,
+          fontWeight: 700,
+          color: "#ff5a5f",
+          margin: "0 auto",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.07)"
+        }}
+        aria-label={`Inicial ${initial}`}
+      >
+        {initial}
+      </div>
+    );
+  }
+  return (
+    <div
+      className="organizer-image-container"
+      style={{
+        width: size,
+        height: size,
+        borderRadius: "50%",
+        overflow: "hidden",
+        margin: "0 auto",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.07)"
+      }}
+    >
+      <img
+        src={organizer.avatar_url}
+        alt={organizer.nombre_organizacion || "Organizador"}
+        width={size}
+        height={size}
+        className="organizer-card-image"
+        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        onError={() => setImgError(true)}
+      />
+    </div>
+  );
+};
+
+const OrganizerCard = ({ organizer }) => (
+  <Link href={`/organizers/${organizer.id}`} className="organizer-card" style={{
+    background: "#fff",
+    borderRadius: 12,
+    boxShadow: "0 4px 16px rgba(0,0,0,0.07)",
+    padding: "2rem 1.2rem 1.2rem 1.2rem",
+    textAlign: "center",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    position: "relative",
+    minHeight: 260,
+    transition: "transform 0.18s",
+    cursor: "pointer"
+  }}>
+    <div className="organizer-card-avatar" style={{ position: "relative", marginBottom: 18 }}>
+      <OrganizerAvatar organizer={organizer} />
+      {organizer.is_favorite && (
+        <div className="organizer-favorite-badge" aria-label="Favorito" style={{
+          position: "absolute",
+          top: 0,
+          right: 0,
+          background: "#fff",
+          borderRadius: "50%",
+          padding: 4,
+          boxShadow: "0 1px 4px rgba(0,0,0,0.07)"
+        }}>
+          <FiStar className="favorite-icon" style={{ color: "#ffb400", fontSize: 22 }} />
+        </div>
+      )}
+    </div>
+    <div className="organizer-card-content">
+      <h3 className="organizer-card-name" style={{
+        fontSize: "1.18rem",
+        fontWeight: 700,
+        marginBottom: 6,
+        color: "#222"
+      }}>{organizer.nombre_organizacion}</h3>
+      {organizer.nombre_usuario && (
+        <p className="organizer-card-owner" style={{
+          color: "#888",
+          fontSize: "0.98rem",
+          marginBottom: 8
+        }}>{organizer.nombre_usuario}</p>
+      )}
+      <div className="organizer-card-meta" style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 6,
+        alignItems: "center"
+      }}>
+        {organizer.telefono_contacto && (
+          <span className="organizer-card-stat" style={{ color: "#555", fontSize: "0.97rem", display: "flex", alignItems: "center", gap: 6 }}>
+            <FiPhone className="organizer-card-icon" aria-hidden="true" style={{ color: "#ff5a5f" }} />
+            {organizer.telefono_contacto}
+          </span>
+        )}
+        {organizer.email && (
+          <span className="organizer-card-stat" style={{ color: "#555", fontSize: "0.97rem", display: "flex", alignItems: "center", gap: 6 }}>
+            <FiMail className="organizer-card-icon" aria-hidden="true" style={{ color: "#ff5a5f" }} />
+            {organizer.email}
+          </span>
+        )}
+        {organizer.ubicacion && (
+          <span className="organizer-card-stat" style={{ color: "#555", fontSize: "0.97rem", display: "flex", alignItems: "center", gap: 6 }}>
+            <FiMapPin className="organizer-card-icon" aria-hidden="true" style={{ color: "#ff5a5f" }} />
+            {organizer.ubicacion}
+          </span>
+        )}
+      </div>
+    </div>
+  </Link>
+);
 
 export default function Home() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -15,6 +169,10 @@ export default function Home() {
   const [userRole, setUserRole] = useState(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
+  const [recommendedEvents, setRecommendedEvents] = useState([]);
+  const [featuredOrganizers, setFeaturedOrganizers] = useState([]);
+  const [loadingEvents, setLoadingEvents] = useState(true);
+  const [loadingOrganizers, setLoadingOrganizers] = useState(true);
   const searchRef = useRef(null);
   const carouselInterval = useRef(null);
   const router = useRouter();
@@ -55,7 +213,31 @@ export default function Home() {
         setUserRole(userInfo.rol);
       }
     }
+    fetchRecommendedEvents();
+    fetchFeaturedOrganizers();
   }, []);
+
+  const fetchRecommendedEvents = async () => {
+    setLoadingEvents(true);
+    try {
+      const res = await eventsService.getAllEvents({ page: 1, limit: 3 });
+      setRecommendedEvents(res.eventos?.slice(0, 3) || []);
+    } catch {
+      setRecommendedEvents([]);
+    }
+    setLoadingEvents(false);
+  };
+
+  const fetchFeaturedOrganizers = async () => {
+    setLoadingOrganizers(true);
+    try {
+      const res = await organizersService.getAllOrganizers();
+      setFeaturedOrganizers((res.data || []).slice(0, 3));
+    } catch {
+      setFeaturedOrganizers([]);
+    }
+    setLoadingOrganizers(false);
+  };
 
   useEffect(() => {
     carouselInterval.current = setInterval(() => {
@@ -81,7 +263,7 @@ export default function Home() {
     };
   }, [searchRef]);
 
-  const handleSearch = (e) => {
+  const handleSearch = async (e) => {
     const value = e.target.value;
     setSearchTerm(value);
 
@@ -89,8 +271,14 @@ export default function Home() {
       setSuggestedEvents([]);
       setShowSuggestions(false);
     } else {
-      setSuggestedEvents([]);
-      setShowSuggestions(true);
+      try {
+        const res = await eventsService.getAllEvents({ search: value, limit: 5 });
+        setSuggestedEvents(res.eventos || []);
+        setShowSuggestions(true);
+      } catch {
+        setSuggestedEvents([]);
+        setShowSuggestions(false);
+      }
     }
   };
 
@@ -124,10 +312,15 @@ export default function Home() {
     router.push("/events?page=1");
   };
 
+  const handleViewMoreOrganizers = () => {
+    router.push("/organizers");
+  };
+
   return (
     <>
       <Header />
       <main className="flex-grow">
+        {/* Carrusel */}
         <section className="hero-carousel">
           <div className="carousel-container">
             {carouselImages.map((slide, index) => (
@@ -190,6 +383,7 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Buscador de eventos */}
         <section className="search-section">
           <div className="container">
             <div className="search-container" ref={searchRef}>
@@ -211,10 +405,14 @@ export default function Home() {
                       className="suggestion-item"
                       onClick={() => goToEventDetails(event.id)}
                     >
-                      <div className="suggestion-name">{event.name}</div>
+                      <div className="suggestion-name">{event.titulo}</div>
                       <div className="suggestion-details">
-                        <span>{event.location}</span>
-                        <span>{event.date}</span>
+                        <span>{event.ubicacion}</span>
+                        <span>
+                          {event.fecha
+                            ? new Date(event.fecha).toLocaleDateString()
+                            : ""}
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -224,6 +422,7 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Bienvenida */}
         {isLoggedIn && (
           <section className="welcome-section">
             <div className="container">
@@ -244,13 +443,24 @@ export default function Home() {
           </section>
         )}
 
+        {/* Eventos recomendados */}
         <section className="featured-events">
           <div className="container">
-            <h2 className="section-title">Eventos Destacados</h2>
+            <h2 className="section-title">Eventos Recomendados</h2>
             <div className="events-grid">
-              <div className="event-placeholder">
-                <p>Cargando eventos destacados...</p>
-              </div>
+              {loadingEvents ? (
+                <div className="event-placeholder">
+                  <p>Cargando eventos recomendados...</p>
+                </div>
+              ) : recommendedEvents.length === 0 ? (
+                <div className="event-placeholder">
+                  <p>No hay eventos recomendados en este momento.</p>
+                </div>
+              ) : (
+                recommendedEvents.map((event) => (
+                  <EventCard key={event.id} event={event} onClick={goToEventDetails} />
+                ))
+              )}
             </div>
             <div className="view-more">
               <button
@@ -264,13 +474,33 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="upcoming-events">
+        {/* Organizadores destacados */}
+        <section className="featured-events">
           <div className="container">
-            <h2 className="section-title">Próximamente</h2>
-            <div className="events-timeline">
-              <div className="event-placeholder">
-                <p>Cargando próximos eventos...</p>
-              </div>
+            <h2 className="section-title">Organizadores Destacados</h2>
+            <div className="events-grid">
+              {loadingOrganizers ? (
+                <div className="event-placeholder">
+                  <p>Cargando organizadores...</p>
+                </div>
+              ) : featuredOrganizers.length === 0 ? (
+                <div className="event-placeholder">
+                  <p>No hay organizadores destacados en este momento.</p>
+                </div>
+              ) : (
+                featuredOrganizers.map((org) => (
+                  <OrganizerCard key={org.id} organizer={org} />
+                ))
+              )}
+            </div>
+            <div className="view-more">
+              <button
+                className="btn-outline"
+                onClick={handleViewMoreOrganizers}
+                aria-label="Ver más organizadores"
+              >
+                Ver más organizadores
+              </button>
             </div>
           </div>
         </section>
